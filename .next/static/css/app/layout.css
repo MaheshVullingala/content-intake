@@ -1,0 +1,42 @@
+/*!*****************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[12].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[12].use[3]!./src/app/globals.css ***!
+  \*****************************************************************************************************************************************************************************************************************************************************************/
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white-smoke: #F3F3F3;
+  --silver:      #B5B5B5;
+  --dim-grey:    #646464;
+  --onyx:        #3C3C3C;
+  --night:       #181313;
+  --accent:      #3C3C3C;
+  --accent-mid:  #646464;
+  --surface:     #FFFFFF;
+  --border:      #E0E0E0;
+}
+
+body {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 400;
+  background: var(--white-smoke);
+  color: var(--onyx);
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 500;
+  color: var(--night);
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--silver); border-radius: 4px; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.25s ease forwards; }
+

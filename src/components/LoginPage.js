@@ -3,11 +3,11 @@ import { useApp } from "@/lib/store";
 import { ROLE_META } from "@/lib/constants";
 
 const USERS = [
-  { id: "stakeholder",  name: "Alex Johnson",  dept: "Product Team",  desc: "Submit and track content requests" },
-  { id: "editorial_qa",name: "Priya Sharma",   dept: "Content Team",  desc: "Review and refine page copy" },
-  { id: "design_qa",   name: "Marcus Lee",     dept: "Design Team",   desc: "Add images and visual assets" },
-  { id: "web_team",    name: "Jordan Chen",    dept: "Web Team",      desc: "Publish approved pages" },
-  { id: "admin",       name: "Admin User",     dept: "Operations",    desc: "Monitor all requests and users" },
+  { id: "stakeholder",  name: "Mahesh",  dept: "Product Team",  desc: "Submit and track content requests" },
+  { id: "editorial_qa",name: "Editor1",   dept: "Editorial Team",  desc: "Review and refine page copy" },
+  { id: "design_qa",   name: "Jay",     dept: "Design Team",   desc: "Add images and visual assets" },
+  { id: "web_team",    name: "Subhadip",    dept: "Web Team",      desc: "Publish approved pages" },
+  { id: "admin",       name: "Chandra",     dept: "Operations",    desc: "Monitor all requests and users" },
 ];
 
 export default function LoginPage() {

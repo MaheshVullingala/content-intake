@@ -35,11 +35,11 @@ const SEED = [
 ];
 
 const USERS = {
-  stakeholder:  { id: "stakeholder",  name: "Alex Johnson",  role: "stakeholder"  },
-  editorial_qa: { id: "editorial_qa", name: "Priya Sharma",  role: "editorial_qa" },
-  design_qa:    { id: "design_qa",    name: "Marcus Lee",    role: "design_qa"    },
-  web_team:     { id: "web_team",     name: "Jordan Chen",   role: "web_team"     },
-  admin:        { id: "admin",        name: "Admin User",    role: "admin"        },
+  stakeholder:  { id: "stakeholder",  name: "Mahesh",  role: "stakeholder"  },
+  editorial_qa: { id: "editorial_qa", name: "Editor1",  role: "editorial_qa" },
+  design_qa:    { id: "design_qa",    name: "Jay",    role: "design_qa"    },
+  web_team:     { id: "web_team",     name: "Subhadip",   role: "web_team"     },
+  admin:        { id: "admin",        name: "Chandra",    role: "admin"        },
 };
 
 const Ctx = createContext(null);

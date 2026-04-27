@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap');
+@import '../styles/components.css';
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --night:  #181313;
+  --onyx:   #3C3C3C;
+  --dim:    #646464;
+  --silver: #B5B5B5;
+  --smoke:  #F3F3F3;
+  --white:  #FFFFFF;
+  --border: #E0E0E0;
+  --green:  #2a7a4b;
+  --red:    #c0392b;
+  --amber:  #d97706;
+}
+
+body {
+  font-family: 'Rubik', sans-serif;
+  font-weight: 400;
+  background: #F3F3F3;
+  color: #3C3C3C;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4 { font-weight: 500; color: #181313; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: #B5B5B5; border-radius: 4px; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeIn 0.25s ease forwards; }

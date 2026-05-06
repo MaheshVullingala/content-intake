@@ -3,15 +3,38 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { PAGE_TYPES, getSectionsForPageType } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
+import AIAssist from "@/components/AIAssist";
+import KeyBenefits from "@/components/sections/KeyBenefits";
+import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
+import FeaturesApps from "@/components/sections/FeaturesApps";
+import FeaturesAppsPreview from "@/components/sections/FeaturesAppsPreview";
+import CustomerStories from "@/components/sections/CustomerStories";
+import CustomerStoriesPreview from "@/components/sections/CustomerStoriesPreview";
+import PromoSection from "@/components/sections/PromoSection";
+import PromoSectionPreview from "@/components/sections/PromoSectionPreview";
+import RelatedContent from "@/components/sections/RelatedContent";
+import RelatedContentPreview from "@/components/sections/RelatedContentPreview";
+import Resources from "@/components/sections/Resources";
+import ResourcesPreview from "@/components/sections/ResourcesPreview";
 
 const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image:"" };
 const EMPTY_OVERVIEW = { overview_label:"", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_note:"" };
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, fieldKey, pageType }) => (
   <div className="field-wrap">
-    <label className="field-label">
-      {label}{required && <span className="req"> *</span>}
-    </label>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+      <label className="field-label" style={{ margin: 0 }}>
+        {label}{required && <span className="req"> *</span>}
+      </label>
+      {fieldKey && (
+        <AIAssist
+          fieldKey={fieldKey}
+          currentValue={value}
+          pageType={pageType || "Product"}
+          onAccept={onChange}
+        />
+      )}
+    </div>
     {multiline
       ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" />
       : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
@@ -27,6 +50,12 @@ export default function NewRequest({ go, user }) {
   const [banner,        setBanner]       = useState(EMPTY_BANNER);
   const [overview,      setOverview]     = useState(EMPTY_OVERVIEW);
   const [naMap,         setNaMap]        = useState({});
+  const [kbData,        setKbData]       = useState({ kb_label:"", kb_impact:"", kb_description:"", kb_cards:[] });
+  const [faData,        setFaData]       = useState({ fa_label:"", fa_impact:"", fa_description:"", fa_view_type:"", fa_items:[], fa_columns:[], fa_rows:[] });
+  const [csData,        setCsData]       = useState({ cs_label:"", cs_impact:"", cs_items:[] });
+  const [promoData,     setPromoData]    = useState({ promo_bg_image:"", promo_bg_note:"", promo_label:"", promo_title:"", promo_description:"", promo_btn_label:"", promo_btn_link:"" });
+  const [rcData,        setRcData]       = useState({ rc_label:"", rc_impact:"", rc_cards:[] });
+  const [resData,       setResData]      = useState({ res_label:"", res_impact:"", res_selected:[], res_video_carousel:{}, res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
   const [saving,        setSaving]       = useState(false);
   const [error,         setError]        = useState("");
   const [showExitModal, setShowExitModal]= useState(false);
@@ -43,6 +72,16 @@ export default function NewRequest({ go, user }) {
     const ov = sections.find(s => s.key === "overview");
     if (ov && ov.required && !naMap["overview"]) {
       if (!overview.overview_impact || !overview.overview_description) return false;
+    }
+    const kb = sections.find(s => s.key === "key_benefits");
+    if (kb && kb.required && !naMap["key_benefits"]) {
+      if (!kbData.kb_impact) return false;
+      if (kbData.kb_cards.length === 0) return false;
+      if (kbData.kb_cards.some(c => !c.title || !c.description)) return false;
+    }
+    const fa = sections.find(s => s.key === "features_apps");
+    if (fa && fa.required && !naMap["features_apps"]) {
+      if (!faData.fa_impact || !faData.fa_view_type) return false;
     }
     return true;
   };
@@ -91,7 +130,7 @@ export default function NewRequest({ go, user }) {
   };
 
   // Merged data for unified preview
-  const previewData = { ...banner, ...overview };
+  const previewData = { ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData };
   const steps = ["Select Page Type", "Fill Sections", "Preview & Submit"];
 
   return (
@@ -193,6 +232,18 @@ export default function NewRequest({ go, user }) {
                 ? !!banner.page_title
                 : s.key === "overview"
                 ? (isNA || (!!overview.overview_impact && !!overview.overview_description))
+                : s.key === "key_benefits"
+                ? (isNA || (!!kbData.kb_impact && kbData.kb_cards.length > 0 && kbData.kb_cards.every(c => c.title && c.description)))
+                : s.key === "features_apps"
+                ? (isNA || (!!faData.fa_impact && !!faData.fa_view_type))
+                : s.key === "customer_stories"
+                ? (isNA || (!!csData.cs_impact && csData.cs_items.length > 0))
+                : s.key === "promo_section"
+                ? (isNA || (!!promoData.promo_title && !!promoData.promo_btn_label))
+                : s.key === "related_content"
+                ? (isNA || (!!rcData.rc_impact && rcData.rc_cards.length > 0))
+                : s.key === "resources"
+                ? (isNA || (!!resData.res_impact && resData.res_selected.length > 0))
                 : false;
               return (
                 <button key={s.key} onClick={() => setActiveSection(s.key)}
@@ -223,14 +274,14 @@ export default function NewRequest({ go, user }) {
                       <p>Common to all page types · Required</p>
                     </div>
                   </div>
-                  <Field label="Page Title" required value={banner.page_title} onChange={v => updBanner("page_title", v)} placeholder="e.g. Xcelium Logic Simulator" />
-                  <Field label="Sub Title"  value={banner.sub_title}  onChange={v => updBanner("sub_title",  v)} placeholder="e.g. Industry-leading simulation platform" />
+                  <Field label="Page Title" required value={banner.page_title} onChange={v => updBanner("page_title", v)} placeholder="e.g. Xcelium Logic Simulator" fieldKey="page_title" pageType={pageType} />
+                  <Field label="Sub Title"  value={banner.sub_title}  onChange={v => updBanner("sub_title",  v)} placeholder="e.g. Industry-leading simulation platform" fieldKey="sub_title" pageType={pageType} />
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <Field label="CTA 1 Label" value={banner.cta1_label} onChange={v => updBanner("cta1_label", v)} placeholder="Read Blog" />
+                    <Field label="CTA 1 Label" value={banner.cta1_label} onChange={v => updBanner("cta1_label", v)} placeholder="Read Blog" fieldKey="cta1_label" pageType={pageType} />
                     <Field label="CTA 1 Link"  value={banner.cta1_link}  onChange={v => updBanner("cta1_link",  v)} placeholder="/blog/..." />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <Field label="CTA 2 Label" value={banner.cta2_label} onChange={v => updBanner("cta2_label", v)} placeholder="Watch Video" />
+                    <Field label="CTA 2 Label" value={banner.cta2_label} onChange={v => updBanner("cta2_label", v)} placeholder="Watch Video" fieldKey="cta2_label" pageType={pageType} />
                     <Field label="CTA 2 Link"  value={banner.cta2_link}  onChange={v => updBanner("cta2_link",  v)} placeholder="/video/..." />
                   </div>
                   <Field label="Banner Image URL" value={banner.banner_image} onChange={v => updBanner("banner_image", v)} placeholder="https://... or describe image" hint="Design QA will finalize the image" />
@@ -239,6 +290,163 @@ export default function NewRequest({ go, user }) {
                   <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
                   <PagePreview req={previewData} pageType={pageType} />
                 </div>
+              </div>
+            )}
+
+            {/* Key Benefits */}
+            {activeSection === "key_benefits" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>⭐ Key Benefits Section</h3>
+                    <p className="text-xs text-muted mt-4">
+                      {sections.find(s => s.key === "key_benefits")?.required ? "Required for this page type" : "Optional for this page type"}
+                    </p>
+                  </div>
+                  <button onClick={() => toggleNA("key_benefits")}
+                    style={{ background: naMap["key_benefits"] ? "#181313" : "#F3F3F3", color: naMap["key_benefits"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    {naMap["key_benefits"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
+                  </button>
+                </div>
+
+                {naMap["key_benefits"] ? (
+                  <div className="na-placeholder">
+                    <div className="icon">—</div>
+                    <div className="text">Key Benefits section marked as Not Applicable</div>
+                    <button onClick={() => toggleNA("key_benefits")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}>
+                      <KeyBenefits
+                        data={kbData}
+                        onChange={setKbData}
+                        pageType={pageType}
+                        isNA={false}
+                        onToggleNA={() => toggleNA("key_benefits")}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Features / Applications */}
+            {activeSection === "features_apps" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>🔧 Features / Applications</h3>
+                    <p className="text-xs text-muted mt-4">
+                      {sections.find(s => s.key === "features_apps")?.required ? "Required for this page type" : "Optional for this page type"}
+                    </p>
+                  </div>
+                  <button onClick={() => toggleNA("features_apps")}
+                    style={{ background: naMap["features_apps"] ? "#181313" : "#F3F3F3", color: naMap["features_apps"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    {naMap["features_apps"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
+                  </button>
+                </div>
+                {naMap["features_apps"] ? (
+                  <div className="na-placeholder">
+                    <div className="icon">—</div>
+                    <div className="text">Features / Applications marked as Not Applicable</div>
+                    <button onClick={() => toggleNA("features_apps")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}>
+                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Customer Stories */}
+            {activeSection === "customer_stories" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div><h3 style={{ fontSize: 14, margin: 0 }}>💬 Customer Stories</h3></div>
+                  <button onClick={() => toggleNA("customer_stories")} style={{ background: naMap["customer_stories"] ? "#181313" : "#F3F3F3", color: naMap["customer_stories"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    {naMap["customer_stories"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
+                  </button>
+                </div>
+                {naMap["customer_stories"] ? (
+                  <div className="na-placeholder"><div className="icon">—</div><div className="text">Customer Stories marked as Not Applicable</div><button onClick={() => toggleNA("customer_stories")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} /></div>
+                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} /></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Promo Section */}
+            {activeSection === "promo_section" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div><h3 style={{ fontSize: 14, margin: 0 }}>📣 Promo Section</h3></div>
+                  <button onClick={() => toggleNA("promo_section")} style={{ background: naMap["promo_section"] ? "#181313" : "#F3F3F3", color: naMap["promo_section"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    {naMap["promo_section"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
+                  </button>
+                </div>
+                {naMap["promo_section"] ? (
+                  <div className="na-placeholder"><div className="icon">—</div><div className="text">Promo Section marked as Not Applicable</div><button onClick={() => toggleNA("promo_section")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} /></div>
+                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} /></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Related Content */}
+            {activeSection === "related_content" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div><h3 style={{ fontSize: 14, margin: 0 }}>📄 Related Content</h3></div>
+                  <button onClick={() => toggleNA("related_content")} style={{ background: naMap["related_content"] ? "#181313" : "#F3F3F3", color: naMap["related_content"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    {naMap["related_content"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
+                  </button>
+                </div>
+                {naMap["related_content"] ? (
+                  <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Content marked as Not Applicable</div><button onClick={() => toggleNA("related_content")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} /></div>
+                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} /></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Resources */}
+            {activeSection === "resources" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div><h3 style={{ fontSize: 14, margin: 0 }}>📚 Resources</h3></div>
+                  <button onClick={() => toggleNA("resources")} style={{ background: naMap["resources"] ? "#181313" : "#F3F3F3", color: naMap["resources"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    {naMap["resources"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
+                  </button>
+                </div>
+                {naMap["resources"] ? (
+                  <div className="na-placeholder"><div className="icon">—</div><div className="text">Resources marked as Not Applicable</div><button onClick={() => toggleNA("resources")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} /></div>
+                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} /></div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -267,9 +475,9 @@ export default function NewRequest({ go, user }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                     <div className="card">
-                      <Field label="Label" value={overview.overview_label} onChange={v => updOverview("overview_label", v)} placeholder='e.g. "OVERVIEW"' hint="Small caps tag above the heading (optional)" />
-                      <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" />
-                      <Field label="Description" required value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline />
+                      <Field label="Label" value={overview.overview_label} onChange={v => updOverview("overview_label", v)} placeholder='e.g. "OVERVIEW"' hint="Small caps tag above the heading (optional)" fieldKey="overview_label" pageType={pageType} />
+                      <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" fieldKey="overview_impact" pageType={pageType} />
+                      <Field label="Description" required value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline fieldKey="overview_description" pageType={pageType} />
 
                       <div className="divider" />
                       <p className="field-label">Image / Diagram / Video — Optional</p>
@@ -286,7 +494,7 @@ export default function NewRequest({ go, user }) {
                         </div>
                       </div>
                       <Field label="Media URL" value={overview.overview_media_url} onChange={v => updOverview("overview_media_url", v)} placeholder="https://... or leave for Design QA" />
-                      <Field label="Notes for Design QA" value={overview.overview_media_note} onChange={v => updOverview("overview_media_note", v)} placeholder="e.g. Diagram showing the simulation workflow" hint="Describe what image or diagram you need" />
+                      <Field label="Notes for Design QA" value={overview.overview_media_note} onChange={v => updOverview("overview_media_note", v)} placeholder="e.g. Diagram showing the simulation workflow" hint="Describe what image or diagram you need" fieldKey="overview_media_note" pageType={pageType} />
                     </div>
                     <div>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>

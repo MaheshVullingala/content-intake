@@ -1,4 +1,10 @@
 "use client";
+import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
+import FeaturesAppsPreview from "@/components/sections/FeaturesAppsPreview";
+import CustomerStoriesPreview from "@/components/sections/CustomerStoriesPreview";
+import PromoSectionPreview from "@/components/sections/PromoSectionPreview";
+import RelatedContentPreview from "@/components/sections/RelatedContentPreview";
+import ResourcesPreview from "@/components/sections/ResourcesPreview";
 
 export default function PagePreview({ req = {}, pageType = "Product" }) {
   const {
@@ -6,9 +12,21 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
     banner_image = "", overview_label = "", overview_impact = "",
     overview_description = "", overview_media_url = "",
     overview_media_note = "", overview_media_type = "image",
+    kb_label = "", kb_impact = "", kb_description = "", kb_cards = [],
+    fa_label = "", fa_impact = "", fa_description = "", fa_view_type = "", fa_items = [], fa_columns = [], fa_rows = [],
+    cs_label = "", cs_impact = "", cs_items = [],
+    promo_title = "", promo_btn_label = "",
+    rc_label = "", rc_impact = "", rc_cards = [],
+    res_label = "", res_impact = "", res_selected = [],
   } = req;
 
-  const hasOverview = overview_impact || overview_description;
+  const hasOverview    = overview_impact || overview_description;
+  const hasKeyBenefits  = kb_impact || kb_cards.length > 0;
+  const hasFeatures      = fa_impact || fa_items.length > 0 || fa_columns.length > 0;
+  const hasCustomerStories = cs_impact || cs_items.length > 0;
+  const hasPromo           = promo_title || promo_btn_label;
+  const hasRelatedContent  = rc_impact || rc_cards.length > 0;
+  const hasResources       = res_impact || res_selected.length > 0;
 
   return (
     <div className="preview-window">
@@ -80,11 +98,68 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
         </>
       )}
 
+      {/* Key Benefits Section */}
+      {hasKeyBenefits && (
+        <>
+          <div className="preview-section-divider" />
+          <KeyBenefitsPreview data={req} />
+        </>
+      )}
+
+      {/* Features / Applications */}
+      {hasFeatures && (
+        <>
+          <div className="preview-section-divider" />
+          <FeaturesAppsPreview data={req} />
+        </>
+      )}
+
+      {/* Customer Stories */}
+      {hasCustomerStories && (
+        <>
+          <div className="preview-section-divider" />
+          <CustomerStoriesPreview data={req} />
+        </>
+      )}
+
+      {/* Promo Section */}
+      {hasPromo && (
+        <>
+          <div className="preview-section-divider" />
+          <PromoSectionPreview data={req} />
+        </>
+      )}
+
+      {/* Related Content */}
+      {hasRelatedContent && (
+        <>
+          <div className="preview-section-divider" />
+          <RelatedContentPreview data={req} />
+        </>
+      )}
+
+      {/* Resources */}
+      {hasResources && (
+        <>
+          <div className="preview-section-divider" />
+          <ResourcesPreview data={req} />
+        </>
+      )}
+
       {/* Preview label */}
       <div className="preview-label-bar">
         <div className="preview-label-dot" />
         <span className="preview-label-text">
-          Live Preview — {hasOverview ? "Banner + Overview" : "Banner Section"}
+          Live Preview — {[
+            "Banner",
+            hasOverview ? "Overview" : null,
+            hasKeyBenefits ? "Key Benefits" : null,
+            hasFeatures ? "Features" : null,
+            hasCustomerStories ? "Stories" : null,
+            hasPromo ? "Promo" : null,
+            hasRelatedContent ? "Related" : null,
+            hasResources ? "Resources" : null,
+          ].filter(Boolean).join(" + ")}
         </span>
       </div>
     </div>

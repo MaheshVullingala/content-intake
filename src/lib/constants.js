@@ -43,6 +43,14 @@ export const FLOW = [
   "published",
 ];
 
+// Which roles can act at each status
+export const ROLE_FOR_STATUS = {
+  editorial_qa:     "editorial_qa",
+  design_qa:        "design_qa",
+  pending_approval: "stakeholder",
+  web_team:         "web_team",
+};
+
 // Section definitions per page type
 export const SECTIONS = {
   banner: {
@@ -64,6 +72,72 @@ export const SECTIONS = {
       "Product":           { required: true },
       "Solutions":         { required: true },
       "Glossary":          { required: false },
+      "On-demand Webinar": { required: null },
+    },
+  },
+  key_benefits: {
+    label: "Key Benefits",
+    icon: "⭐",
+    description: "Label, impact statement and benefit cards with icons",
+    pageTypes: {
+      "Product":           { required: true },
+      "Solutions":         { required: true },
+      "Glossary":          { required: null },
+      "On-demand Webinar": { required: null },
+    },
+  },
+  features_apps: {
+    label: "Features / Applications",
+    icon: "🔧",
+    description: "List, tabs or table view of features or applications",
+    pageTypes: {
+      "Product":           { required: true },
+      "Solutions":         { required: true },
+      "Glossary":          { required: null },
+      "On-demand Webinar": { required: null },
+    },
+  },
+  customer_stories: {
+    label: "Customer Stories",
+    icon: "💬",
+    description: "Testimonial carousel with customer quotes",
+    pageTypes: {
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: null },
+      "On-demand Webinar": { required: null },
+    },
+  },
+  promo_section: {
+    label: "Promo Section",
+    icon: "📣",
+    description: "Full-width banner with background image and CTA",
+    pageTypes: {
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: null },
+      "On-demand Webinar": { required: null },
+    },
+  },
+  related_content: {
+    label: "Related Content",
+    icon: "📄",
+    description: "Up to 3 content cards with image, label and description",
+    pageTypes: {
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: null },
+      "On-demand Webinar": { required: null },
+    },
+  },
+  resources: {
+    label: "Resources",
+    icon: "📚",
+    description: "Video carousel, mixed media, resource cards, news and blogs",
+    pageTypes: {
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: null },
       "On-demand Webinar": { required: null },
     },
   },

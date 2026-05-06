@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { getStatus, ROLE_META, canAct, nextActionLabel, FLOW } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
+import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 
 function formatBytes(b) {
   if (b < 1024) return b + " B";
@@ -40,14 +41,16 @@ export default function ReqDetail({ reqId, go, user }) {
   const [uploading,    setUploading]   = useState(false);
   const [dragOver,     setDragOver]    = useState(false);
   const [saving,       setSaving]      = useState(false);
+  const [assigning,    setAssigning]   = useState(false);
   const [error,        setError]       = useState("");
   const [showPreview,  setShowPreview] = useState(false);
+  const [teamMembers,  setTeamMembers] = useState([]);
   const fileRef = useRef();
 
   const fetchAll = async () => {
     setLoading(true);
     const [{ data: r }, { data: c }, { data: a }] = await Promise.all([
-      supabase.from("requests").select("*, users(name,role,department)").eq("id", reqId).single(),
+      supabase.from("requests").select("*, users!requests_created_by_fkey(name,role,department), assigned:users!requests_assigned_to_fkey(name,role)").eq("id", reqId).single(),
       supabase.from("comments").select("*").eq("request_id", reqId).order("created_at"),
       supabase.from("attachments").select("*").eq("request_id", reqId).order("created_at"),
     ]);
@@ -55,7 +58,16 @@ export default function ReqDetail({ reqId, go, user }) {
     setLoading(false);
   };
 
+  const fetchTeamMembers = async (role) => {
+    const { data } = await supabase.from("users").select("id, name, role").eq("role", role).neq("id", user.id);
+    setTeamMembers(data || []);
+  };
+
   useEffect(() => { fetchAll(); }, [reqId]);
+
+  useEffect(() => {
+    if (user.can_assign) fetchTeamMembers(user.role);
+  }, [user.can_assign, user.role]);
 
   if (loading) return <div style={{ padding: "3rem", textAlign: "center", color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>Loading...</div>;
   if (!req)    return <div style={{ padding: "2rem", color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>Request not found.</div>;
@@ -65,7 +77,8 @@ export default function ReqDetail({ reqId, go, user }) {
   const isEditorialQA = user.role === "editorial_qa" && req.status === "editorial_qa";
   const isDesignQA    = user.role === "design_qa"    && req.status === "design_qa";
   const stageIdx      = FLOW.indexOf(req.status);
-  const hasOverview   = req.overview_impact || req.overview_description;
+  const hasOverview    = req.overview_impact || req.overview_description;
+  const hasKeyBenefits = req.kb_impact || (req.kb_cards && req.kb_cards.length > 0);
 
   const startEdit = () => setEditData({
     page_title: req.page_title, sub_title: req.sub_title,
@@ -428,12 +441,59 @@ export default function ReqDetail({ reqId, go, user }) {
                 <span style={{ fontSize: 16 }}>{ROLE_META[user.role]?.icon}</span>
                 <span className="text-xs text-uppercase font-medium">Your Review</span>
               </div>
+
+              {/* Assignment section — only for users with can_assign permission */}
+              {user.can_assign && actionable && (
+                <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid #F3F3F3" }}>
+                  <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Assign to team member
+                  </label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <select
+                      defaultValue={req.assigned_to || ""}
+                      onChange={async (e) => {
+                        const assignedId = e.target.value;
+                        setAssigning(true);
+                        await supabase.from("requests").update({
+                          assigned_to: assignedId || null,
+                          assigned_by: user.id,
+                          assigned_at: new Date().toISOString(),
+                        }).eq("id", req.id);
+                        await fetchAll();
+                        setAssigning(false);
+                      }}
+                      style={{ flex: 1, background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.55rem 0.8rem", fontSize: 13, color: "#181313", outline: "none", fontFamily: "'Rubik',sans-serif", cursor: "pointer" }}>
+                      <option value="">Unassigned</option>
+                      <option value={user.id}>Assign to myself</option>
+                      {teamMembers.map(m => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                    {assigning && <span style={{ fontSize: 12, color: "#B5B5B5", alignSelf: "center" }}>Saving...</span>}
+                  </div>
+                  {req.assigned && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: "#2a7a4b", display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#2a7a4b", display: "inline-block" }} />
+                      Assigned to {req.assigned?.name || "—"}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Show assigned person to non-assigners */}
+              {!user.can_assign && req.assigned && (
+                <div style={{ marginBottom: 12, padding: "0.6rem 0.8rem", background: "#F9F9F9", borderRadius: 8, border: "1px solid #F3F3F3", fontSize: 12, color: "#646464", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#2a7a4b", display: "inline-block" }} />
+                  Assigned to <strong style={{ color: "#181313" }}>{req.assigned?.name}</strong>
+                </div>
+              )}
+
               {editData && <div className="alert alert-warning">⚠️ Save your edits before approving.</div>}
               {error     && <div className="alert alert-error">{error}</div>}
               <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Add a comment (optional)..." className="textarea" style={{ minHeight: 85 }} />
               <div className="flex-col gap-8 mt-8">
                 <button onClick={doAdvance} disabled={saving || !!editData} className="btn-primary btn-full" style={{ opacity: saving || editData ? 0.5 : 1, justifyContent: "center" }}>
-                  {saving ? "Processing..." : nextActionLabel(user.role, req.status)}
+                  {saving ? "Processing..." : nextActionLabel(user.role)}
                 </button>
                 <button onClick={doReturn} disabled={saving} className="btn-danger">↩ Return for Revision</button>
               </div>

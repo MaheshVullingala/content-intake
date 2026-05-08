@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { PAGE_TYPES, getSectionsForPageType } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
@@ -43,13 +43,15 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
   </div>
 );
 
-export default function NewRequest({ go, user }) {
-  const [step,          setStep]         = useState(1);
+export default function NewRequest({ go, user, draftId }) {
+  const [step,          setStep]         = useState(draftId ? 2 : 1);
+  const [draftDbId,     setDraftDbId]    = useState(draftId || null);
   const [pageType,      setPageType]     = useState("");
   const [activeSection, setActiveSection]= useState("banner");
   const [banner,        setBanner]       = useState(EMPTY_BANNER);
   const [overview,      setOverview]     = useState(EMPTY_OVERVIEW);
   const [naMap,         setNaMap]        = useState({});
+  const [loadingDraft,  setLoadingDraft] = useState(!!draftId);
   const [kbData,        setKbData]       = useState({ kb_label:"", kb_impact:"", kb_description:"", kb_cards:[] });
   const [faData,        setFaData]       = useState({ fa_label:"", fa_impact:"", fa_description:"", fa_view_type:"", fa_items:[], fa_columns:[], fa_rows:[] });
   const [csData,        setCsData]       = useState({ cs_label:"", cs_impact:"", cs_items:[] });
@@ -59,6 +61,26 @@ export default function NewRequest({ go, user }) {
   const [saving,        setSaving]       = useState(false);
   const [error,         setError]        = useState("");
   const [showExitModal, setShowExitModal]= useState(false);
+
+  // Load draft data if editing
+  useEffect(() => {
+    if (!draftId) return;
+    const loadDraft = async () => {
+      const { data, error } = await supabase.from("requests").select("*").eq("id", draftId).single();
+      if (error || !data) { go("dashboard"); return; }
+      setPageType(data.page_type || "");
+      setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image: data.banner_image||"" });
+      setOverview({ overview_label: data.overview_label||"", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_note: data.overview_media_note||"" });
+      if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: data.kb_label||"", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
+      if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: data.fa_label||"", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: data.fa_items||[], fa_columns: data.fa_columns||[], fa_rows: data.fa_rows||[] });
+      if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: data.cs_label||"", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
+      if (data.promo_title) setPromoData({ promo_bg_image: data.promo_bg_image||"", promo_bg_note: data.promo_bg_note||"", promo_label: data.promo_label||"", promo_title: data.promo_title||"", promo_description: data.promo_description||"", promo_btn_label: data.promo_btn_label||"", promo_btn_link: data.promo_btn_link||"" });
+      if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: data.rc_label||"", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
+      if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
+      setLoadingDraft(false);
+    };
+    loadDraft();
+  }, [draftId]);
 
   const updBanner   = (k, v) => setBanner(p  => ({ ...p,  [k]: v }));
   const updOverview = (k, v) => setOverview(p => ({ ...p,  [k]: v }));
@@ -88,29 +110,120 @@ export default function NewRequest({ go, user }) {
 
   const buildPayload = (status) => ({
     page_type: pageType, status, created_by: user.id,
+    // Banner
     page_title: banner.page_title, sub_title: banner.sub_title,
     cta1_label: banner.cta1_label, cta1_link: banner.cta1_link,
     cta2_label: banner.cta2_label, cta2_link: banner.cta2_link,
     banner_image: banner.banner_image,
+    // Overview
     ...(!naMap["overview"] ? {
-      overview_label: overview.overview_label,
-      overview_impact: overview.overview_impact,
+      overview_label:       overview.overview_label,
+      overview_impact:      overview.overview_impact,
       overview_description: overview.overview_description,
-      overview_media_url: overview.overview_media_url,
-      overview_media_type: overview.overview_media_type,
-      overview_media_note: overview.overview_media_note,
+      overview_media_url:   overview.overview_media_url,
+      overview_media_type:  overview.overview_media_type,
+      overview_media_note:  overview.overview_media_note,
+    } : {}),
+    // Key Benefits
+    ...(!naMap["key_benefits"] ? {
+      kb_label:       kbData.kb_label,
+      kb_impact:      kbData.kb_impact,
+      kb_description: kbData.kb_description,
+      kb_cards:       kbData.kb_cards,
+    } : {}),
+    // Features / Applications
+    ...(!naMap["features_apps"] ? {
+      fa_label:       faData.fa_label,
+      fa_impact:      faData.fa_impact,
+      fa_description: faData.fa_description,
+      fa_view_type:   faData.fa_view_type,
+      fa_items:       faData.fa_items,
+      fa_columns:     faData.fa_columns,
+      fa_rows:        faData.fa_rows,
+    } : {}),
+    // Customer Stories
+    ...(!naMap["customer_stories"] ? {
+      cs_label:  csData.cs_label,
+      cs_impact: csData.cs_impact,
+      cs_items:  csData.cs_items,
+    } : {}),
+    // Promo Section
+    ...(!naMap["promo_section"] ? {
+      promo_bg_image:    promoData.promo_bg_image,
+      promo_bg_note:     promoData.promo_bg_note,
+      promo_label:       promoData.promo_label,
+      promo_title:       promoData.promo_title,
+      promo_description: promoData.promo_description,
+      promo_btn_label:   promoData.promo_btn_label,
+      promo_btn_link:    promoData.promo_btn_link,
+    } : {}),
+    // Related Content
+    ...(!naMap["related_content"] ? {
+      rc_label:  rcData.rc_label,
+      rc_impact: rcData.rc_impact,
+      rc_cards:  rcData.rc_cards,
+    } : {}),
+    // Resources
+    ...(!naMap["resources"] ? {
+      res_label:          resData.res_label,
+      res_impact:         resData.res_impact,
+      res_selected:       resData.res_selected,
+      res_video_carousel: resData.res_video_carousel,
+      res_mixed_carousel: resData.res_mixed_carousel,
+      res_resources:      resData.res_resources,
+      res_news:           resData.res_news,
+      res_blogs:          resData.res_blogs,
     } : {}),
   });
 
   const saveDraft = async () => {
-    if (!banner.page_title || !pageType) { go("dashboard"); return; }
+    // Validate minimum required fields
+    if (!pageType) {
+      setError("Please select a page type first.");
+      return;
+    }
+    if (!banner.page_title) {
+      setError("Please enter a page title before saving.");
+      return;
+    }
+
     setSaving(true);
     setError("");
+
     try {
-      await supabase.from("requests").insert(buildPayload("draft"));
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        setError("Session expired. Please sign out and log in again.");
+        setSaving(false);
+        return;
+      }
+
+      const payload = buildPayload("draft");
+
+      let err;
+      if (draftDbId) {
+        // Update existing draft
+        const { error } = await supabase.from("requests").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", draftDbId);
+        err = error;
+      } else {
+        // Insert new draft
+        const { data, error } = await supabase.from("requests").insert(payload).select().single();
+        err = error;
+        if (!err && data) setDraftDbId(data.id);
+      }
+
+      if (err) {
+        console.error("Save error:", err);
+        setError(`Save failed: ${err.message}`);
+        setSaving(false);
+        return;
+      }
+
+      setSaving(false);
       go("dashboard");
-    } catch {
-      setError("Failed to save draft. Please try again.");
+    } catch (e) {
+      console.error("Unexpected error:", e);
+      setError(`Unexpected error: ${e.message}`);
       setSaving(false);
     }
   };
@@ -118,20 +231,30 @@ export default function NewRequest({ go, user }) {
   const submit = async () => {
     setSaving(true);
     setError("");
-    try {
-      const { data, error: err } = await supabase.from("requests").insert(buildPayload("editorial_qa")).select().single();
-      if (err) throw err;
-      await supabase.from("status_history").insert({ request_id: data.id, user_id: user.id, user_name: user.name, from_status: null, to_status: "editorial_qa" });
-      go("detail", data.id);
-    } catch {
-      setError("Failed to submit. Please try again.");
+    const payload = buildPayload("editorial_qa");
+    console.log("Submitting payload:", payload);
+    const { data, error: err } = await supabase.from("requests").insert(payload).select().single();
+    if (err) {
+      console.error("Submit error:", err);
+      setError(`Failed to submit: ${err.message}`);
       setSaving(false);
+      return;
     }
+    const { error: histErr } = await supabase.from("status_history").insert({ request_id: data.id, user_id: user.id, user_name: user.name, from_status: null, to_status: "editorial_qa" });
+    if (histErr) console.error("History error:", histErr);
+    go("detail", data.id);
+    setSaving(false);
   };
 
   // Merged data for unified preview
   const previewData = { ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData };
   const steps = ["Select Page Type", "Fill Sections", "Preview & Submit"];
+
+  if (loadingDraft) return (
+    <div style={{ padding: "4rem", textAlign: "center", color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>
+      Loading draft...
+    </div>
+  );
 
   return (
     <div className="fade-in" style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "'Rubik', sans-serif" }}>

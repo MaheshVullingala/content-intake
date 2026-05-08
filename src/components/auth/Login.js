@@ -2,22 +2,11 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-const TEST_ACCOUNTS = [
-  { role: "Stakeholder",  email: "stakeholder@test.com", icon: "👤" },
-  { role: "Editorial QA", email: "editorial@test.com",   icon: "✍️"  },
-  { role: "Design QA",    email: "design@test.com",      icon: "🎨" },
-  { role: "Web Team",     email: "webteam@test.com",     icon: "🌐" },
-  { role: "Admin",        email: "admin@test.com",       icon: "⚙️"  },
-];
-const TEST_PASSWORD = "Test@1234";
-
 export default function Login({ onSwitch }) {
-  const [email,       setEmail]       = useState("");
-  const [password,    setPassword]    = useState("");
-  const [loading,     setLoading]     = useState(false);
-  const [loadingRole, setLoadingRole] = useState(null);
-  const [error,       setError]       = useState("");
-  const [showTest,    setShowTest]    = useState(false);
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,17 +15,6 @@ export default function Login({ onSwitch }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setError(error.message);
     setLoading(false);
-  };
-
-  const quickLogin = async (testEmail) => {
-    setLoadingRole(testEmail);
-    setError("");
-    const { error } = await supabase.auth.signInWithPassword({
-      email:    testEmail,
-      password: TEST_PASSWORD,
-    });
-    if (error) setError("Test account not set up yet. Run the SQL first.");
-    setLoadingRole(null);
   };
 
   const inputStyle = {
@@ -93,41 +71,7 @@ export default function Login({ onSwitch }) {
         </button>
       </p>
 
-      {/* Test credentials section */}
-      <div style={{ marginTop: 24, borderTop: "1px solid #2e2a2a", paddingTop: 20 }}>
-        <button type="button" onClick={() => setShowTest(!showTest)}
-          style={{ width: "100%", background: "transparent", border: "1px dashed #3C3C3C", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#646464", cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          🧪 {showTest ? "Hide" : "Show"} test accounts
-        </button>
 
-        {showTest && (
-          <div style={{ marginTop: 14 }}>
-            <div style={{ background: "#2e2a2a", border: "1px solid #3C3C3C", borderRadius: 8, padding: "0.65rem 0.9rem", marginBottom: 12, fontSize: 12, color: "#646464", fontFamily: "'Rubik',sans-serif" }}>
-              Password for all test accounts: <strong style={{ color: "#B5B5B5", fontFamily: "monospace" }}>{TEST_PASSWORD}</strong>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {TEST_ACCOUNTS.map(acc => (
-                <button key={acc.email} type="button" onClick={() => quickLogin(acc.email)}
-                  disabled={!!loadingRole}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: loadingRole === acc.email ? "#2e2a2a" : "#252020", border: "1px solid #3C3C3C", borderRadius: 8, padding: "0.6rem 0.9rem", cursor: loadingRole ? "not-allowed" : "pointer", transition: "border-color 0.15s", fontFamily: "'Rubik',sans-serif" }}
-                  onMouseEnter={e => { if (!loadingRole) e.currentTarget.style.borderColor = "#646464"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#3C3C3C"; }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 16 }}>{acc.icon}</span>
-                    <div style={{ textAlign: "left" }}>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: "#F3F3F3" }}>{acc.role}</div>
-                      <div style={{ fontSize: 11, color: "#646464", fontFamily: "monospace" }}>{acc.email}</div>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 12, color: "#646464" }}>
-                    {loadingRole === acc.email ? "Signing in..." : "Quick login →"}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
     </form>
   );
 }

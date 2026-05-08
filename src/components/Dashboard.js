@@ -12,9 +12,13 @@ export default function Dashboard({ go, user }) {
 
   const fetchRequests = async () => {
     setLoading(true);
-    let query = supabase.from("requests").select("*, users(name, role)").order("updated_at", { ascending: false });
+    let query = supabase
+      .from("requests")
+      .select("*, users!requests_created_by_fkey(name, role)")
+      .order("updated_at", { ascending: false });
     if (user.role === "stakeholder") query = query.eq("created_by", user.id);
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) console.error("Dashboard fetch error:", error);
     setRequests(data || []);
     setLoading(false);
   };
@@ -149,11 +153,21 @@ export default function Dashboard({ go, user }) {
                     </td>
                     <td style={{ padding: "0.9rem 1.2rem" }}>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <button onClick={() => go("detail", req.id)}
-                          style={{ background: act ? "#181313" : "#F3F3F3", color: act ? "#fff" : "#646464", border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                          {act ? "Review →" : "View"}
-                        </button>
-                        {/* Delete button — only for draft requests owned by current user or admin */}
+                        {/* Edit button — only for drafts owned by current user */}
+                        {isDraft && isOwner && (
+                          <button onClick={() => go("edit", req.id)}
+                            style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                            ✎ Edit
+                          </button>
+                        )}
+                        {/* View/Review button */}
+                        {!isDraft && (
+                          <button onClick={() => go("detail", req.id)}
+                            style={{ background: act ? "#181313" : "#F3F3F3", color: act ? "#fff" : "#646464", border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                            {act ? "Review →" : "View"}
+                          </button>
+                        )}
+                        {/* Delete button — only for drafts */}
                         {isDraft && (isOwner || user.role === "admin") && (
                           <button onClick={() => setDeleteModal(req)}
                             style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500, transition: "all 0.15s" }}

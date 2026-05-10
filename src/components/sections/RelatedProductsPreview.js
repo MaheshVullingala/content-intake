@@ -6,7 +6,7 @@ export default function RelatedProductsPreview({ data = {} }) {
   if (!rp_impact && rp_cards.length === 0) return null;
 
   return (
-    <div style={{ padding: "3rem 3.5rem", borderTop: "1px solid #F3F3F3", background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
+    <div style={{ padding: "3rem 0", borderTop: "1px solid #F3F3F3", background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       {/* Label */}
       <div style={{ fontSize: 11, fontWeight: 600, color: rp_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
         {rp_label || "RELATED PRODUCTS"}

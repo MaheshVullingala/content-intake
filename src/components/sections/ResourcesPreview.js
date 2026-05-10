@@ -115,7 +115,7 @@ export default function ResourcesPreview({ data = {} }) {
   if (!res_impact && res_selected.length === 0) return null;
 
   return (
-    <div style={{ padding: "3rem 3.5rem", borderTop: "1px solid #F3F3F3", background: "#F9F9F9", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
+    <div style={{ padding: "3rem 0", borderTop: "1px solid #F3F3F3", background: "#F9F9F9", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       {/* Label */}
       <div style={{ fontSize: 11, fontWeight: 600, color: res_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16, textAlign: "center" }}>
         {res_label || "RESOURCES"}

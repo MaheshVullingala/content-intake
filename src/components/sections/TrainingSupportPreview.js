@@ -36,7 +36,7 @@ export default function TrainingSupportPreview({ data = {} }) {
   }));
 
   return (
-    <div style={{ padding: "3rem 3.5rem", borderTop: "1px solid #F3F3F3", background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
+    <div style={{ padding: "3rem 0", borderTop: "1px solid #F3F3F3", background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       {/* Label */}
       <div style={{ fontSize: 11, fontWeight: 600, color: "#646464", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
         {d.ts_label}

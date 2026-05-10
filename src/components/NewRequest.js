@@ -412,9 +412,10 @@ export default function NewRequest({ go, user, draftId }) {
 
       {/* ── Step 2: Fill Sections ── */}
       {step === 2 && (
-        <div>
-          {/* Horizontal section tab bar */}
-          <div className="section-tab-bar">
+        <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 20 }}>
+          {/* Section nav */}
+          <div>
+            <p className="text-xs text-uppercase text-muted mb-8">Sections</p>
             {sections.map(s => {
               const isNA     = naMap[s.key];
               const isActive = activeSection === s.key;
@@ -441,13 +442,16 @@ export default function NewRequest({ go, user, draftId }) {
                 : false;
               return (
                 <button key={s.key} onClick={() => setActiveSection(s.key)}
-                  className={`section-tab${isActive ? " active" : ""}`}>
-                  <span className="section-tab-label">
-                    {s.label}{!isActive && isDone && <span className="section-tab-check"> ✓</span>}
-                  </span>
-                  <span className={`section-tab-sub${s.required && !isNA ? " required" : ""}`}>
-                    {isNA ? "N/A" : s.required ? "Required" : "Optional"}
-                  </span>
+                  className={`section-nav-btn${isActive ? " active" : ""}`}>
+                  <div>
+                    <div className="section-nav-label">{s.label}</div>
+                    <div className={`section-nav-sub${!isActive && s.required && !isNA ? " required" : ""}`}>
+                      {isNA ? "Marked N/A" : s.required ? "Required" : "Optional"}
+                    </div>
+                  </div>
+                  <div className="section-nav-status" style={{ color: isActive ? "#fff" : isDone ? "#2a7a4b" : "#B5B5B5" }}>
+                    {isNA ? "—" : isDone ? "✓" : "○"}
+                  </div>
                 </button>
               );
             })}

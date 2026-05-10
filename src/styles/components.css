@@ -228,45 +228,29 @@
 .tab-btn:hover  { color: #3C3C3C; }
 .tab-btn.active { background: #0f172a; color: #f1f5f9; font-weight: 500; }
 
-/* ── Section horizontal tab bar (Step 2) ─────── */
-.section-tab-bar {
+/* ── Section nav sidebar ──────────────────────── */
+.section-nav-btn {
+  width: 100%;
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  white-space: nowrap;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 12px 0;
-  margin-bottom: 20px;
-  scrollbar-width: none;
-}
-.section-tab-bar::-webkit-scrollbar { display: none; }
-
-.section-tab {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 8px 16px;
-  border-radius: 8px;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
   border: 1px solid #E0E0E0;
-  background: #F9F9F9;
+  border-radius: 9px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 8px;
   cursor: pointer;
-  font-family: 'Rubik', sans-serif;
-  flex-shrink: 0;
+  text-align: left;
   transition: all 0.15s;
 }
-.section-tab:hover                    { border-color: #3C3C3C; background: #fff; }
-.section-tab.active                   { background: #181313; border-color: #181313; }
-
-.section-tab-label                    { font-size: 13px; font-weight: 500; color: #181313; }
-.section-tab.active .section-tab-label { color: #ffffff; }
-
-.section-tab-check                    { color: #14b8a6; font-size: 11px; }
-
-.section-tab-sub                      { font-size: 10px; color: #B5B5B5; margin-top: 2px; }
-.section-tab-sub.required             { color: #c0392b; }
-.section-tab.active .section-tab-sub  { color: rgba(255,255,255,0.55); }
-.section-tab.active .section-tab-sub.required { color: #f87171; }
+.section-nav-btn:hover           { border-color: #3C3C3C; }
+.section-nav-btn.active          { background: #0f172a; border-color: #14b8a6; }
+.section-nav-label               { font-size: 13px; font-weight: 500; color: #181313; }
+.section-nav-btn.active .section-nav-label { color: #F3F3F3; }
+.section-nav-sub                 { font-size: 10px; color: #B5B5B5; margin-top: 2px; }
+.section-nav-sub.required        { color: #c0392b; }
+.section-nav-btn.active .section-nav-sub  { color: #B5B5B5; }
+.section-nav-status              { font-size: 16px; }
 
 /* ── Step bar ─────────────────────────────────── */
 .step-bar {

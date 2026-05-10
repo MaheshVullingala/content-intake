@@ -4,6 +4,16 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  /* Midnight Steel palette */
+  --bg-dark:     #0f172a;
+  --navbar:      #1e293b;
+  --border-dark: #334155;
+  --accent:      #14b8a6;
+  --accent-light:#5eead4;
+  --accent-tint: rgba(20,184,166,0.12);
+  --accent-border:rgba(20,184,166,0.3);
+
+  /* Light side (unchanged) */
   --night:  #181313;
   --onyx:   #3C3C3C;
   --dim:    #646464;
@@ -11,6 +21,9 @@
   --smoke:  #F3F3F3;
   --white:  #FFFFFF;
   --border: #E0E0E0;
+  --bg-app: #f8fafc;
+
+  /* Status */
   --green:  #2a7a4b;
   --red:    #c0392b;
   --amber:  #d97706;
@@ -19,7 +32,7 @@
 body {
   font-family: 'Rubik', sans-serif;
   font-weight: 400;
-  background: #F3F3F3;
+  background: var(--bg-app);
   color: #3C3C3C;
   line-height: 1.5;
 }
@@ -27,7 +40,7 @@ body {
 h1, h2, h3, h4 { font-weight: 500; color: #181313; }
 
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: #B5B5B5; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(5px); }

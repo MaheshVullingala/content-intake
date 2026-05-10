@@ -64,7 +64,7 @@ export default function Register({ onSwitch }) {
   };
 
   return (
-    <form onSubmit={handleRegister} style={{ width: "100%" }}>
+    <form onSubmit={handleRegister} style={{ width: "100%", maxWidth: 400, margin: "0 auto" }}>
       <h2 style={{ fontSize: 20, fontWeight: 500, color: "#F3F3F3", marginBottom: 6, fontFamily: "'Rubik',sans-serif" }}>Create account</h2>
       <p style={{ fontSize: 13, color: "#646464", marginBottom: 24, fontFamily: "'Rubik',sans-serif" }}>Register with your work email</p>
 
@@ -78,16 +78,16 @@ export default function Register({ onSwitch }) {
         <label style={labelStyle}>Full Name</label>
         <input type="text" value={form.name} onChange={e => upd("name", e.target.value)} required
           placeholder="e.g. Alex Johnson" maxLength={100} style={inputStyle}
-          onFocus={e => e.target.style.borderColor = "#B5B5B5"}
-          onBlur={e  => e.target.style.borderColor = "#3C3C3C"} />
+          onFocus={e => { e.target.style.borderColor = '#14b8a6'; e.target.style.background = 'rgba(255,255,255,0.12)'; }}
+          onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)'; }} />
       </div>
 
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>Work Email</label>
         <input type="email" value={form.email} onChange={e => upd("email", e.target.value)} required
           placeholder="you@company.com" maxLength={254} style={inputStyle}
-          onFocus={e => e.target.style.borderColor = "#B5B5B5"}
-          onBlur={e  => e.target.style.borderColor = "#3C3C3C"} />
+          onFocus={e => { e.target.style.borderColor = '#14b8a6'; e.target.style.background = 'rgba(255,255,255,0.12)'; }}
+          onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)'; }} />
       </div>
 
       <div style={{ marginBottom: 14 }}>
@@ -104,15 +104,15 @@ export default function Register({ onSwitch }) {
           <label style={labelStyle}>Password</label>
           <input type="password" value={form.password} onChange={e => upd("password", e.target.value)} required
             placeholder="Min. 8 characters" minLength={8} style={inputStyle}
-            onFocus={e => e.target.style.borderColor = "#B5B5B5"}
-            onBlur={e  => e.target.style.borderColor = "#3C3C3C"} />
+            onFocus={e => { e.target.style.borderColor = '#14b8a6'; e.target.style.background = 'rgba(255,255,255,0.12)'; }}
+            onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)'; }} />
         </div>
         <div>
           <label style={labelStyle}>Confirm Password</label>
           <input type="password" value={form.confirm} onChange={e => upd("confirm", e.target.value)} required
             placeholder="Repeat password" minLength={8} style={inputStyle}
-            onFocus={e => e.target.style.borderColor = "#B5B5B5"}
-            onBlur={e  => e.target.style.borderColor = "#3C3C3C"} />
+            onFocus={e => { e.target.style.borderColor = '#14b8a6'; e.target.style.background = 'rgba(255,255,255,0.12)'; }}
+            onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)'; }} />
         </div>
       </div>
 

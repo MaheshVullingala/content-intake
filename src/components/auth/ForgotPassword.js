@@ -35,7 +35,7 @@ export default function ForgotPassword({ onSwitch }) {
   );
 
   return (
-    <form onSubmit={handleReset} style={{ width: "100%" }}>
+    <form onSubmit={handleReset} style={{ width: "100%", maxWidth: 400, margin: "0 auto" }}>
       <h2 style={{ fontSize: 20, fontWeight: 500, color: "#F3F3F3", marginBottom: 6, fontFamily: "'Rubik',sans-serif" }}>Reset password</h2>
       <p style={{ fontSize: 13, color: "#646464", marginBottom: 24, fontFamily: "'Rubik',sans-serif" }}>
         Enter your email and we'll send you a reset link.
@@ -50,8 +50,8 @@ export default function ForgotPassword({ onSwitch }) {
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
           placeholder="you@company.com" maxLength={254}
           style={{ width: "100%", background: "#2e2a2a", border: "1px solid #3C3C3C", borderRadius: 8, padding: "0.7rem 0.9rem", fontSize: 14, color: "#F3F3F3", outline: "none", fontFamily: "'Rubik',sans-serif", boxSizing: "border-box" }}
-          onFocus={e => e.target.style.borderColor = "#B5B5B5"}
-          onBlur={e  => e.target.style.borderColor = "#3C3C3C"} />
+          onFocus={e => { e.target.style.borderColor = '#14b8a6'; e.target.style.background = 'rgba(255,255,255,0.12)'; }}
+          onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.background = 'rgba(255,255,255,0.08)'; }} />
       </div>
 
       <button type="submit" disabled={loading}

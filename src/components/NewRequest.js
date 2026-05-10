@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { PAGE_TYPES, getSectionsForPageType } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
@@ -16,6 +16,10 @@ import RelatedContent from "@/components/sections/RelatedContent";
 import RelatedContentPreview from "@/components/sections/RelatedContentPreview";
 import Resources from "@/components/sections/Resources";
 import ResourcesPreview from "@/components/sections/ResourcesPreview";
+import RelatedProducts from "@/components/sections/RelatedProducts";
+import RelatedProductsPreview from "@/components/sections/RelatedProductsPreview";
+import TrainingSupport from "@/components/sections/TrainingSupport";
+import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview";
 
 const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image:"" };
 const EMPTY_OVERVIEW = { overview_label:"", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_note:"" };
@@ -48,6 +52,7 @@ export default function NewRequest({ go, user, draftId }) {
   const [draftDbId,     setDraftDbId]    = useState(draftId || null);
   const [pageType,      setPageType]     = useState("");
   const [activeSection, setActiveSection]= useState("banner");
+  const previewRef = useRef(null);
   const [banner,        setBanner]       = useState(EMPTY_BANNER);
   const [overview,      setOverview]     = useState(EMPTY_OVERVIEW);
   const [naMap,         setNaMap]        = useState({});
@@ -58,9 +63,24 @@ export default function NewRequest({ go, user, draftId }) {
   const [promoData,     setPromoData]    = useState({ promo_bg_image:"", promo_bg_note:"", promo_label:"", promo_title:"", promo_description:"", promo_btn_label:"", promo_btn_link:"" });
   const [rcData,        setRcData]       = useState({ rc_label:"", rc_impact:"", rc_cards:[] });
   const [resData,       setResData]      = useState({ res_label:"", res_impact:"", res_selected:[], res_video_carousel:{}, res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
+  const [rpData,        setRpData]       = useState({ rp_label:"", rp_impact:"", rp_description:"", rp_cards:[] });
+  const [tsData,        setTsData]       = useState({});
   const [saving,        setSaving]       = useState(false);
   const [error,         setError]        = useState("");
   const [showExitModal, setShowExitModal]= useState(false);
+
+  // Auto-scroll preview to the active section
+  useEffect(() => {
+    if (!previewRef.current) return;
+    // Small delay so React renders the section into DOM before we scroll
+    const timer = setTimeout(() => {
+      const target = previewRef.current?.querySelector(`[data-section="${activeSection}"]`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [activeSection]);
 
   // Load draft data if editing
   useEffect(() => {
@@ -77,6 +97,8 @@ export default function NewRequest({ go, user, draftId }) {
       if (data.promo_title) setPromoData({ promo_bg_image: data.promo_bg_image||"", promo_bg_note: data.promo_bg_note||"", promo_label: data.promo_label||"", promo_title: data.promo_title||"", promo_description: data.promo_description||"", promo_btn_label: data.promo_btn_label||"", promo_btn_link: data.promo_btn_link||"" });
       if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: data.rc_label||"", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
       if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
+      if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: data.rp_label||"", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
+      if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: data.ts_label, ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
       setLoadingDraft(false);
     };
     loadDraft();
@@ -163,6 +185,33 @@ export default function NewRequest({ go, user, draftId }) {
       rc_impact: rcData.rc_impact,
       rc_cards:  rcData.rc_cards,
     } : {}),
+    // Training & Support
+    ...(!naMap["training_support"] ? {
+      ts_label:               tsData.ts_label,
+      ts_impact:              tsData.ts_impact,
+      ts_card1_icon:          tsData.ts_card1_icon,
+      ts_card1_title:         tsData.ts_card1_title,
+      ts_card1_description:   tsData.ts_card1_description,
+      ts_card1_cta_label:     tsData.ts_card1_cta_label,
+      ts_card1_cta_link:      tsData.ts_card1_cta_link,
+      ts_card2_icon:          tsData.ts_card2_icon,
+      ts_card2_title:         tsData.ts_card2_title,
+      ts_card2_description:   tsData.ts_card2_description,
+      ts_card2_cta_label:     tsData.ts_card2_cta_label,
+      ts_card2_cta_link:      tsData.ts_card2_cta_link,
+      ts_card3_icon:          tsData.ts_card3_icon,
+      ts_card3_title:         tsData.ts_card3_title,
+      ts_card3_description:   tsData.ts_card3_description,
+      ts_card3_cta_label:     tsData.ts_card3_cta_label,
+      ts_card3_cta_link:      tsData.ts_card3_cta_link,
+    } : {}),
+    // Related Products
+    ...(!naMap["related_products"] ? {
+      rp_label:       rpData.rp_label,
+      rp_impact:      rpData.rp_impact,
+      rp_description: rpData.rp_description,
+      rp_cards:       rpData.rp_cards,
+    } : {}),
     // Resources
     ...(!naMap["resources"] ? {
       res_label:          resData.res_label,
@@ -228,6 +277,25 @@ export default function NewRequest({ go, user, draftId }) {
     }
   };
 
+  // Save draft without navigating (used from exit modal)
+  const saveAndExit = async () => {
+    if (!pageType || !banner.page_title) { go("dashboard"); return; }
+    setSaving(true);
+    try {
+      const payload = buildPayload("draft");
+      if (draftDbId) {
+        await supabase.from("requests").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", draftDbId);
+      } else {
+        await supabase.from("requests").insert(payload);
+      }
+    } catch (e) {
+      console.error("Save and exit error:", e);
+    }
+    setSaving(false);
+    setShowExitModal(false);
+    go("dashboard");
+  };
+
   const submit = async () => {
     setSaving(true);
     setError("");
@@ -247,7 +315,7 @@ export default function NewRequest({ go, user, draftId }) {
   };
 
   // Merged data for unified preview
-  const previewData = { ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData };
+  const previewData = { ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData };
   const steps = ["Select Page Type", "Fill Sections", "Preview & Submit"];
 
   if (loadingDraft) return (
@@ -266,7 +334,7 @@ export default function NewRequest({ go, user, draftId }) {
             <h2>Leave without saving?</h2>
             <p>You have unsaved content. Save it as a draft so you can continue later.</p>
             <div className="modal-actions">
-              <button onClick={saveDraft} className="btn-primary btn-full">
+              <button onClick={saveAndExit} disabled={saving} className="btn-primary btn-full">
                 {saving ? "Saving..." : "💾 Save as Draft & Exit"}
               </button>
               <button onClick={() => go("dashboard")} className="btn-secondary btn-full">
@@ -326,7 +394,7 @@ export default function NewRequest({ go, user, draftId }) {
                   <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {getSectionsForPageType(pt).map(s => (
                       <span key={s.key} style={{ fontSize: 10, background: s.required ? "#181313" : "#F3F3F3", color: s.required ? "#fff" : "#646464", borderRadius: 10, padding: "2px 8px", fontWeight: 500 }}>
-                        {s.icon} {s.label} · {s.required ? "Required" : "Optional"}
+                        {s.label} · {s.required ? "Required" : "Optional"}
                       </span>
                     ))}
                   </div>
@@ -367,12 +435,16 @@ export default function NewRequest({ go, user, draftId }) {
                 ? (isNA || (!!rcData.rc_impact && rcData.rc_cards.length > 0))
                 : s.key === "resources"
                 ? (isNA || (!!resData.res_impact && resData.res_selected.length > 0))
+                : s.key === "related_products"
+                ? (isNA || (!!rpData.rp_impact && rpData.rp_cards.length > 0))
+                : s.key === "training_support"
+                ? true
                 : false;
               return (
                 <button key={s.key} onClick={() => setActiveSection(s.key)}
                   className={`section-nav-btn${isActive ? " active" : ""}`}>
                   <div>
-                    <div className="section-nav-label">{s.icon} {s.label}</div>
+                    <div className="section-nav-label">{s.label}</div>
                     <div className={`section-nav-sub${!isActive && s.required && !isNA ? " required" : ""}`}>
                       {isNA ? "Marked N/A" : s.required ? "Required" : "Optional"}
                     </div>
@@ -389,11 +461,12 @@ export default function NewRequest({ go, user, draftId }) {
           <div>
             {/* Banner */}
             {activeSection === "banner" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                 <div className="card">
                   <div className="card-header">
                     <div>
-                      <h3>🖼️ Banner Section</h3>
+                      <h3>Banner Section</h3>
                       <p>Common to all page types · Required</p>
                     </div>
                   </div>
@@ -409,9 +482,10 @@ export default function NewRequest({ go, user, draftId }) {
                   </div>
                   <Field label="Banner Image URL" value={banner.banner_image} onChange={v => updBanner("banner_image", v)} placeholder="https://... or describe image" hint="Design QA will finalize the image" />
                 </div>
-                <div>
+                </div>
+                <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                   <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                  <PagePreview req={previewData} pageType={pageType} />
+                  <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
                 </div>
               </div>
             )}
@@ -421,7 +495,7 @@ export default function NewRequest({ go, user, draftId }) {
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>⭐ Key Benefits Section</h3>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>Key Benefits Section</h3>
                     <p className="text-xs text-muted mt-4">
                       {sections.find(s => s.key === "key_benefits")?.required ? "Required for this page type" : "Optional for this page type"}
                     </p>
@@ -439,8 +513,8 @@ export default function NewRequest({ go, user, draftId }) {
                     <button onClick={() => toggleNA("key_benefits")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                       <KeyBenefits
                         data={kbData}
                         onChange={setKbData}
@@ -449,9 +523,9 @@ export default function NewRequest({ go, user, draftId }) {
                         onToggleNA={() => toggleNA("key_benefits")}
                       />
                     </div>
-                    <div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -480,13 +554,13 @@ export default function NewRequest({ go, user, draftId }) {
                     <button onClick={() => toggleNA("features_apps")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                       <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} />
                     </div>
-                    <div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -505,9 +579,9 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["customer_stories"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Customer Stories marked as Not Applicable</div><button onClick={() => toggleNA("customer_stories")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} /></div>
-                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -525,9 +599,9 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["promo_section"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Promo Section marked as Not Applicable</div><button onClick={() => toggleNA("promo_section")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} /></div>
-                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -545,9 +619,9 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["related_content"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Content marked as Not Applicable</div><button onClick={() => toggleNA("related_content")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} /></div>
-                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -565,9 +639,67 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["resources"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Resources marked as Not Applicable</div><button onClick={() => toggleNA("resources")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} /></div>
-                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData }} pageType={pageType} /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Related Products */}
+            {activeSection === "related_products" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>Related Products</h3>
+                    <p className="text-xs text-muted mt-4">Optional for this page type</p>
+                  </div>
+                  <button onClick={() => toggleNA("related_products")}
+                    style={{ background: naMap["related_products"] ? "#181313" : "#F3F3F3", color: naMap["related_products"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    {naMap["related_products"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
+                  </button>
+                </div>
+                {naMap["related_products"] ? (
+                  <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Products marked as Not Applicable</div><button onClick={() => toggleNA("related_products")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+                      <RelatedProducts data={rpData} onChange={setRpData} isNA={false} onToggleNA={() => toggleNA("related_products")} />
+                    </div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                      <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Training & Support */}
+            {activeSection === "training_support" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>Training & Support</h3>
+                    <p className="text-xs text-muted mt-4">Optional — pre-filled with default content</p>
+                  </div>
+                  <button onClick={() => toggleNA("training_support")}
+                    style={{ background: naMap["training_support"] ? "#181313" : "#F3F3F3", color: naMap["training_support"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    {naMap["training_support"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
+                  </button>
+                </div>
+                {naMap["training_support"] ? (
+                  <div className="na-placeholder"><div className="icon">—</div><div className="text">Training & Support marked as Not Applicable</div><button onClick={() => toggleNA("training_support")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} />
+                    </div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                      <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -578,7 +710,7 @@ export default function NewRequest({ go, user, draftId }) {
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>📋 Overview Section</h3>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>Overview Section</h3>
                     <p className="text-xs text-muted mt-4">
                       {sections.find(s => s.key === "overview")?.required ? "Required for this page type" : "Optional for this page type"}
                     </p>
@@ -596,7 +728,7 @@ export default function NewRequest({ go, user, draftId }) {
                     <button onClick={() => toggleNA("overview")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div className="card">
                       <Field label="Label" value={overview.overview_label} onChange={v => updOverview("overview_label", v)} placeholder='e.g. "OVERVIEW"' hint="Small caps tag above the heading (optional)" fieldKey="overview_label" pageType={pageType} />
                       <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" fieldKey="overview_impact" pageType={pageType} />
@@ -619,9 +751,9 @@ export default function NewRequest({ go, user, draftId }) {
                       <Field label="Media URL" value={overview.overview_media_url} onChange={v => updOverview("overview_media_url", v)} placeholder="https://... or leave for Design QA" />
                       <Field label="Notes for Design QA" value={overview.overview_media_note} onChange={v => updOverview("overview_media_note", v)} placeholder="e.g. Diagram showing the simulation workflow" hint="Describe what image or diagram you need" fieldKey="overview_media_note" pageType={pageType} />
                     </div>
-                    <div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={previewData} pageType={pageType} />
+                      <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -657,7 +789,7 @@ export default function NewRequest({ go, user, draftId }) {
         <>
           <div style={{ marginBottom: 20 }}>
             <p className="text-xs text-uppercase text-muted mb-8">Full Page Preview</p>
-            <PagePreview req={previewData} pageType={pageType} />
+            <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
           </div>
 
           {/* Section summary */}
@@ -673,7 +805,7 @@ export default function NewRequest({ go, user, draftId }) {
                   : false;
                 return (
                   <div key={s.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#F9F9F9", borderRadius: 8, padding: "0.65rem 0.9rem", border: "1px solid #F3F3F3" }}>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>{s.icon} {s.label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{s.label}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 10, color: s.required ? "#c0392b" : "#B5B5B5", fontWeight: 500 }}>{s.required ? "Required" : "Optional"}</span>
                       <span style={{ fontSize: 12, color: isNA ? "#B5B5B5" : isDone ? "#2a7a4b" : "#c0392b", fontWeight: 500 }}>

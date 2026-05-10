@@ -80,8 +80,8 @@ export const SECTIONS = {
     icon: "⭐",
     description: "Label, impact statement and benefit cards with icons",
     pageTypes: {
-      "Product":           { required: true },
-      "Solutions":         { required: true },
+      "Product":           { required: false },
+      "Solutions":         { required: false },
       "Glossary":          { required: null },
       "On-demand Webinar": { required: null },
     },
@@ -91,8 +91,8 @@ export const SECTIONS = {
     icon: "🔧",
     description: "List, tabs or table view of features or applications",
     pageTypes: {
-      "Product":           { required: true },
-      "Solutions":         { required: true },
+      "Product":           { required: false },
+      "Solutions":         { required: false },
       "Glossary":          { required: null },
       "On-demand Webinar": { required: null },
     },
@@ -139,6 +139,28 @@ export const SECTIONS = {
       "Solutions":         { required: false },
       "Glossary":          { required: null },
       "On-demand Webinar": { required: null },
+    },
+  },
+  related_products: {
+    label: "Related Products",
+    icon: "📦",
+    description: "Grid of related product cards with title, description and CTA",
+    pageTypes: {
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: null },
+      "On-demand Webinar": { required: null },
+    },
+  },
+  training_support: {
+    label: "Training & Support",
+    icon: "🎓",
+    description: "Pre-filled training, online support and technical forums cards",
+    pageTypes: {
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: false },
+      "On-demand Webinar": { required: false },
     },
   },
 };

@@ -5,8 +5,10 @@ import CustomerStoriesPreview from "@/components/sections/CustomerStoriesPreview
 import PromoSectionPreview from "@/components/sections/PromoSectionPreview";
 import RelatedContentPreview from "@/components/sections/RelatedContentPreview";
 import ResourcesPreview from "@/components/sections/ResourcesPreview";
+import RelatedProductsPreview from "@/components/sections/RelatedProductsPreview";
+import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview";
 
-export default function PagePreview({ req = {}, pageType = "Product" }) {
+export default function PagePreview({ req = {}, pageType = "Product", activeSection = "" }) {
   const {
     page_title = "", sub_title = "", cta1_label = "", cta2_label = "",
     banner_image = "", overview_label = "", overview_impact = "",
@@ -18,15 +20,19 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
     promo_title = "", promo_btn_label = "",
     rc_label = "", rc_impact = "", rc_cards = [],
     res_label = "", res_impact = "", res_selected = [],
+    rp_label = "", rp_impact = "", rp_cards = [],
+    ts_label, ts_card1_cta_link, ts_card2_cta_link, ts_card3_cta_link,
   } = req;
 
-  const hasOverview    = overview_impact || overview_description;
-  const hasKeyBenefits  = kb_impact || kb_cards.length > 0;
-  const hasFeatures      = fa_impact || fa_items.length > 0 || fa_columns.length > 0;
-  const hasCustomerStories = cs_impact || cs_items.length > 0;
-  const hasPromo           = promo_title || promo_btn_label;
-  const hasRelatedContent  = rc_impact || rc_cards.length > 0;
-  const hasResources       = res_impact || res_selected.length > 0;
+  const hasOverview    = overview_impact || overview_description || activeSection === "overview";
+  const hasKeyBenefits  = kb_impact || kb_cards.length > 0 || activeSection === "key_benefits";
+  const hasFeatures      = fa_impact || fa_items.length > 0 || fa_columns.length > 0 || activeSection === "features_apps";
+  const hasCustomerStories = cs_impact || cs_items.length > 0 || activeSection === "customer_stories";
+  const hasPromo           = promo_title || promo_btn_label || activeSection === "promo_section";
+  const hasRelatedContent  = rc_impact || rc_cards.length > 0 || activeSection === "related_content";
+  const hasResources        = res_impact || res_selected.length > 0 || activeSection === "resources";
+  const hasRelatedProducts  = rp_impact || rp_cards.length > 0 || activeSection === "related_products";
+  const hasTrainingSupport  = ts_label || ts_card1_cta_link || ts_card2_cta_link || ts_card3_cta_link || activeSection === "training_support";
 
   return (
     <div className="preview-window">
@@ -41,7 +47,7 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
       </div>
 
       {/* Banner Section */}
-      <div className="banner-section" style={{
+      <div data-section="banner" className="banner-section" style={{
         background: banner_image
           ? `linear-gradient(to right, rgba(24,19,19,0.92) 38%, rgba(24,19,19,0.5)), url('${banner_image}') center/cover`
           : "linear-gradient(135deg, #181313, #3C3C3C)",
@@ -66,7 +72,7 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
       {hasOverview && (
         <>
           <div className="preview-section-divider" />
-          <div className="overview-section">
+          <div data-section="overview" className="overview-section">
             <div className={`overview-label ${overview_label ? "filled" : "placeholder"}`}>
               {overview_label || "OVERVIEW"}
             </div>
@@ -102,7 +108,7 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
       {hasKeyBenefits && (
         <>
           <div className="preview-section-divider" />
-          <KeyBenefitsPreview data={req} />
+          <div data-section="key_benefits"><KeyBenefitsPreview data={req} /></div>
         </>
       )}
 
@@ -110,7 +116,7 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
       {hasFeatures && (
         <>
           <div className="preview-section-divider" />
-          <FeaturesAppsPreview data={req} />
+          <div data-section="features_apps"><FeaturesAppsPreview data={req} /></div>
         </>
       )}
 
@@ -118,7 +124,7 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
       {hasCustomerStories && (
         <>
           <div className="preview-section-divider" />
-          <CustomerStoriesPreview data={req} />
+          <div data-section="customer_stories"><CustomerStoriesPreview data={req} /></div>
         </>
       )}
 
@@ -126,7 +132,7 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
       {hasPromo && (
         <>
           <div className="preview-section-divider" />
-          <PromoSectionPreview data={req} />
+          <div data-section="promo_section"><PromoSectionPreview data={req} /></div>
         </>
       )}
 
@@ -134,7 +140,7 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
       {hasRelatedContent && (
         <>
           <div className="preview-section-divider" />
-          <RelatedContentPreview data={req} />
+          <div data-section="related_content"><RelatedContentPreview data={req} /></div>
         </>
       )}
 
@@ -142,7 +148,23 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
       {hasResources && (
         <>
           <div className="preview-section-divider" />
-          <ResourcesPreview data={req} />
+          <div data-section="resources"><ResourcesPreview data={req} /></div>
+        </>
+      )}
+
+      {/* Related Products */}
+      {hasRelatedProducts && (
+        <>
+          <div className="preview-section-divider" />
+          <div data-section="related_products"><RelatedProductsPreview data={req} /></div>
+        </>
+      )}
+
+      {/* Training & Support */}
+      {hasTrainingSupport && (
+        <>
+          <div className="preview-section-divider" />
+          <div data-section="training_support"><TrainingSupportPreview data={req} /></div>
         </>
       )}
 
@@ -159,6 +181,8 @@ export default function PagePreview({ req = {}, pageType = "Product" }) {
             hasPromo ? "Promo" : null,
             hasRelatedContent ? "Related" : null,
             hasResources ? "Resources" : null,
+            hasRelatedProducts ? "Related Products" : null,
+            hasTrainingSupport ? "Training & Support" : null,
           ].filter(Boolean).join(" + ")}
         </span>
       </div>

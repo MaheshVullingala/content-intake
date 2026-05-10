@@ -46,7 +46,7 @@ export default function ResetPassword({ onDone }) {
   );
 
   return (
-    <form onSubmit={handleReset} style={{ width: "100%" }}>
+    <form onSubmit={handleReset} style={{ width: "100%", maxWidth: 400, margin: "0 auto" }}>
       <h2 style={{ fontSize: 20, fontWeight: 500, color: "#F3F3F3", marginBottom: 6, fontFamily: "'Rubik',sans-serif" }}>Set new password</h2>
       <p style={{ fontSize: 13, color: "#646464", marginBottom: 24, fontFamily: "'Rubik',sans-serif" }}>Choose a strong password for your account.</p>
 

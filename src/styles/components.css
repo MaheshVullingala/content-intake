@@ -4,8 +4,8 @@
 
 /* ── Buttons ──────────────────────────────────── */
 .btn-primary {
-  background: #181313;
-  color: #ffffff;
+  background: #14b8a6;
+  color: #0f172a;
   border: none;
   border-radius: 8px;
   padding: 0.6rem 1.4rem;
@@ -19,7 +19,7 @@
   gap: 6px;
 }
 .btn-primary:hover    { opacity: 0.85; }
-.btn-primary:disabled { background: #B5B5B5; cursor: not-allowed; opacity: 1; }
+.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; opacity: 1; color: #fff; }
 
 .btn-secondary {
   background: #F3F3F3;
@@ -226,7 +226,7 @@
   white-space: nowrap;
 }
 .tab-btn:hover  { color: #3C3C3C; }
-.tab-btn.active { background: #181313; color: #fff; font-weight: 500; }
+.tab-btn.active { background: #0f172a; color: #f1f5f9; font-weight: 500; }
 
 /* ── Section nav sidebar ──────────────────────── */
 .section-nav-btn {
@@ -244,7 +244,7 @@
   transition: all 0.15s;
 }
 .section-nav-btn:hover           { border-color: #3C3C3C; }
-.section-nav-btn.active          { background: #181313; border-color: #181313; }
+.section-nav-btn.active          { background: #0f172a; border-color: #14b8a6; }
 .section-nav-label               { font-size: 13px; font-weight: 500; color: #181313; }
 .section-nav-btn.active .section-nav-label { color: #F3F3F3; }
 .section-nav-sub                 { font-size: 10px; color: #B5B5B5; margin-top: 2px; }
@@ -280,8 +280,8 @@
   border: 1px solid #E0E0E0;
   flex-shrink: 0;
 }
-.step-circle.done   { background: #181313; color: #fff; border-color: transparent; }
-.step-circle.active { background: #181313; color: #fff; border-color: transparent; }
+.step-circle.done   { background: #14b8a6; color: #0f172a; border-color: transparent; }
+.step-circle.active { background: #0f172a; color: #f1f5f9; border-color: #14b8a6; }
 
 .step-label        { font-size: 13px; color: #B5B5B5; margin-left: 8px; }
 .step-label.active { color: #181313; font-weight: 500; }
@@ -431,7 +431,7 @@
 .overview-media-placeholder .text   { font-size: 12px; color: #B5B5B5; }
 .overview-media-placeholder .sub    { font-size: 11px; color: #E0E0E0; margin-top: 4px; }
 
-.preview-section-divider { height: 1px; background: #F3F3F3; margin: 0; }
+.preview-section-divider { display: none; }
 
 /* ── N/A placeholder ──────────────────────────── */
 .na-placeholder      { background: #F9F9F9; border: 2px dashed #E0E0E0; border-radius: 12px; padding: 3rem; text-align: center; }
@@ -474,10 +474,10 @@
 /* ── Progress dots ────────────────────────────── */
 .progress-dots          { display: flex; align-items: center; }
 .progress-dot           { width: 9px; height: 9px; border-radius: 50%; background: #E0E0E0; transition: all 0.2s; }
-.progress-dot.done      { background: #181313; }
-.progress-dot.current   { background: #181313; box-shadow: 0 0 0 3px #3C3C3C33; }
+.progress-dot.done      { background: #14b8a6; }
+.progress-dot.current   { background: #0f172a; box-shadow: 0 0 0 3px rgba(20,184,166,0.3); }
 .progress-line          { width: 18px; height: 2px; background: #E0E0E0; }
-.progress-line.done     { background: #3C3C3C; }
+.progress-line.done     { background: #14b8a6; }
 
 /* ── Summary ──────────────────────────────────── */
 .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

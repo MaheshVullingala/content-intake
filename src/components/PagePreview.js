@@ -110,7 +110,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasKeyBenefits && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="key_benefits" className="preview-section-white"><div className="section-container"><KeyBenefitsPreview data={req} /></div></div>
+          <div data-section="key_benefits"><div className="section-container"><KeyBenefitsPreview data={req} /></div></div>
         </>
       )}
 
@@ -118,7 +118,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasFeatures && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="features_apps" className="preview-section-white"><div className="section-container"><FeaturesAppsPreview data={req} /></div></div>
+          <div data-section="features_apps"><div className="section-container"><FeaturesAppsPreview data={req} /></div></div>
         </>
       )}
 
@@ -126,15 +126,15 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasCustomerStories && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="customer_stories" className="preview-section-white"><div className="section-container"><CustomerStoriesPreview data={req} /></div></div>
+          <div data-section="customer_stories"><div className="section-container"><CustomerStoriesPreview data={req} /></div></div>
         </>
       )}
 
-      {/* Promo Section — full width, no section-container */}
+      {/* Promo Section */}
       {hasPromo && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="promo_section"><PromoSectionPreview data={req} /></div>
+          <div data-section="promo_section"><div className="section-container"><PromoSectionPreview data={req} /></div></div>
         </>
       )}
 
@@ -142,7 +142,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasRelatedContent && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="related_content" className="preview-section-white"><div className="section-container"><RelatedContentPreview data={req} /></div></div>
+          <div data-section="related_content"><div className="section-container"><RelatedContentPreview data={req} /></div></div>
         </>
       )}
 
@@ -150,7 +150,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasResources && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="resources" className="preview-section-muted"><div className="section-container"><ResourcesPreview data={req} /></div></div>
+          <div data-section="resources"><div className="section-container"><ResourcesPreview data={req} /></div></div>
         </>
       )}
 
@@ -158,7 +158,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasRelatedProducts && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="related_products" className="preview-section-white"><div className="section-container"><RelatedProductsPreview data={req} /></div></div>
+          <div data-section="related_products"><div className="section-container"><RelatedProductsPreview data={req} /></div></div>
         </>
       )}
 
@@ -166,7 +166,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasTrainingSupport && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="training_support" className="preview-section-white"><div className="section-container"><TrainingSupportPreview data={req} /></div></div>
+          <div data-section="training_support"><div className="section-container"><TrainingSupportPreview data={req} /></div></div>
         </>
       )}
 

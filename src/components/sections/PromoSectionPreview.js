@@ -14,8 +14,7 @@ export default function PromoSectionPreview({ data = {} }) {
       width: "100%", boxSizing: "border-box",
       fontFamily: "'Rubik', sans-serif",
     }}>
-      <div className="section-container">
-      <div style={{ padding: "2.5rem 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 32, minHeight: 140 }}>
+      <div style={{ maxWidth: "1320px", margin: "0 auto", padding: "2.5rem 3rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 32, minHeight: 140, boxSizing: "border-box", width: "100%" }}>
         {/* Left content */}
         <div style={{ flex: 1 }}>
           {promo_label && (
@@ -50,7 +49,6 @@ export default function PromoSectionPreview({ data = {} }) {
             </div>
           </div>
         )}
-      </div>
       </div>
     </div>
   );

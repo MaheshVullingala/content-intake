@@ -412,10 +412,10 @@ export default function NewRequest({ go, user, draftId }) {
 
       {/* ── Step 2: Fill Sections ── */}
       {step === 2 && (
-        <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 20 }}>
-          {/* Section nav */}
-          <div>
-            <p className="text-xs text-uppercase text-muted mb-8">Sections</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+
+          {/* ── Horizontal section tab bar ── */}
+          <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", overflowX: "auto", whiteSpace: "nowrap", padding: "0 4px" }}>
             {sections.map(s => {
               const isNA     = naMap[s.key];
               const isActive = activeSection === s.key;
@@ -442,22 +442,45 @@ export default function NewRequest({ go, user, draftId }) {
                 : false;
               return (
                 <button key={s.key} onClick={() => setActiveSection(s.key)}
-                  className={`section-nav-btn${isActive ? " active" : ""}`}>
-                  <div>
-                    <div className="section-nav-label">{s.label}</div>
-                    <div className={`section-nav-sub${!isActive && s.required && !isNA ? " required" : ""}`}>
-                      {isNA ? "Marked N/A" : s.required ? "Required" : "Optional"}
-                    </div>
+                  style={{
+                    display: "inline-flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: 2,
+                    padding: "10px 16px",
+                    marginRight: 2,
+                    background: isActive ? "#181313" : "transparent",
+                    border: "none",
+                    borderBottom: isActive ? "2px solid #14b8a6" : "2px solid transparent",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.15s",
+                    fontFamily: "'Rubik', sans-serif",
+                  }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: isActive ? "#fff" : "#181313" }}>
+                      {s.label}
+                    </span>
+                    {isDone && !isNA && (
+                      <span style={{ fontSize: 11, color: "#14b8a6", fontWeight: 600 }}>✓</span>
+                    )}
+                    {isNA && (
+                      <span style={{ fontSize: 10, color: "#94a3b8" }}>—</span>
+                    )}
                   </div>
-                  <div className="section-nav-status" style={{ color: isActive ? "#fff" : isDone ? "#2a7a4b" : "#B5B5B5" }}>
-                    {isNA ? "—" : isDone ? "✓" : "○"}
-                  </div>
+                  <span style={{
+                    fontSize: 10,
+                    color: isActive ? "#94a3b8" : (s.required && !isNA ? "#c0392b" : "#94a3b8"),
+                    fontWeight: 400,
+                  }}>
+                    {isNA ? "Marked N/A" : s.required ? "Required" : "Optional"}
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          {/* Section form */}
+          {/* Section form + preview */}
           <div>
             {/* Banner */}
             {activeSection === "banner" && (

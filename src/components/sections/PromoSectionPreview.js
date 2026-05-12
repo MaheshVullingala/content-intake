@@ -7,7 +7,7 @@ export default function PromoSectionPreview({ data = {} }) {
 
   return (
     <div style={{
-      borderTop: "1px solid #F3F3F3",
+      
       background: promo_bg_image
         ? `linear-gradient(to right, rgba(0,0,0,0.75) 50%, rgba(0,0,0,0.4)), url('${promo_bg_image}') center/cover`
         : "linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)",

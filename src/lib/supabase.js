@@ -16,12 +16,34 @@ export const getUserProfile = async () => {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return null;
 
-  const { data: profile, error: profileError } = await supabase
+  // Try auth_id first, fall back to email match
+  let profile = null;
+
+  const { data: byAuthId } = await supabase
     .from('users')
     .select('*')
     .eq('auth_id', user.id)
     .single();
 
-  if (profileError) return null;
+  if (byAuthId) {
+    profile = byAuthId;
+  } else {
+    // Fall back to email lookup and auto-link auth_id
+    const { data: byEmail } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', user.email)
+      .single();
+
+    if (byEmail) {
+      // Auto-link auth_id so future lookups are faster
+      await supabase
+        .from('users')
+        .update({ auth_id: user.id })
+        .eq('id', byEmail.id);
+      profile = { ...byEmail, auth_id: user.id };
+    }
+  }
+
   return profile;
 };

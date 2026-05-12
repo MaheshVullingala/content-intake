@@ -10,7 +10,7 @@ export default function CustomerStoriesPreview({ data = {} }) {
   const current = cs_items[active] || {};
 
   return (
-    <div style={{ padding: "3.5rem 3.5rem", borderTop: "1px solid #F3F3F3", background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif", textAlign: "center" }}>
+    <div style={{ padding: "3.5rem 3.5rem",  background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif", textAlign: "center" }}>
       {/* Label */}
       <div style={{ fontSize: 11, fontWeight: 600, color: cs_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 20 }}>
         {cs_label || "ENDORSEMENTS"}

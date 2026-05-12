@@ -179,57 +179,19 @@ export default function ReqDetail({ reqId, go, user }) {
 
       {/* ── Preview Modal ── */}
       {showPreview && (
-        <div onClick={() => setShowPreview(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 999, padding: "2rem 1rem", overflowY: "auto" }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 900, borderRadius: 16, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.4)", marginBottom: "2rem" }}>
-            {/* Modal header */}
-            <div style={{ background: "#181313", padding: "1rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div onClick={() => setShowPreview(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-start", justifyContent: "center", zIndex: 999, overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", background: "#fff", minHeight: "100vh" }}>
+            {/* Modal top bar */}
+            <div style={{ background: "#181313", padding: "0.75rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 10 }}>
               <div style={{ color: "#F3F3F3", fontWeight: 500, fontSize: 14, fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 8 }}>
-                <span>👁</span> Page Preview — {req.page_title}
+                👁 Page Preview — {req.page_title}
               </div>
               <button onClick={() => setShowPreview(false)} style={{ background: "transparent", border: "1px solid #3C3C3C", color: "#B5B5B5", borderRadius: 6, padding: "0.3rem 0.8rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
                 ✕ Close
               </button>
             </div>
-
-            {/* Banner */}
-            <div style={{ minHeight: 220, display: "flex", alignItems: "center", padding: "2.5rem 3rem", position: "relative", overflow: "hidden", background: req.banner_image ? `linear-gradient(to right,rgba(24,19,19,0.92) 38%,rgba(24,19,19,0.5)),url('${req.banner_image}') center/cover` : "linear-gradient(135deg,#181313,#3C3C3C)" }}>
-              <div style={{ position: "relative", zIndex: 2, maxWidth: 560 }}>
-                <span style={{ background: "#F3F3F3", color: "#181313", fontSize: 10, fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 10px", borderRadius: 4, display: "inline-block", marginBottom: 12 }}>{req.page_type}</span>
-                <h1 style={{ color: "#F3F3F3", fontWeight: 500, fontSize: 28, marginBottom: 10, lineHeight: 1.25, wordBreak: "break-word" }}>{req.page_title}</h1>
-                <p  style={{ color: "#B5B5B5", fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>{req.sub_title}</p>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {req.cta1_label && <div style={{ background: "#F3F3F3", color: "#181313", borderRadius: 5, padding: "8px 18px", fontSize: 13, fontWeight: 500 }}>↗ {req.cta1_label}</div>}
-                  {req.cta2_label && <div style={{ border: "1px solid #B5B5B5", color: "#F3F3F3", borderRadius: 5, padding: "8px 18px", fontSize: 13, fontWeight: 500 }}>▷ {req.cta2_label}</div>}
-                </div>
-              </div>
-            </div>
-
-            {/* Overview */}
-            {hasOverview && (
-              <div style={{ padding: "3rem 3.5rem", borderTop: "1px solid #F3F3F3", background: "#fff", width: "100%", boxSizing: "border-box", overflow: "hidden" }}>
-                {req.overview_label && (
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "#646464", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>{req.overview_label}</div>
-                )}
-                {req.overview_impact && (
-                  <h2 style={{ fontSize: 28, fontWeight: 400, color: "#181313", lineHeight: 1.3, marginBottom: 20, wordBreak: "break-word", overflowWrap: "break-word" }}>{req.overview_impact}</h2>
-                )}
-                {req.overview_description && (
-                  <p style={{ fontSize: 15, color: "#3C3C3C", lineHeight: 1.75, textAlign: "justify", wordBreak: "break-word", overflowWrap: "break-word", maxWidth: "100%", display: "block" }}>{req.overview_description}</p>
-                )}
-                {req.overview_media_url && (
-                  <div style={{ marginTop: 32, textAlign: "center" }}>
-                    <img src={req.overview_media_url} alt="Overview" style={{ maxWidth: "100%", borderRadius: 8, border: "1px solid #E0E0E0" }} onError={e => { e.target.style.display = "none"; }} />
-                    {req.overview_media_note && <div style={{ fontSize: 12, color: "#B5B5B5", marginTop: 12, fontStyle: "italic" }}>{req.overview_media_note}</div>}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Modal footer */}
-            <div style={{ background: "#F9F9F9", borderTop: "1px solid #E0E0E0", padding: "0.8rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>Click outside to close</span>
-              <button onClick={() => setShowPreview(false)} className="btn-ghost" style={{ fontSize: 12, padding: "0.35rem 0.9rem" }}>✕ Close Preview</button>
-            </div>
+            {/* Full page preview using PagePreview component */}
+            <PagePreview req={liveData} pageType={req.page_type} fullPage={true} />
           </div>
         </div>
       )}

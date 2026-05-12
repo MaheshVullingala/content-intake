@@ -34,9 +34,15 @@ export default function App() {
 
       if (event === "SIGNED_IN") {
         const profile = await getUserProfile();
-        setUser(profile);
-        setView("dashboard");
-        setReqId(null);
+        setUser(prev => {
+          // Only redirect to dashboard on actual fresh login (no previous user)
+          // Not on silent token refreshes (prev already exists)
+          if (!prev) {
+            setView("dashboard");
+            setReqId(null);
+          }
+          return profile;
+        });
         setLoading(false);
       }
 

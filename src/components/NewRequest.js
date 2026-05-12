@@ -68,19 +68,33 @@ export default function NewRequest({ go, user, draftId }) {
   const [saving,        setSaving]       = useState(false);
   const [error,         setError]        = useState("");
   const [showExitModal, setShowExitModal]= useState(false);
+  const isSavingRef = useRef(false); // Prevent concurrent saves
 
-  // Auto-scroll preview to the active section
+  // Auto-scroll preview to the active section — scroll WITHIN the preview container only
   useEffect(() => {
     if (!previewRef.current) return;
-    // Small delay so React renders the section into DOM before we scroll
     const timer = setTimeout(() => {
-      const target = previewRef.current?.querySelector(`[data-section="${activeSection}"]`);
+      const container = previewRef.current;
+      const target = container.querySelector(`[data-section="${activeSection}"]`);
       if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Scroll only inside the preview container — never the page
+        const containerScrollTop = container.scrollTop;
+        const containerTop = container.getBoundingClientRect().top;
+        const targetTop = target.getBoundingClientRect().top;
+        const newScrollTop = containerScrollTop + (targetTop - containerTop);
+        container.scrollTo({ top: newScrollTop, behavior: "smooth" });
       }
-    }, 80);
+    }, 100);
     return () => clearTimeout(timer);
   }, [activeSection]);
+
+  // Prevent page from scrolling when section tab is clicked
+  const handleSectionChange = (key) => {
+    const pageScrollY = window.scrollY;
+    setActiveSection(key);
+    // Restore page scroll position after state update
+    requestAnimationFrame(() => { window.scrollTo(0, pageScrollY); });
+  };
 
   // Load draft data if editing
   useEffect(() => {
@@ -225,54 +239,82 @@ export default function NewRequest({ go, user, draftId }) {
     } : {}),
   });
 
-  const saveDraft = async () => {
-    // Validate minimum required fields
-    if (!pageType) {
-      setError("Please select a page type first.");
-      return;
-    }
-    if (!banner.page_title) {
-      setError("Please enter a page title before saving.");
-      return;
-    }
+  // saveDraft: pass navigate=true to go to dashboard after saving
+  const saveDraft = async (navigate = false) => {
+    if (isSavingRef.current) return; // Prevent concurrent saves
+    if (!pageType) { setError("Please select a page type first."); return; }
+    if (!banner.page_title) { setError("Please enter a page title before saving."); return; }
 
+    isSavingRef.current = true;
     setSaving(true);
     setError("");
 
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) {
-        setError("Session expired. Please sign out and log in again.");
-        setSaving(false);
-        return;
-      }
-
-      const payload = buildPayload("draft");
-
-      let err;
-      if (draftDbId) {
-        // Update existing draft
-        const { error } = await supabase.from("requests").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", draftDbId);
-        err = error;
-      } else {
-        // Insert new draft
-        const { data, error } = await supabase.from("requests").insert(payload).select().single();
-        err = error;
-        if (!err && data) setDraftDbId(data.id);
-      }
-
-      if (err) {
-        console.error("Save error:", err);
-        setError(`Save failed: ${err.message}`);
-        setSaving(false);
-        return;
-      }
-
+    // Safety timeout — always unblock UI after 8 seconds
+    const timeout = setTimeout(() => {
+      isSavingRef.current = false;
       setSaving(false);
-      go("dashboard");
+      setError("Save timed out. Check your connection and try again.");
+    }, 8000);
+
+    try {
+      // Small delay to ensure React state has flushed before reading values
+      await new Promise(resolve => setTimeout(resolve, 50));
+      const payload = buildPayload("draft");
+      if (draftDbId) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Prefer": "return=minimal",
+            },
+            body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
+          }
+        );
+        if (!res.ok) {
+          const errText = await res.text();
+          setError(`Save failed: ${errText}`);
+          return;
+        }
+      } else {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/requests`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+              "Prefer": "return=representation",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+        if (!res.ok) {
+          const errText = await res.text();
+          setError(`Save failed: ${errText}`);
+          return;
+        }
+        const data = await res.json();
+        if (data && data[0]) setDraftDbId(data[0].id);
+      }
+
+      if (navigate) go("dashboard");
     } catch (e) {
-      console.error("Unexpected error:", e);
-      setError(`Unexpected error: ${e.message}`);
+      console.error("Save exception:", e);
+      setError(`Error: ${e.message}`);
+    } finally {
+      clearTimeout(timeout);
+      isSavingRef.current = false;
       setSaving(false);
     }
   };
@@ -281,19 +323,39 @@ export default function NewRequest({ go, user, draftId }) {
   const saveAndExit = async () => {
     if (!pageType || !banner.page_title) { go("dashboard"); return; }
     setSaving(true);
+    const timeout = setTimeout(() => { setSaving(false); setShowExitModal(false); go("dashboard"); }, 8000);
     try {
       const payload = buildPayload("draft");
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const headers = {
+        "Content-Type": "application/json",
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Prefer": "return=minimal",
+      };
       if (draftDbId) {
-        await supabase.from("requests").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", draftDbId);
+        await fetch(`${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`, {
+          method: "PATCH", headers,
+          body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
+        });
       } else {
-        await supabase.from("requests").insert(payload);
+        const res = await fetch(`${supabaseUrl}/rest/v1/requests`, {
+          method: "POST",
+          headers: { ...headers, "Prefer": "return=representation" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data && data[0]) setDraftDbId(data[0].id);
       }
     } catch (e) {
       console.error("Save and exit error:", e);
+    } finally {
+      clearTimeout(timeout);
+      setSaving(false);
+      setShowExitModal(false);
+      go("dashboard");
     }
-    setSaving(false);
-    setShowExitModal(false);
-    go("dashboard");
   };
 
   const submit = async () => {
@@ -348,33 +410,91 @@ export default function NewRequest({ go, user, draftId }) {
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-        <button onClick={() => hasContent ? setShowExitModal(true) : go("dashboard")} className="btn-ghost">
-          ← Back
-        </button>
-        <div style={{ width: 1, height: 20, background: "#E0E0E0" }} />
-        <div>
-          <h1 style={{ fontSize: 20, margin: 0 }}>New Content Request</h1>
-          <p style={{ color: "#B5B5B5", fontSize: 12, margin: 0 }}>{pageType || "Select a page type to begin"}</p>
+      {/* Header + Progress Pills */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16 }}>
+
+        {/* Left: Title only */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: 1 }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: 20, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>New Content Request</h1>
+            <p style={{ color: "#B5B5B5", fontSize: 12, margin: 0 }}>{pageType || "Select a page type to begin"}</p>
+          </div>
         </div>
+
+        {/* Center: Step pills */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {steps.map((s, i) => {
+            const n = i + 1, done = n < step, active = n === step;
+            return (
+              <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  borderRadius: 999,
+                  padding: "5px 14px 5px 8px",
+                  background: done ? "rgba(20,184,166,0.12)" : active ? "#181313" : "#f1f5f9",
+                  border: done ? "1px solid rgba(20,184,166,0.3)" : active ? "1px solid #14b8a6" : "1px solid #E0E0E0",
+                }}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: "50%",
+                    background: done ? "#14b8a6" : active ? "#14b8a6" : "#E0E0E0",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 600,
+                    color: done ? "#0f172a" : active ? "#fff" : "#94a3b8",
+                    flexShrink: 0,
+                  }}>
+                    {done ? "✓" : n}
+                  </div>
+                  <span style={{
+                    fontSize: 12, fontWeight: 500, whiteSpace: "nowrap",
+                    color: done ? "#0F6E56" : active ? "#fff" : "#94a3b8",
+                  }}>
+                    {s}
+                  </span>
+                </div>
+                {i < 2 && <div style={{ width: 20, height: 1, background: "#E0E0E0", flexShrink: 0 }} />}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Right: Save as Draft + Preview & Submit */}
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          {step === 2 && banner.page_title && pageType && (
+            <button onClick={saveDraft} disabled={saving}
+              style={{
+                background: "#F3F3F3", color: "#3C3C3C",
+                border: "1px solid #E0E0E0", borderRadius: 8,
+                padding: "0.55rem 1.2rem", fontSize: 13, fontWeight: 500,
+                cursor: saving ? "not-allowed" : "pointer",
+                fontFamily: "'Rubik', sans-serif", whiteSpace: "nowrap",
+                opacity: saving ? 0.5 : 1,
+              }}>
+              {saving ? "Saving..." : "💾 Save as Draft"}
+            </button>
+          )}
+          {step === 2 && (
+            <button onClick={() => setStep(3)} disabled={!isValid()}
+              style={{
+                background: isValid() ? "#14b8a6" : "#f9f9f9",
+                color: isValid() ? "#fff" : "#B5B5B5",
+                border: isValid() ? "1.5px solid #14b8a6" : "1.5px solid #E0E0E0",
+                borderRadius: 8, padding: "0.55rem 1.2rem",
+                fontSize: 13, fontWeight: 500,
+                cursor: isValid() ? "pointer" : "not-allowed",
+                fontFamily: "'Rubik', sans-serif", whiteSpace: "nowrap",
+              }}>
+              Preview & Submit →
+            </button>
+          )}
+
+        </div>
+
       </div>
 
-      {/* Step bar */}
-      <div className="step-bar">
-        {steps.map((s, i) => {
-          const n = i + 1, done = n < step, active = n === step;
-          return (
-            <div key={s} className={`step-item${i < 2 ? " step-item-flex" : ""}`}>
-              <div className={`step-circle ${done ? "done" : active ? "active" : ""}`}>
-                {done ? "✓" : n}
-              </div>
-              <span className={`step-label ${done ? "done" : active ? "active" : ""}`}>{s}</span>
-              {i < 2 && <div className={`step-line${done ? " done" : ""}`} />}
-            </div>
-          );
-        })}
-      </div>
+      {/* Save error display */}
+      {error && step !== 3 && (
+        <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>
+      )}
 
       {/* ── Step 1: Page Type ── */}
       {step === 1 && (
@@ -415,7 +535,7 @@ export default function NewRequest({ go, user, draftId }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
 
           {/* ── Horizontal section tab bar ── */}
-          <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", overflowX: "auto", whiteSpace: "nowrap", padding: "0 4px" }}>
+          <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", overflowX: "auto", whiteSpace: "nowrap", padding: "0 4px", position: "sticky", top: 56, zIndex: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", scrollbarWidth: "none", msOverflowStyle: "none" }}>
             {sections.map(s => {
               const isNA     = naMap[s.key];
               const isActive = activeSection === s.key;
@@ -441,7 +561,7 @@ export default function NewRequest({ go, user, draftId }) {
                 ? true
                 : false;
               return (
-                <button key={s.key} onClick={() => setActiveSection(s.key)}
+                <button key={s.key} onClick={() => handleSectionChange(s.key)}
                   style={{
                     display: "inline-flex",
                     flexDirection: "column",
@@ -481,7 +601,7 @@ export default function NewRequest({ go, user, draftId }) {
           </div>
 
           {/* Section form + preview */}
-          <div>
+          <div style={{ paddingTop: 16 }}>
             {/* Banner */}
             {activeSection === "banner" && (
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
@@ -786,26 +906,7 @@ export default function NewRequest({ go, user, draftId }) {
         </div>
       )}
 
-      {step === 2 && (
-        <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button onClick={() => setStep(1)} className="btn-ghost">← Back</button>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            {banner.page_title && pageType && (
-              <button onClick={saveDraft} disabled={saving} style={{
-                background: "#F3F3F3", color: "#3C3C3C", border: "1px solid #E0E0E0",
-                borderRadius: 8, padding: "0.6rem 1.4rem", fontSize: 13, fontWeight: 500,
-                cursor: saving ? "not-allowed" : "pointer", fontFamily: "'Rubik', sans-serif",
-                display: "flex", alignItems: "center", gap: 6, opacity: saving ? 0.5 : 1,
-              }}>
-                {saving ? "Saving..." : "💾 Save as Draft"}
-              </button>
-            )}
-            <button onClick={() => setStep(3)} disabled={!isValid()} className="btn-primary" style={{ opacity: isValid() ? 1 : 0.4 }}>
-              Preview & Submit →
-            </button>
-          </div>
-        </div>
-      )}
+
 
       {/* ── Step 3: Preview & Submit ── */}
       {step === 3 && (
@@ -847,22 +948,12 @@ export default function NewRequest({ go, user, draftId }) {
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <button onClick={() => setStep(2)} className="btn-ghost">← Edit</button>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button onClick={saveDraft} disabled={saving} style={{
-                background: "#F3F3F3", color: "#3C3C3C",
-                border: "1px solid #E0E0E0", borderRadius: 8,
-                padding: "0.6rem 1.4rem", fontSize: 13,
-                fontWeight: 500, cursor: saving ? "not-allowed" : "pointer",
-                fontFamily: "'Rubik', sans-serif", display: "flex",
-                alignItems: "center", gap: 6, opacity: saving ? 0.5 : 1,
-              }}>
-                💾 Save as Draft
-              </button>
-              <button onClick={submit} disabled={saving} className="btn-primary">
-                {saving ? "Submitting..." : "Submit for Editorial QA →"}
-              </button>
-            </div>
+            <button onClick={() => setStep(2)} className="btn-ghost">
+              ← Back to Edit
+            </button>
+            <button onClick={submit} disabled={saving} className="btn-primary">
+              {saving ? "Submitting..." : "Submit for Editorial QA →"}
+            </button>
           </div>
         </>
       )}

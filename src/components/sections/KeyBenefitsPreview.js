@@ -41,8 +41,10 @@ export default function KeyBenefitsPreview({ data = {} }) {
           <div style={{ display: "grid", gridTemplateColumns: getGridCols(kb_cards.length), gap: "2rem 3rem", marginTop: kb_impact ? 40 : 0 }}>
             {kb_cards.map((card, idx) => (
               <div key={card.id || idx}>
-                <div style={{ width: 48, height: 48, marginBottom: 20, background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {card.icon_description ? (
+                <div style={{ width: 48, height: 48, marginBottom: 20, background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  {card.icon_url ? (
+                    <img src={card.icon_url} alt={card.icon_description || "icon"} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                  ) : card.icon_description ? (
                     <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 4px", lineHeight: 1.3 }}>🎨</span>
                   ) : (
                     <span style={{ fontSize: 18, opacity: 0.3 }}>◻</span>

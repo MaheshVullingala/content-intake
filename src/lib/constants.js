@@ -27,12 +27,15 @@ export const canAct = (role, status) => ({
   web_team:     "web_team",
 }[role] === status);
 
-export const nextActionLabel = (role) => ({
-  stakeholder:  "Submit for Editorial QA",
-  editorial_qa: "Approve → Send to Design QA",
-  design_qa:    "Approve → Send for User Review",
-  web_team:     "Mark as Published",
-}[role] || "Advance");
+export const nextActionLabel = (role, status) => {
+  if (role === "stakeholder" && status === "pending_approval") return "✅ Approve & Send to Web Team";
+  return ({
+    stakeholder:  "Submit for Editorial QA",
+    editorial_qa: "Approve → Send to Design QA",
+    design_qa:    "Approve → Send for Stakeholder Approval",
+    web_team:     "Mark as Published",
+  }[role] || "Advance");
+};
 
 export const FLOW = [
   "draft",
@@ -42,6 +45,17 @@ export const FLOW = [
   "web_team",
   "published",
 ];
+
+// Where each role's "return" action sends the request
+export const returnDestination = (role) => ({
+  editorial_qa: "draft",
+  design_qa:    "draft",
+}[role] || "draft");
+
+export const returnActionLabel = (role) => ({
+  editorial_qa: "↩ Return for Revision",
+  design_qa:    "💬 Query Stakeholder",
+}[role] || "↩ Return");
 
 // Which roles can act at each status
 export const ROLE_FOR_STATUS = {
@@ -53,6 +67,17 @@ export const ROLE_FOR_STATUS = {
 
 // Section definitions per page type
 export const SECTIONS = {
+  seo_meta: {
+    label: "SEO Meta Data",
+    icon: "🔍",
+    description: "Page location, meta title, meta description and keywords for search engines",
+    pageTypes: {
+      "Product":           { required: true },
+      "Solutions":         { required: true },
+      "Glossary":          { required: true },
+      "On-demand Webinar": { required: true },
+    },
+  },
   banner: {
     label: "Banner",
     icon: "🖼️",

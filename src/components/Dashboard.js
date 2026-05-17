@@ -1,26 +1,62 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { PCBLoader } from "@/components/PCBLoader";
 import { getStatus, ROLE_META, canAct, STATUS_FLOW } from "@/lib/constants";
 
 export default function Dashboard({ go, user }) {
-  const [requests,    setRequests]    = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [deleteModal, setDeleteModal] = useState(null);
-  const [deleting,    setDeleting]    = useState(false);
+  const [requests,      setRequests]      = useState([]);
+  const [returnCounts,  setReturnCounts]  = useState({}); // requestId → { count, lastRole }
+  const [loading,       setLoading]       = useState(true);
+  const [deleteModal,   setDeleteModal]   = useState(null);
+  const [deleting,      setDeleting]      = useState(false);
+  const [view,          setView]          = useState("mine");   // "mine" | "all"
+  const [filterStatus,  setFilterStatus]  = useState("all");   // status key or "all"
+  const [filterRole,    setFilterRole]    = useState("all");   // role key or "all"
   const m = ROLE_META[user.role];
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (retryCount = 0) => {
     setLoading(true);
-    let query = supabase
-      .from("requests")
-      .select("*, users!requests_created_by_fkey(name, role)")
-      .order("updated_at", { ascending: false });
-    if (user.role === "stakeholder") query = query.eq("created_by", user.id);
-    const { data, error } = await query;
-    if (error) console.error("Dashboard fetch error:", error);
-    setRequests(data || []);
-    setLoading(false);
+    try {
+      let query = supabase
+        .from("requests")
+        .select("*, users!requests_created_by_fkey(name, role)")
+        .order("updated_at", { ascending: false });
+      // Stakeholders only see their own requests; other roles see all in "mine" view filtered client-side
+      if (user.role === "stakeholder") query = query.eq("created_by", user.id);
+      const { data, error } = await query;
+      if (error) { console.error("Dashboard fetch error:", error); return; }
+      const rows = data || [];
+
+      // If we get 0 rows but we just saved, Supabase may not have committed yet — retry once
+      if (rows.length === 0 && retryCount < 2) {
+        await new Promise(r => setTimeout(r, 600));
+        return fetchRequests(retryCount + 1);
+      }
+
+      setRequests(rows);
+
+      // Fetch return/query info — include user_role to distinguish Editorial vs Design QA
+      if (rows.length > 0) {
+        const ids = rows.map(r => r.id);
+        const { data: returnComments } = await supabase
+          .from("comments")
+          .select("request_id, user_role, created_at")
+          .in("request_id", ids)
+          .eq("is_return", true)
+          .order("created_at", { ascending: false });
+        const counts = {};
+        (returnComments || []).forEach(c => {
+          if (!counts[c.request_id]) counts[c.request_id] = { count: 0, lastRole: c.user_role };
+          counts[c.request_id].count += 1;
+        });
+        setReturnCounts(counts);
+      }
+    } catch (e) {
+      console.error("Dashboard fetch exception:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchRequests(); }, [user.id]);
@@ -37,8 +73,18 @@ export default function Dashboard({ go, user }) {
     fetchRequests();
   };
 
+  // "My Tasks" = requests where this role can act (editorial_qa → editorial_qa status, etc.)
+  const myTasks = requests.filter(r => canAct(user.role, r.status));
+  const actionable = myTasks;
+
+  // "All Requests" filtered list
+  const allFiltered = requests.filter(r => {
+    if (filterStatus !== "all" && r.status !== filterStatus) return false;
+    return true;
+  });
+
+  const displayRows = view === "mine" ? myTasks : allFiltered;
   const stats = STATUS_FLOW.map(s => ({ ...s, count: requests.filter(r => r.status === s.key).length }));
-  const actionable = requests.filter(r => canAct(user.role, r.status));
 
   return (
     <div className="fade-in" style={{ fontFamily: "'Rubik', sans-serif" }}>
@@ -105,13 +151,42 @@ export default function Dashboard({ go, user }) {
 
       {/* Table */}
       <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E0E0E0", overflow: "hidden" }}>
-        <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #F3F3F3", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>All Requests</h2>
-          <span style={{ color: "#B5B5B5", fontSize: 13 }}>{requests.length} total</span>
+        <div style={{ padding: "0.75rem 1.2rem", borderBottom: "1px solid #F3F3F3" }}>
+          {/* View toggle */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: view === "all" ? 12 : 0 }}>
+            <div style={{ display: "flex", background: "#F3F3F3", borderRadius: 8, padding: 3, gap: 2 }}>
+              {[["mine", `⚡ My Tasks${myTasks.length > 0 ? ` (${myTasks.length})` : ""}`], ["all", "📋 All Requests"]].map(([v, label]) => (
+                <button key={v} onClick={() => setView(v)}
+                  style={{ padding: "0.4rem 1rem", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 500, fontFamily: "'Rubik',sans-serif", transition: "all 0.15s",
+                    background: view === v ? "#fff" : "transparent",
+                    color:      view === v ? "#181313" : "#646464",
+                    boxShadow:  view === v ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <span style={{ color: "#B5B5B5", fontSize: 12 }}>{displayRows.length} shown</span>
+          </div>
+
+          {/* Filters — only in All view */}
+          {view === "all" && (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+                style={{ fontSize: 12, padding: "0.4rem 0.7rem", border: "1px solid #E0E0E0", borderRadius: 7, background: "#fff", color: "#181313", fontFamily: "'Rubik',sans-serif", cursor: "pointer" }}>
+                <option value="all">All Statuses</option>
+                {STATUS_FLOW.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select>
+              <button onClick={() => { setFilterStatus("all"); setFilterRole("all"); }}
+                style={{ fontSize: 12, padding: "0.4rem 0.8rem", border: "1px solid #E0E0E0", borderRadius: 7, background: "#fff", color: "#646464", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
+                ✕ Clear Filters
+              </button>
+            </div>
+          )}
         </div>
 
         {loading ? (
-          <div style={{ padding: "3rem", textAlign: "center", color: "#B5B5B5" }}>Loading requests...</div>
+          <PCBLoader label="LOADING REQUESTS..." />
         ) : requests.length === 0 ? (
           <div style={{ padding: "3.5rem", textAlign: "center" }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
@@ -130,16 +205,34 @@ export default function Dashboard({ go, user }) {
               </tr>
             </thead>
             <tbody>
-              {requests.map((req, i) => {
-                const s   = getStatus(req.status);
-                const act = canAct(user.role, req.status);
-                const isDraft = req.status === "draft";
-                const isOwner = req.created_by === user.id;
+              {displayRows.map((req, i) => {
+                const s          = getStatus(req.status);
+                const act        = canAct(user.role, req.status);
+                const isDraft    = req.status === "draft";
+                const isOwner    = req.created_by === user.id;
+                const returnInfo   = returnCounts[req.id] || { count: 0, lastRole: null };
+                const returnCount  = returnInfo.count;
+                const returnedBy   = returnInfo.lastRole; // "editorial_qa" | "design_qa" | null
+                const isReturnedDraft      = isDraft && returnCount > 0;
+                const isDesignQuery        = isReturnedDraft && returnedBy === "design_qa";
+                const isEditorialReturn    = isReturnedDraft && returnedBy === "editorial_qa";
+                const canDelete  = isDraft && returnCount === 0 && (isOwner || user.role === "admin");
+
+                const returnBadgeLabel = isDesignQuery ? "DESIGN QUERY" : isEditorialReturn ? "RETURNED" : "RETURNED";
+                const returnBadgeBg    = isDesignQuery ? "#eff6ff" : "#fff3cd";
+                const returnBadgeColor = isDesignQuery ? "#1d4ed8" : "#856404";
+                const returnBadgeBorder= isDesignQuery ? "#3b82f633" : "#ffc10744";
+                const commentBtnBg     = isDesignQuery ? "#eff6ff" : "#fff3cd";
+                const commentBtnColor  = isDesignQuery ? "#1d4ed8" : "#856404";
+                const commentBtnBorder = isDesignQuery ? "#3b82f666" : "#ffc10766";
+                const commentBtnIcon   = isDesignQuery ? "💬" : "↩";
+
                 return (
-                  <tr key={req.id} style={{ borderBottom: i < requests.length - 1 ? "1px solid #F9F9F9" : "none", background: act ? "#FAFAFA" : "#fff" }}>
+                  <tr key={req.id} style={{ borderBottom: i < displayRows.length - 1 ? "1px solid #F9F9F9" : "none", background: act ? "#FAFAFA" : isDesignQuery ? "#f0f7ff" : isReturnedDraft ? "#fffbf0" : "#fff" }}>
                     <td style={{ padding: "0.9rem 1.2rem", fontSize: 14, color: "#181313", fontWeight: 400 }}>
                       {req.page_title || <span style={{ color: "#B5B5B5", fontStyle: "italic" }}>Untitled</span>}
-                      {isDraft && <span style={{ marginLeft: 8, fontSize: 10, background: "#F3F3F3", color: "#B5B5B5", border: "1px solid #E0E0E0", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>DRAFT</span>}
+                      {isDraft && !isReturnedDraft && <span style={{ marginLeft: 8, fontSize: 10, background: "#F3F3F3", color: "#B5B5B5", border: "1px solid #E0E0E0", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>DRAFT</span>}
+                      {isReturnedDraft && <span style={{ marginLeft: 8, fontSize: 10, background: returnBadgeBg, color: returnBadgeColor, border: `1px solid ${returnBadgeBorder}`, borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>{returnBadgeLabel}</span>}
                     </td>
                     <td style={{ padding: "0.9rem 1.2rem" }}>
                       <span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 11, fontWeight: 500, borderRadius: 4, padding: "3px 9px", border: "1px solid #E0E0E0" }}>{req.page_type}</span>
@@ -153,22 +246,34 @@ export default function Dashboard({ go, user }) {
                     </td>
                     <td style={{ padding: "0.9rem 1.2rem" }}>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        {/* Edit button — only for drafts owned by current user */}
-                        {isDraft && isOwner && (
+
+                        {/* Returned/Queried draft — stakeholder sees only Comments button */}
+                        {isReturnedDraft && isOwner && (
+                          <button onClick={() => go("detail", req.id)}
+                            style={{ background: commentBtnBg, color: commentBtnColor, border: `1px solid ${commentBtnBorder}`, borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
+                            {commentBtnIcon} {isDesignQuery ? "Design Query" : "Comments"}
+                            <span style={{ background: "#c0392b", color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>{returnCount}</span>
+                          </button>
+                        )}
+
+                        {/* Fresh draft — stakeholder sees Edit */}
+                        {isDraft && !isReturnedDraft && isOwner && (
                           <button onClick={() => go("edit", req.id)}
                             style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
                             ✎ Edit
                           </button>
                         )}
-                        {/* View/Review button */}
+
+                        {/* Non-draft — View/Review */}
                         {!isDraft && (
                           <button onClick={() => go("detail", req.id)}
                             style={{ background: act ? "#181313" : "#F3F3F3", color: act ? "#fff" : "#646464", border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                            {act ? "Review →" : "View"}
+                            {act ? "Review →" : user.role === "stakeholder" && req.status === "pending_approval" ? "✅ Sign off" : "View"}
                           </button>
                         )}
-                        {/* Delete button — only for drafts */}
-                        {isDraft && (isOwner || user.role === "admin") && (
+
+                        {/* Delete — only fresh drafts, never returned ones */}
+                        {canDelete && (
                           <button onClick={() => setDeleteModal(req)}
                             style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500, transition: "all 0.15s" }}
                             onMouseEnter={e => { e.currentTarget.style.background = "#fee2e2"; }}
@@ -176,6 +281,7 @@ export default function Dashboard({ go, user }) {
                             🗑️ Delete
                           </button>
                         )}
+
                       </div>
                     </td>
                   </tr>
@@ -188,3 +294,4 @@ export default function Dashboard({ go, user }) {
     </div>
   );
 }
+

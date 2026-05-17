@@ -34,6 +34,8 @@ export default function TrainingSupportPreview({ data = {} }) {
     cta_link:    d[`ts_card${n}_cta_link`],
   }));
 
+  const isUrl = (str) => str && (str.startsWith("http://") || str.startsWith("https://") || str.startsWith("/"));
+
   return (
     <div style={{ background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       <div className="section-container training">
@@ -50,13 +52,17 @@ export default function TrainingSupportPreview({ data = {} }) {
           {cards.map((card, i) => (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
               <div style={{ width: 52, height: 52, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <div style={{ width: 52, height: 52, background: "#F9F9F9", border: "1px dashed #E0E0E0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: 22 }}>
-                    {i === 0 ? "📋" : i === 1 ? "☁️" : "👥"}
-                  </span>
+                <div style={{ width: 52, height: 52, background: "#F9F9F9", border: "1px dashed #E0E0E0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  {isUrl(card.icon) ? (
+                    <img src={card.icon} alt={`card ${i + 1} icon`} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                  ) : (
+                    <span style={{ fontSize: 22 }}>
+                      {i === 0 ? "📋" : i === 1 ? "☁️" : "👥"}
+                    </span>
+                  )}
                 </div>
               </div>
-              {card.icon && (
+              {card.icon && !isUrl(card.icon) && (
                 <div style={{ fontSize: 10, color: "#B5B5B5", marginBottom: 10, fontStyle: "italic" }}>
                   🎨 {card.icon}
                 </div>

@@ -1,7 +1,6 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { PCBLoader } from "@/components/PCBLoader";
 import { PAGE_TYPES, getSectionsForPageType } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
 import AIAssist from "@/components/AIAssist";
@@ -22,64 +21,37 @@ import RelatedProductsPreview from "@/components/sections/RelatedProductsPreview
 import TrainingSupport from "@/components/sections/TrainingSupport";
 import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview";
 
-const EMPTY_SEO = { seo_page_location:"", seo_meta_title:"", seo_meta_description:"", seo_meta_keywords:"" };
-
 const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image:"" };
 const EMPTY_OVERVIEW = { overview_label:"", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_note:"" };
 
-const CHAR_LIMITS = {
-  page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300, banner_image:500,
-  seo_page_location:300, seo_meta_title:70, seo_meta_description:160, seo_meta_keywords:300,
-  overview_label:30, overview_impact:100, overview_description:600, overview_media_note:300,
-  kb_label:30, kb_impact:100, kb_description:300,
-  fa_label:30, fa_impact:100, fa_description:300,
-  cs_label:30, cs_impact:100,
-  promo_label:30, promo_title:120, promo_description:300, promo_btn_label:30, promo_btn_link:300,
-  rc_label:30, rc_impact:100,
-  rp_label:30, rp_impact:100, rp_description:300,
-  ts_label:40, ts_impact:80,
-};
-
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint, fieldKey, pageType, charLimit }) => {
-  const limit = charLimit || (fieldKey ? CHAR_LIMITS[fieldKey] : null);
-  const len   = (value || "").length;
-  const over  = limit && len > limit;
-  return (
-    <div className="field-wrap">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
-        <label className="field-label" style={{ margin: 0 }}>
-          {label}{required && <span className="req"> *</span>}
-        </label>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {limit && (
-            <span style={{ fontSize: 10, fontWeight: 500, color: over ? "#c0392b" : len > limit * 0.85 ? "#856404" : "#B5B5B5", fontFamily: "monospace" }}>
-              {len}/{limit}
-            </span>
-          )}
-          {fieldKey && (
-            <AIAssist fieldKey={fieldKey} currentValue={value} pageType={pageType || "Product"} onAccept={onChange} />
-          )}
-        </div>
-      </div>
-      {multiline
-        ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea"
-            style={over ? { borderColor: "#c0392b" } : {}} />
-        : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input"
-            style={over ? { borderColor: "#c0392b" } : {}} />
-      }
-      {over && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 3 }}>⚠️ Exceeds {limit} character limit</div>}
-      {hint && !over && <div className="field-hint">{hint}</div>}
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, fieldKey, pageType }) => (
+  <div className="field-wrap">
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+      <label className="field-label" style={{ margin: 0 }}>
+        {label}{required && <span className="req"> *</span>}
+      </label>
+      {fieldKey && (
+        <AIAssist
+          fieldKey={fieldKey}
+          currentValue={value}
+          pageType={pageType || "Product"}
+          onAccept={onChange}
+        />
+      )}
     </div>
-  );
-};
+    {multiline
+      ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" />
+      : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
+    }
+    {hint && <div className="field-hint">{hint}</div>}
+  </div>
+);
 
 export default function NewRequest({ go, user, draftId }) {
   const [step,          setStep]         = useState(draftId ? 2 : 1);
   const [draftDbId,     setDraftDbId]    = useState(draftId || null);
   const [pageType,      setPageType]     = useState("");
-  const [activeSection, setActiveSection]= useState("seo_meta");
-  const [seoData,       setSeoData]      = useState(EMPTY_SEO);
-  const previewRef = useRef(null);
+  const [activeSection, setActiveSection]= useState("banner");
   const [banner,        setBanner]       = useState(EMPTY_BANNER);
   const [overview,      setOverview]     = useState(EMPTY_OVERVIEW);
   const [naMap,         setNaMap]        = useState({});
@@ -95,35 +67,6 @@ export default function NewRequest({ go, user, draftId }) {
   const [saving,        setSaving]       = useState(false);
   const [error,         setError]        = useState("");
   const [showExitModal, setShowExitModal]= useState(false);
-  const [returnComments,  setReturnComments]  = useState([]);
-  const [showReturnPanel, setShowReturnPanel] = useState(true);
-  const isSavingRef = useRef(false); // Prevent concurrent saves
-
-  // Auto-scroll preview to the active section — scroll WITHIN the preview container only
-  useEffect(() => {
-    if (!previewRef.current) return;
-    const timer = setTimeout(() => {
-      const container = previewRef.current;
-      const target = container.querySelector(`[data-section="${activeSection}"]`);
-      if (target) {
-        // Scroll only inside the preview container — never the page
-        const containerScrollTop = container.scrollTop;
-        const containerTop = container.getBoundingClientRect().top;
-        const targetTop = target.getBoundingClientRect().top;
-        const newScrollTop = containerScrollTop + (targetTop - containerTop);
-        container.scrollTo({ top: newScrollTop, behavior: "smooth" });
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [activeSection]);
-
-  // Prevent page from scrolling when section tab is clicked
-  const handleSectionChange = (key) => {
-    const pageScrollY = window.scrollY;
-    setActiveSection(key);
-    // Restore page scroll position after state update
-    requestAnimationFrame(() => { window.scrollTo(0, pageScrollY); });
-  };
 
   // Load draft data if editing
   useEffect(() => {
@@ -132,7 +75,6 @@ export default function NewRequest({ go, user, draftId }) {
       const { data, error } = await supabase.from("requests").select("*").eq("id", draftId).single();
       if (error || !data) { go("dashboard"); return; }
       setPageType(data.page_type || "");
-      setSeoData({ seo_page_location: data.seo_page_location||"", seo_meta_title: data.seo_meta_title||"", seo_meta_description: data.seo_meta_description||"", seo_meta_keywords: data.seo_meta_keywords||"" });
       setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image: data.banner_image||"" });
       setOverview({ overview_label: data.overview_label||"", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_note: data.overview_media_note||"" });
       if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: data.kb_label||"", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
@@ -143,14 +85,11 @@ export default function NewRequest({ go, user, draftId }) {
       if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
       if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: data.rp_label||"", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
       if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: data.ts_label, ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
-      const { data: rc } = await supabase.from("comments").select("*").eq("request_id", draftId).eq("is_return", true).order("created_at", { ascending: false });
-      setReturnComments(rc || []);
       setLoadingDraft(false);
     };
     loadDraft();
   }, [draftId]);
 
-  const updSeo      = (k, v) => setSeoData(p  => ({ ...p, [k]: v }));
   const updBanner   = (k, v) => setBanner(p  => ({ ...p,  [k]: v }));
   const updOverview = (k, v) => setOverview(p => ({ ...p,  [k]: v }));
   const toggleNA    = (key)  => setNaMap(p   => ({ ...p,  [key]: !p[key] }));
@@ -160,7 +99,6 @@ export default function NewRequest({ go, user, draftId }) {
 
   const isValid = () => {
     if (!banner.page_title) return false;
-    if (!seoData.seo_meta_title || !seoData.seo_meta_description) return false;
     const ov = sections.find(s => s.key === "overview");
     if (ov && ov.required && !naMap["overview"]) {
       if (!overview.overview_impact || !overview.overview_description) return false;
@@ -180,10 +118,6 @@ export default function NewRequest({ go, user, draftId }) {
 
   const buildPayload = (status) => ({
     page_type: pageType, status, created_by: user.id,
-    seo_page_location: seoData.seo_page_location,
-    seo_meta_title: seoData.seo_meta_title,
-    seo_meta_description: seoData.seo_meta_description,
-    seo_meta_keywords: seoData.seo_meta_keywords,
     // Banner
     page_title: banner.page_title, sub_title: banner.sub_title,
     cta1_label: banner.cta1_label, cta1_link: banner.cta1_link,
@@ -277,85 +211,54 @@ export default function NewRequest({ go, user, draftId }) {
     } : {}),
   });
 
-  // saveDraft: pass navigate=true to go to dashboard after saving
-  const saveDraft = async (navigate = false) => {
-    if (isSavingRef.current) return; // Prevent concurrent saves
-    if (!pageType) { setError("Please select a page type first."); return; }
-    if (!banner.page_title) { setError("Please enter a page title before saving."); return; }
+  const saveDraft = async () => {
+    // Validate minimum required fields
+    if (!pageType) {
+      setError("Please select a page type first.");
+      return;
+    }
+    if (!banner.page_title) {
+      setError("Please enter a page title before saving.");
+      return;
+    }
 
-    isSavingRef.current = true;
     setSaving(true);
     setError("");
 
-    // Safety timeout — always unblock UI after 8 seconds
-    const timeout = setTimeout(() => {
-      isSavingRef.current = false;
-      setSaving(false);
-      setError("Save timed out. Check your connection and try again.");
-    }, 8000);
-
     try {
-      // Small delay to ensure React state has flushed before reading values
-      await new Promise(resolve => setTimeout(resolve, 50));
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) {
+        setError("Session expired. Please sign out and log in again.");
+        setSaving(false);
+        return;
+      }
+
       const payload = buildPayload("draft");
+
+      let err;
       if (draftDbId) {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        const res = await fetch(
-          `${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
-              "Prefer": "return=minimal",
-            },
-            body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
-          }
-        );
-        if (!res.ok) {
-          const errText = await res.text();
-          setError(`Save failed: ${errText}`);
-          return;
-        }
+        // Update existing draft
+        const { error } = await supabase.from("requests").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", draftDbId);
+        err = error;
       } else {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-        const res = await fetch(
-          `${supabaseUrl}/rest/v1/requests`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
-              "Prefer": "return=representation",
-            },
-            body: JSON.stringify(payload),
-          }
-        );
-        if (!res.ok) {
-          const errText = await res.text();
-          setError(`Save failed: ${errText}`);
-          return;
-        }
-        const data = await res.json();
-        if (data && data[0]) setDraftDbId(data[0].id);
+        // Insert new draft
+        const { data, error } = await supabase.from("requests").insert(payload).select().single();
+        err = error;
+        if (!err && data) setDraftDbId(data.id);
       }
 
-      if (navigate) {
-        await new Promise(r => setTimeout(r, 300));
-        go("dashboard");
+      if (err) {
+        console.error("Save error:", err);
+        setError(`Save failed: ${err.message}`);
+        setSaving(false);
+        return;
       }
+
+      setSaving(false);
+      go("dashboard");
     } catch (e) {
-      console.error("Save exception:", e);
-      setError(`Error: ${e.message}`);
-    } finally {
-      clearTimeout(timeout);
-      isSavingRef.current = false;
+      console.error("Unexpected error:", e);
+      setError(`Unexpected error: ${e.message}`);
       setSaving(false);
     }
   };
@@ -364,100 +267,37 @@ export default function NewRequest({ go, user, draftId }) {
   const saveAndExit = async () => {
     if (!pageType || !banner.page_title) { go("dashboard"); return; }
     setSaving(true);
-    const timeout = setTimeout(() => { setSaving(false); setShowExitModal(false); go("dashboard"); }, 8000);
     try {
       const payload = buildPayload("draft");
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      const headers = {
-        "Content-Type": "application/json",
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
-        "Prefer": "return=minimal",
-      };
       if (draftDbId) {
-        await fetch(`${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`, {
-          method: "PATCH", headers,
-          body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
-        });
+        await supabase.from("requests").update({ ...payload, updated_at: new Date().toISOString() }).eq("id", draftDbId);
       } else {
-        const res = await fetch(`${supabaseUrl}/rest/v1/requests`, {
-          method: "POST",
-          headers: { ...headers, "Prefer": "return=representation" },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (data && data[0]) setDraftDbId(data[0].id);
+        await supabase.from("requests").insert(payload);
       }
     } catch (e) {
       console.error("Save and exit error:", e);
-    } finally {
-      clearTimeout(timeout);
-      setSaving(false);
-      setShowExitModal(false);
-      await new Promise(r => setTimeout(r, 300));
-      go("dashboard");
     }
+    setSaving(false);
+    setShowExitModal(false);
+    go("dashboard");
   };
 
   const submit = async () => {
     setSaving(true);
     setError("");
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const headers = {
-      "Content-Type": "application/json",
-      "apikey": supabaseKey,
-      "Authorization": `Bearer ${supabaseKey}`,
-    };
-
-    try {
-      const payload = buildPayload("editorial_qa");
-      let requestId = draftDbId;
-
-      if (draftDbId) {
-        // Update existing draft — change status to editorial_qa
-        const res = await fetch(
-          `${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`,
-          {
-            method: "PATCH",
-            headers: { ...headers, "Prefer": "return=representation" },
-            body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
-          }
-        );
-        const data = await res.json();
-        if (!res.ok) { setError(`Failed to submit: ${JSON.stringify(data)}`); return; }
-        requestId = draftDbId;
-      } else {
-        // No draft exists — insert new record
-        const res = await fetch(
-          `${supabaseUrl}/rest/v1/requests`,
-          {
-            method: "POST",
-            headers: { ...headers, "Prefer": "return=representation" },
-            body: JSON.stringify(payload),
-          }
-        );
-        const data = await res.json();
-        if (!res.ok) { setError(`Failed to submit: ${JSON.stringify(data)}`); return; }
-        requestId = data[0]?.id;
-      }
-
-      // Add status history entry
-      await supabase.from("status_history").insert({
-        request_id: requestId,
-        user_id: user.id,
-        user_name: user.name,
-        from_status: "draft",
-        to_status: "editorial_qa"
-      });
-
-      go("detail", requestId);
-    } catch (e) {
-      setError(`Error: ${e.message}`);
-    } finally {
+    const payload = buildPayload("editorial_qa");
+    console.log("Submitting payload:", payload);
+    const { data, error: err } = await supabase.from("requests").insert(payload).select().single();
+    if (err) {
+      console.error("Submit error:", err);
+      setError(`Failed to submit: ${err.message}`);
       setSaving(false);
+      return;
     }
+    const { error: histErr } = await supabase.from("status_history").insert({ request_id: data.id, user_id: user.id, user_name: user.name, from_status: null, to_status: "editorial_qa" });
+    if (histErr) console.error("History error:", histErr);
+    go("detail", data.id);
+    setSaving(false);
   };
 
   // Merged data for unified preview
@@ -465,42 +305,13 @@ export default function NewRequest({ go, user, draftId }) {
   const steps = ["Select Page Type", "Fill Sections", "Preview & Submit"];
 
   if (loadingDraft) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh" }}>
-      <PCBLoader label="LOADING DRAFT..." />
+    <div style={{ padding: "4rem", textAlign: "center", color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>
+      Loading draft...
     </div>
   );
 
   return (
     <div className="fade-in" style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "'Rubik', sans-serif" }}>
-
-      {/* Revision Notes Panel */}
-      {draftId && returnComments.length > 0 && (
-        <div style={{ position:"fixed", bottom:24, right:24, zIndex:500, width:showReturnPanel ? 340 : "auto",
-          background:"#fff", borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.18)", border:"2px solid #ffc107", overflow:"hidden" }}>
-          <div onClick={() => setShowReturnPanel(p => !p)}
-            style={{ background:"#fff3cd", padding:"0.75rem 1rem", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", gap:8 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:16 }}>↩</span>
-              <span style={{ fontSize:13, fontWeight:600, color:"#856404" }}>Revision Notes ({returnComments.length})</span>
-            </div>
-            <span style={{ fontSize:12, color:"#856404", fontWeight:500 }}>{showReturnPanel ? "▼" : "▲"}</span>
-          </div>
-          {showReturnPanel && (
-            <div style={{ maxHeight:320, overflowY:"auto", padding:"0.75rem" }}>
-              {returnComments.map((c, i) => (
-                <div key={c.id} style={{ marginBottom: i < returnComments.length-1 ? 10 : 0, padding:"0.65rem 0.8rem",
-                  background:"#fff8e6", border:"1px solid #ffc10744", borderRadius:8, borderLeft:"3px solid #ffc107" }}>
-                  <div style={{ fontSize:11, color:"#856404", fontWeight:600, marginBottom:4, display:"flex", justifyContent:"space-between" }}>
-                    <span>{c.user_name} ({c.user_role?.replace("_"," ")})</span>
-                    <span style={{ fontWeight:400 }}>{new Date(c.created_at).toLocaleDateString("en-GB",{day:"2-digit",month:"short"})}</span>
-                  </div>
-                  <div style={{ fontSize:13, color:"#3C3C3C", lineHeight:1.55 }}>{c.text.replace(/^\[(Returned|Design Query)\]\s*/,"")}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Exit Modal */}
       {showExitModal && (
@@ -523,91 +334,33 @@ export default function NewRequest({ go, user, draftId }) {
         </div>
       )}
 
-      {/* Header + Progress Pills */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16 }}>
-
-        {/* Left: Title only */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: 1 }}>
-          <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontSize: 20, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>New Content Request</h1>
-            <p style={{ color: "#B5B5B5", fontSize: 12, margin: 0 }}>{pageType || "Select a page type to begin"}</p>
-          </div>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+        <button onClick={() => hasContent ? setShowExitModal(true) : go("dashboard")} className="btn-ghost">
+          ← Back
+        </button>
+        <div style={{ width: 1, height: 20, background: "#E0E0E0" }} />
+        <div>
+          <h1 style={{ fontSize: 20, margin: 0 }}>New Content Request</h1>
+          <p style={{ color: "#B5B5B5", fontSize: 12, margin: 0 }}>{pageType || "Select a page type to begin"}</p>
         </div>
-
-        {/* Center: Step pills */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          {steps.map((s, i) => {
-            const n = i + 1, done = n < step, active = n === step;
-            return (
-              <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  borderRadius: 999,
-                  padding: "5px 14px 5px 8px",
-                  background: done ? "rgba(20,184,166,0.12)" : active ? "#181313" : "#f1f5f9",
-                  border: done ? "1px solid rgba(20,184,166,0.3)" : active ? "1px solid #14b8a6" : "1px solid #E0E0E0",
-                }}>
-                  <div style={{
-                    width: 20, height: 20, borderRadius: "50%",
-                    background: done ? "#14b8a6" : active ? "#14b8a6" : "#E0E0E0",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, fontWeight: 600,
-                    color: done ? "#0f172a" : active ? "#fff" : "#94a3b8",
-                    flexShrink: 0,
-                  }}>
-                    {done ? "✓" : n}
-                  </div>
-                  <span style={{
-                    fontSize: 12, fontWeight: 500, whiteSpace: "nowrap",
-                    color: done ? "#0F6E56" : active ? "#fff" : "#94a3b8",
-                  }}>
-                    {s}
-                  </span>
-                </div>
-                {i < 2 && <div style={{ width: 20, height: 1, background: "#E0E0E0", flexShrink: 0 }} />}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Right: Save as Draft + Preview & Submit */}
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          {step === 2 && banner.page_title && pageType && (
-            <button onClick={saveDraft} disabled={saving}
-              style={{
-                background: "#F3F3F3", color: "#3C3C3C",
-                border: "1px solid #E0E0E0", borderRadius: 8,
-                padding: "0.55rem 1.2rem", fontSize: 13, fontWeight: 500,
-                cursor: saving ? "not-allowed" : "pointer",
-                fontFamily: "'Rubik', sans-serif", whiteSpace: "nowrap",
-                opacity: saving ? 0.5 : 1,
-              }}>
-              {saving ? "Saving..." : "💾 Save as Draft"}
-            </button>
-          )}
-          {step === 2 && (
-            <button onClick={() => setStep(3)} disabled={!isValid()}
-              style={{
-                background: isValid() ? "#14b8a6" : "#f9f9f9",
-                color: isValid() ? "#fff" : "#B5B5B5",
-                border: isValid() ? "1.5px solid #14b8a6" : "1.5px solid #E0E0E0",
-                borderRadius: 8, padding: "0.55rem 1.2rem",
-                fontSize: 13, fontWeight: 500,
-                cursor: isValid() ? "pointer" : "not-allowed",
-                fontFamily: "'Rubik', sans-serif", whiteSpace: "nowrap",
-              }}>
-              Preview & Submit →
-            </button>
-          )}
-
-        </div>
-
       </div>
 
-      {/* Save error display */}
-      {error && step !== 3 && (
-        <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>
-      )}
+      {/* Step bar */}
+      <div className="step-bar">
+        {steps.map((s, i) => {
+          const n = i + 1, done = n < step, active = n === step;
+          return (
+            <div key={s} className={`step-item${i < 2 ? " step-item-flex" : ""}`}>
+              <div className={`step-circle ${done ? "done" : active ? "active" : ""}`}>
+                {done ? "✓" : n}
+              </div>
+              <span className={`step-label ${done ? "done" : active ? "active" : ""}`}>{s}</span>
+              {i < 2 && <div className={`step-line${done ? " done" : ""}`} />}
+            </div>
+          );
+        })}
+      </div>
 
       {/* ── Step 1: Page Type ── */}
       {step === 1 && (
@@ -627,7 +380,7 @@ export default function NewRequest({ go, user, draftId }) {
                   <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {getSectionsForPageType(pt).map(s => (
                       <span key={s.key} style={{ fontSize: 10, background: s.required ? "#181313" : "#F3F3F3", color: s.required ? "#fff" : "#646464", borderRadius: 10, padding: "2px 8px", fontWeight: 500 }}>
-                        {s.label} · {s.required ? "Required" : "Optional"}
+                        {s.icon} {s.label} · {s.required ? "Required" : "Optional"}
                       </span>
                     ))}
                   </div>
@@ -645,16 +398,14 @@ export default function NewRequest({ go, user, draftId }) {
 
       {/* ── Step 2: Fill Sections ── */}
       {step === 2 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-
-          {/* ── Horizontal section tab bar ── */}
-          <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", overflowX: "auto", whiteSpace: "nowrap", padding: "0 4px", position: "sticky", top: 56, zIndex: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 20 }}>
+          {/* Section nav */}
+          <div>
+            <p className="text-xs text-uppercase text-muted mb-8">Sections</p>
             {sections.map(s => {
               const isNA     = naMap[s.key];
               const isActive = activeSection === s.key;
-              const isDone   = s.key === "seo_meta"
-                ? (!!seoData.seo_meta_title && !!seoData.seo_meta_description)
-                : s.key === "banner"
+              const isDone   = s.key === "banner"
                 ? !!banner.page_title
                 : s.key === "overview"
                 ? (isNA || (!!overview.overview_impact && !!overview.overview_description))
@@ -676,89 +427,31 @@ export default function NewRequest({ go, user, draftId }) {
                 ? true
                 : false;
               return (
-                <button key={s.key} onClick={() => handleSectionChange(s.key)}
-                  style={{
-                    display: "inline-flex",
-                    flexDirection: "column",
-                    alignItems: "flex-start",
-                    gap: 2,
-                    padding: "10px 16px",
-                    marginRight: 2,
-                    background: isActive ? "#181313" : "transparent",
-                    border: "none",
-                    borderBottom: isActive ? "2px solid #14b8a6" : "2px solid transparent",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.15s",
-                    fontFamily: "'Rubik', sans-serif",
-                  }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: isActive ? "#fff" : "#181313" }}>
-                      {s.label}
-                    </span>
-                    {isDone && !isNA && (
-                      <span style={{ fontSize: 11, color: "#14b8a6", fontWeight: 600 }}>✓</span>
-                    )}
-                    {isNA && (
-                      <span style={{ fontSize: 10, color: "#94a3b8" }}>—</span>
-                    )}
+                <button key={s.key} onClick={() => setActiveSection(s.key)}
+                  className={`section-nav-btn${isActive ? " active" : ""}`}>
+                  <div>
+                    <div className="section-nav-label">{s.icon} {s.label}</div>
+                    <div className={`section-nav-sub${!isActive && s.required && !isNA ? " required" : ""}`}>
+                      {isNA ? "Marked N/A" : s.required ? "Required" : "Optional"}
+                    </div>
                   </div>
-                  <span style={{
-                    fontSize: 10,
-                    color: isActive ? "#94a3b8" : (s.required && !isNA ? "#c0392b" : "#94a3b8"),
-                    fontWeight: 400,
-                  }}>
-                    {isNA ? "Marked N/A" : s.required ? "Required" : "Optional"}
-                  </span>
+                  <div className="section-nav-status" style={{ color: isActive ? "#fff" : isDone ? "#2a7a4b" : "#B5B5B5" }}>
+                    {isNA ? "—" : isDone ? "✓" : "○"}
+                  </div>
                 </button>
               );
             })}
           </div>
 
-          {/* Section form + preview */}
-          <div style={{ paddingTop: 16 }}>
-            {/* SEO Meta Data */}
-            {activeSection === "seo_meta" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                  <div className="card">
-                    <div className="card-header">
-                      <div><h3>🔍 SEO Meta Data</h3><p>Required for all page types · Helps search engines find and rank your page</p></div>
-                    </div>
-                    <Field label="Page Location" required value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" fieldKey="seo_page_location" hint="The URL path where this page will live on the site" />
-                    <Field label="Meta Title" required value={seoData.seo_meta_title} onChange={v => updSeo("seo_meta_title", v)} placeholder="e.g. Xcelium Logic Simulator | Cadence" fieldKey="seo_meta_title" hint="Shown in browser tabs and search results — 50–70 characters" />
-                    <Field label="Meta Description" required value={seoData.seo_meta_description} onChange={v => updSeo("seo_meta_description", v)} placeholder="e.g. Accelerate SoC verification with Cadence Xcelium..." multiline fieldKey="seo_meta_description" hint="Shown in search results — 120–160 characters" />
-                    <Field label="Meta Keywords" value={seoData.seo_meta_keywords} onChange={v => updSeo("seo_meta_keywords", v)} placeholder="e.g. logic simulator, SoC verification, mixed-signal" multiline fieldKey="seo_meta_keywords" hint="Comma-separated keywords" />
-                    <div style={{ marginTop:20, background:"#fff", border:"1px solid #E0E0E0", borderRadius:10, padding:"1rem 1.2rem" }}>
-                      <p style={{ fontSize:10, color:"#B5B5B5", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10, fontWeight:600 }}>Google Search Preview</p>
-                      <div style={{ fontSize:12, color:"#1a0dab", fontWeight:500, marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{seoData.seo_meta_title || <span style={{ color:"#B5B5B5", fontStyle:"italic" }}>Meta title will appear here</span>}</div>
-                      <div style={{ fontSize:11, color:"#006621", marginBottom:4 }}>cadence.com{seoData.seo_page_location || "/products/..."}</div>
-                      <div style={{ fontSize:12, color:"#545454", lineHeight:1.5, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>{seoData.seo_meta_description || <span style={{ color:"#B5B5B5", fontStyle:"italic" }}>Meta description will appear here...</span>}</div>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ position:"sticky", top:0, height:"100vh", overflowY:"auto", paddingBottom:"2rem" }}>
-                  <p className="text-xs text-uppercase text-muted mb-8">SEO Guidelines</p>
-                  <div className="card" style={{ gap:14 }}>
-                    {[["🔍","Meta Title","50–70 characters. Include the primary keyword and brand name."],["📝","Meta Description","120–160 characters. Summarise the page value clearly."],["🔗","Page Location","Use lowercase, hyphens (not underscores). e.g. /products/xcelium"],["🏷️","Keywords","3–8 comma-separated terms your audience searches for."]].map(([icon,title,desc]) => (
-                      <div key={title} style={{ display:"flex", gap:12, paddingBottom:14, borderBottom:"1px solid #F3F3F3" }}>
-                        <div style={{ fontSize:20, flexShrink:0 }}>{icon}</div>
-                        <div><div style={{ fontSize:13, fontWeight:600, color:"#181313", marginBottom:4 }}>{title}</div><div style={{ fontSize:12, color:"#646464", lineHeight:1.6 }}>{desc}</div></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
+          {/* Section form */}
+          <div>
             {/* Banner */}
             {activeSection === "banner" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                 <div className="card">
                   <div className="card-header">
                     <div>
-                      <h3>Banner Section</h3>
+                      <h3>🖼️ Banner Section</h3>
                       <p>Common to all page types · Required</p>
                     </div>
                   </div>
@@ -774,10 +467,9 @@ export default function NewRequest({ go, user, draftId }) {
                   </div>
                   <Field label="Banner Image URL" value={banner.banner_image} onChange={v => updBanner("banner_image", v)} placeholder="https://... or describe image" hint="Design QA will finalize the image" />
                 </div>
-                </div>
-                <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                <div>
                   <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                  <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
+                  <PagePreview req={previewData} pageType={pageType} />
                 </div>
               </div>
             )}
@@ -787,7 +479,7 @@ export default function NewRequest({ go, user, draftId }) {
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>Key Benefits Section</h3>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>⭐ Key Benefits Section</h3>
                     <p className="text-xs text-muted mt-4">
                       {sections.find(s => s.key === "key_benefits")?.required ? "Required for this page type" : "Optional for this page type"}
                     </p>
@@ -805,8 +497,8 @@ export default function NewRequest({ go, user, draftId }) {
                     <button onClick={() => toggleNA("key_benefits")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}>
                       <KeyBenefits
                         data={kbData}
                         onChange={setKbData}
@@ -815,9 +507,9 @@ export default function NewRequest({ go, user, draftId }) {
                         onToggleNA={() => toggleNA("key_benefits")}
                       />
                     </div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                    <div>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} />
                     </div>
                   </div>
                 )}
@@ -846,13 +538,13 @@ export default function NewRequest({ go, user, draftId }) {
                     <button onClick={() => toggleNA("features_apps")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}>
                       <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} />
                     </div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                    <div>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} />
                     </div>
                   </div>
                 )}
@@ -871,9 +563,9 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["customer_stories"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Customer Stories marked as Not Applicable</div><button onClick={() => toggleNA("customer_stories")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} /></div>
+                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} /></div>
                   </div>
                 )}
               </div>
@@ -891,9 +583,9 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["promo_section"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Promo Section marked as Not Applicable</div><button onClick={() => toggleNA("promo_section")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                     <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} /></div>
                   </div>
                 )}
               </div>
@@ -911,9 +603,9 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["related_content"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Content marked as Not Applicable</div><button onClick={() => toggleNA("related_content")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} /></div>
+                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} /></div>
                   </div>
                 )}
               </div>
@@ -931,9 +623,9 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["resources"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Resources marked as Not Applicable</div><button onClick={() => toggleNA("resources")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} /></div>
+                    <div><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} /></div>
                   </div>
                 )}
               </div>
@@ -944,7 +636,7 @@ export default function NewRequest({ go, user, draftId }) {
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>Related Products</h3>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>📦 Related Products</h3>
                     <p className="text-xs text-muted mt-4">Optional for this page type</p>
                   </div>
                   <button onClick={() => toggleNA("related_products")}
@@ -955,13 +647,13 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["related_products"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Products marked as Not Applicable</div><button onClick={() => toggleNA("related_products")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}>
                       <RelatedProducts data={rpData} onChange={setRpData} isNA={false} onToggleNA={() => toggleNA("related_products")} />
                     </div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                    <div>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} />
                     </div>
                   </div>
                 )}
@@ -973,7 +665,7 @@ export default function NewRequest({ go, user, draftId }) {
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>Training & Support</h3>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>🎓 Training & Support</h3>
                     <p className="text-xs text-muted mt-4">Optional — pre-filled with default content</p>
                   </div>
                   <button onClick={() => toggleNA("training_support")}
@@ -984,13 +676,13 @@ export default function NewRequest({ go, user, draftId }) {
                 {naMap["training_support"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Training & Support marked as Not Applicable</div><button onClick={() => toggleNA("training_support")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                    <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: 4 }}>
                       <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} />
                     </div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                    <div>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} />
                     </div>
                   </div>
                 )}
@@ -1002,7 +694,7 @@ export default function NewRequest({ go, user, draftId }) {
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>Overview Section</h3>
+                    <h3 style={{ fontSize: 14, margin: 0 }}>📋 Overview Section</h3>
                     <p className="text-xs text-muted mt-4">
                       {sections.find(s => s.key === "overview")?.required ? "Required for this page type" : "Optional for this page type"}
                     </p>
@@ -1020,7 +712,7 @@ export default function NewRequest({ go, user, draftId }) {
                     <button onClick={() => toggleNA("overview")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                     <div className="card">
                       <Field label="Label" value={overview.overview_label} onChange={v => updOverview("overview_label", v)} placeholder='e.g. "OVERVIEW"' hint="Small caps tag above the heading (optional)" fieldKey="overview_label" pageType={pageType} />
                       <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" fieldKey="overview_impact" pageType={pageType} />
@@ -1043,9 +735,9 @@ export default function NewRequest({ go, user, draftId }) {
                       <Field label="Media URL" value={overview.overview_media_url} onChange={v => updOverview("overview_media_url", v)} placeholder="https://... or leave for Design QA" />
                       <Field label="Notes for Design QA" value={overview.overview_media_note} onChange={v => updOverview("overview_media_note", v)} placeholder="e.g. Diagram showing the simulation workflow" hint="Describe what image or diagram you need" fieldKey="overview_media_note" pageType={pageType} />
                     </div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                    <div>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={previewData} pageType={pageType} />
                     </div>
                   </div>
                 )}
@@ -1055,14 +747,33 @@ export default function NewRequest({ go, user, draftId }) {
         </div>
       )}
 
-
+      {step === 2 && (
+        <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button onClick={() => setStep(1)} className="btn-ghost">← Back</button>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            {banner.page_title && pageType && (
+              <button onClick={saveDraft} disabled={saving} style={{
+                background: "#F3F3F3", color: "#3C3C3C", border: "1px solid #E0E0E0",
+                borderRadius: 8, padding: "0.6rem 1.4rem", fontSize: 13, fontWeight: 500,
+                cursor: saving ? "not-allowed" : "pointer", fontFamily: "'Rubik', sans-serif",
+                display: "flex", alignItems: "center", gap: 6, opacity: saving ? 0.5 : 1,
+              }}>
+                {saving ? "Saving..." : "💾 Save as Draft"}
+              </button>
+            )}
+            <button onClick={() => setStep(3)} disabled={!isValid()} className="btn-primary" style={{ opacity: isValid() ? 1 : 0.4 }}>
+              Preview & Submit →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Step 3: Preview & Submit ── */}
       {step === 3 && (
         <>
           <div style={{ marginBottom: 20 }}>
             <p className="text-xs text-uppercase text-muted mb-8">Full Page Preview</p>
-            <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
+            <PagePreview req={previewData} pageType={pageType} />
           </div>
 
           {/* Section summary */}
@@ -1078,7 +789,7 @@ export default function NewRequest({ go, user, draftId }) {
                   : false;
                 return (
                   <div key={s.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#F9F9F9", borderRadius: 8, padding: "0.65rem 0.9rem", border: "1px solid #F3F3F3" }}>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>{s.label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{s.icon} {s.label}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 10, color: s.required ? "#c0392b" : "#B5B5B5", fontWeight: 500 }}>{s.required ? "Required" : "Optional"}</span>
                       <span style={{ fontSize: 12, color: isNA ? "#B5B5B5" : isDone ? "#2a7a4b" : "#c0392b", fontWeight: 500 }}>
@@ -1097,12 +808,22 @@ export default function NewRequest({ go, user, draftId }) {
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <button onClick={() => setStep(2)} className="btn-ghost">
-              ← Back to Edit
-            </button>
-            <button onClick={submit} disabled={saving} className="btn-primary">
-              {saving ? "Submitting..." : "Submit for Editorial QA →"}
-            </button>
+            <button onClick={() => setStep(2)} className="btn-ghost">← Edit</button>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button onClick={saveDraft} disabled={saving} style={{
+                background: "#F3F3F3", color: "#3C3C3C",
+                border: "1px solid #E0E0E0", borderRadius: 8,
+                padding: "0.6rem 1.4rem", fontSize: 13,
+                fontWeight: 500, cursor: saving ? "not-allowed" : "pointer",
+                fontFamily: "'Rubik', sans-serif", display: "flex",
+                alignItems: "center", gap: 6, opacity: saving ? 0.5 : 1,
+              }}>
+                💾 Save as Draft
+              </button>
+              <button onClick={submit} disabled={saving} className="btn-primary">
+                {saving ? "Submitting..." : "Submit for Editorial QA →"}
+              </button>
+            </div>
           </div>
         </>
       )}

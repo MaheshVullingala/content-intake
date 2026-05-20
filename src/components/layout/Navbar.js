@@ -1,6 +1,13 @@
 "use client";
+import { useState } from "react";
 
 export default function Navbar({ go, view, user, logout }) {
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try { await logout(); } finally { setLoggingOut(false); }
+  };
   if (!user) return null;
 
   const isAdmin = user.role === "admin";
@@ -74,11 +81,11 @@ export default function Navbar({ go, view, user, logout }) {
             <div style={{ fontSize: 13, fontWeight: 500, color: "#f1f5f9", fontFamily: "'Rubik', sans-serif" }}>{user.name}</div>
             <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Rubik', sans-serif" }}>{user.role?.replace(/_/g, " ")}</div>
           </div>
-          <button onClick={logout}
-            style={{ background: "none", border: "1px solid #334155", borderRadius: 6, padding: "0.3rem 0.75rem", fontSize: 12, color: "#94a3b8", cursor: "pointer", fontFamily: "'Rubik', sans-serif", transition: "all 0.15s", marginLeft: 4 }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "#94a3b8"; e.currentTarget.style.color = "#f1f5f9"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "#334155"; e.currentTarget.style.color = "#94a3b8"; }}>
-            Sign out
+          <button onClick={handleLogout} disabled={loggingOut}
+            style={{ background: "none", border: "1px solid #334155", borderRadius: 6, padding: "0.3rem 0.75rem", fontSize: 12, color: loggingOut ? "#475569" : "#94a3b8", cursor: loggingOut ? "not-allowed" : "pointer", fontFamily: "'Rubik', sans-serif", transition: "all 0.15s", marginLeft: 4, opacity: loggingOut ? 0.6 : 1 }}
+            onMouseEnter={e => { if (!loggingOut) { e.currentTarget.style.borderColor = "#94a3b8"; e.currentTarget.style.color = "#f1f5f9"; } }}
+            onMouseLeave={e => { if (!loggingOut) { e.currentTarget.style.borderColor = "#334155"; e.currentTarget.style.color = "#94a3b8"; } }}>
+            {loggingOut ? "Signing out..." : "Sign out"}
           </button>
         </div>
       </div>

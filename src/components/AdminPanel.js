@@ -33,12 +33,23 @@ export default function AdminPanel({ user }) {
   const assignRole = async (userId, role) => {
     setUpdating(`role-${userId}`);
     setMsg("");
-    const { error } = await supabase.from("users").update({ role }).eq("id", userId);
-    if (error) setMsg("Failed to update role.");
-    else {
+    console.log("Assigning role:", role, "to user id:", userId);
+    const { data, error } = await supabase
+      .from("users")
+      .update({ role })
+      .eq("id", userId)
+      .select(); // ← returns the updated row so we can verify
+    console.log("Update result:", data, error);
+    if (error) {
+      setMsg(`Failed to update role: ${error.message}`);
+      console.error("Role update error:", error);
+    } else if (!data || data.length === 0) {
+      setMsg("Warning: No rows updated — the user ID may not match. Check RLS policies.");
+      console.warn("No rows updated for userId:", userId);
+    } else {
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
-      setMsg("Role updated successfully.");
-      setTimeout(() => setMsg(""), 3000);
+      setMsg(`✅ Role updated to "${role}" — ${data[0]?.email || userId}`);
+      setTimeout(() => setMsg(""), 4000);
     }
     setUpdating(null);
   };

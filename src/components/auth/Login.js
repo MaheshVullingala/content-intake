@@ -12,9 +12,19 @@ export default function Login({ onSwitch }) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
-    setLoading(false);
+    try {
+      const timeout = setTimeout(() => {
+        setLoading(false);
+        setError("Request timed out — please check your connection and try again.");
+      }, 12000);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      clearTimeout(timeout);
+      if (error) setError(error.message);
+    } catch(e) {
+      setError("Login failed — please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle = {

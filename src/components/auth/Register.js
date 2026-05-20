@@ -22,17 +22,26 @@ export default function Register({ onSwitch }) {
     if (!form.department)               { setError("Please select your department."); return; }
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email:    form.email,
-      password: form.password,
-      options: {
-        data: { name: form.name.trim(), department: form.department },
-      },
-    });
-
-    if (error) { setError(error.message); setLoading(false); return; }
-    setSuccess(true);
-    setLoading(false);
+    try {
+      const timeout = setTimeout(() => {
+        setLoading(false);
+        setError("Request timed out — please check your connection and try again.");
+      }, 12000);
+      const { error } = await supabase.auth.signUp({
+        email:    form.email,
+        password: form.password,
+        options: {
+          data: { name: form.name.trim(), department: form.department },
+        },
+      });
+      clearTimeout(timeout);
+      if (error) { setError(error.message); return; }
+      setSuccess(true);
+    } catch(e) {
+      setError("Registration failed — please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) return (

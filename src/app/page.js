@@ -17,15 +17,18 @@ export default function App() {
 
   useEffect(() => {
     // Single source of truth — use onAuthStateChange only
-    // It fires immediately on mount with INITIAL_SESSION event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth event:", event, "Session:", !!session);
 
       if (event === "INITIAL_SESSION") {
-        // Fires on page load — session is null if not logged in
         if (session) {
-          const profile = await getUserProfile();
-          setUser(profile);
+          try {
+            const profile = await getUserProfile();
+            setUser(profile);
+          } catch(e) {
+            console.error("Profile fetch failed:", e);
+            setUser(null);
+          }
         } else {
           setUser(null);
         }
@@ -33,16 +36,18 @@ export default function App() {
       }
 
       if (event === "SIGNED_IN") {
-        const profile = await getUserProfile();
-        setUser(prev => {
-          // Only redirect to dashboard on actual fresh login (no previous user)
-          // Not on silent token refreshes (prev already exists)
-          if (!prev) {
-            setView("dashboard");
-            setReqId(null);
-          }
-          return profile;
-        });
+        try {
+          const profile = await getUserProfile();
+          setUser(prev => {
+            if (!prev) {
+              setView("dashboard");
+              setReqId(null);
+            }
+            return profile;
+          });
+        } catch(e) {
+          console.error("Profile fetch on sign-in failed:", e);
+        }
         setLoading(false);
       }
 
@@ -53,30 +58,54 @@ export default function App() {
       }
 
       if (event === "TOKEN_REFRESHED") {
-        // Don't refetch profile on token refresh — just keep existing user
+        // Token refreshed silently — keep existing user
         setLoading(false);
       }
 
-      if (event === "PASSWORD_RECOVERY") {
-        setAuthMode("reset");
+      // Session expired or refresh token invalid — force sign out
+      if (event === "USER_UPDATED") {
         setLoading(false);
       }
     });
 
-    // Safety timeout — if loading takes more than 5s, stop
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 5000);
+    // Detect session expiry while app is open (check every 2 minutes)
+    const sessionCheck = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Session gone — user was logged in but token expired
+        setUser(prev => {
+          if (prev) {
+            console.log("Session expired — signing out");
+            supabase.auth.signOut();
+          }
+          return prev;
+        });
+      }
+    }, 2 * 60 * 1000); // every 2 minutes
+
+    // Safety timeout — if loading takes more than 6s, stop
+    const timeout = setTimeout(() => setLoading(false), 6000);
 
     return () => {
       subscription.unsubscribe();
+      clearInterval(sessionCheck);
       clearTimeout(timeout);
     };
   }, []);
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      await supabase.auth.signOut();
+      clearTimeout(timeout);
+    } catch(e) {
+      console.error("Logout error:", e);
+    } finally {
+      // Always clear user state even if signOut fails
+      setUser(null);
+      setView("dashboard");
+    }
   };
 
   const go = (v, id = null) => {

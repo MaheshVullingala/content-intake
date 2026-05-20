@@ -11,39 +11,35 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 });
 
-// Get current user profile from users table
+// Get current user profile from users table — always fresh, no cache
 export const getUserProfile = async () => {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return null;
 
-  // Try auth_id first, fall back to email match
-  let profile = null;
-
-  const { data: byAuthId } = await supabase
+  // Always read fresh from DB — use auth_id as primary lookup
+  const { data: byAuthId, error: e1 } = await supabase
     .from('users')
     .select('*')
     .eq('auth_id', user.id)
     .single();
 
-  if (byAuthId) {
-    profile = byAuthId;
-  } else {
-    // Fall back to email lookup and auto-link auth_id
-    const { data: byEmail } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', user.email)
-      .single();
+  if (byAuthId) return byAuthId;
 
-    if (byEmail) {
-      // Auto-link auth_id so future lookups are faster
-      await supabase
-        .from('users')
-        .update({ auth_id: user.id })
-        .eq('id', byEmail.id);
-      profile = { ...byEmail, auth_id: user.id };
-    }
+  // Fallback to email if auth_id not linked yet
+  const { data: byEmail, error: e2 } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', user.email)
+    .single();
+
+  if (byEmail) {
+    // Link auth_id for future lookups
+    await supabase
+      .from('users')
+      .update({ auth_id: user.id })
+      .eq('id', byEmail.id);
+    return { ...byEmail, auth_id: user.id };
   }
 
-  return profile;
+  return null;
 };

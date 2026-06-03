@@ -24,11 +24,11 @@ import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview
 
 const EMPTY_SEO = { seo_page_location:"", seo_meta_title:"", seo_meta_description:"", seo_meta_keywords:"" };
 
-const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image:"" };
+const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image:"", banner_image_note:"" };
 const EMPTY_OVERVIEW = { overview_label:"", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_note:"" };
 
 const CHAR_LIMITS = {
-  page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300, banner_image:500,
+  page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300, banner_image:500, banner_image_note:300,
   seo_page_location:300, seo_meta_title:70, seo_meta_description:160, seo_meta_keywords:300,
   overview_label:30, overview_impact:100, overview_description:600, overview_media_note:300,
   kb_label:30, kb_impact:100, kb_description:300,
@@ -93,6 +93,7 @@ export default function NewRequest({ go, user, draftId }) {
   const [rpData,        setRpData]       = useState({ rp_label:"", rp_impact:"", rp_description:"", rp_cards:[] });
   const [tsData,        setTsData]       = useState({});
   const [saving,        setSaving]       = useState(false);
+  const [draftSaved,    setDraftSaved]   = useState(false); // shows "Draft saved" toast
   const [error,         setError]        = useState("");
   const [showExitModal, setShowExitModal]= useState(false);
   const [returnComments,  setReturnComments]  = useState([]);
@@ -133,7 +134,7 @@ export default function NewRequest({ go, user, draftId }) {
       if (error || !data) { go("dashboard"); return; }
       setPageType(data.page_type || "");
       setSeoData({ seo_page_location: data.seo_page_location||"", seo_meta_title: data.seo_meta_title||"", seo_meta_description: data.seo_meta_description||"", seo_meta_keywords: data.seo_meta_keywords||"" });
-      setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image: data.banner_image||"" });
+      setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image: data.banner_image||"", banner_image_note: data.banner_image_note||"" });
       setOverview({ overview_label: data.overview_label||"", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_note: data.overview_media_note||"" });
       if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: data.kb_label||"", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
       if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: data.fa_label||"", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: data.fa_items||[], fa_columns: data.fa_columns||[], fa_rows: data.fa_rows||[] });
@@ -188,7 +189,8 @@ export default function NewRequest({ go, user, draftId }) {
     page_title: banner.page_title, sub_title: banner.sub_title,
     cta1_label: banner.cta1_label, cta1_link: banner.cta1_link,
     cta2_label: banner.cta2_label, cta2_link: banner.cta2_link,
-    banner_image: banner.banner_image,
+    banner_image:      banner.banner_image,
+    banner_image_note: banner.banner_image_note,
     // Overview
     ...(!naMap["overview"] ? {
       overview_label:       overview.overview_label,
@@ -346,9 +348,15 @@ export default function NewRequest({ go, user, draftId }) {
         if (data && data[0]) setDraftDbId(data[0].id);
       }
 
+      // Show success toast
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 3000);
+
       if (navigate) {
-        await new Promise(r => setTimeout(r, 300));
+        // Wait for Supabase to fully commit before navigating
+        await new Promise(r => setTimeout(r, 800));
         go("dashboard");
+        return; // don't run finally setSaving — we're navigating away
       }
     } catch (e) {
       console.error("Save exception:", e);
@@ -400,6 +408,44 @@ export default function NewRequest({ go, user, draftId }) {
     }
   };
 
+
+  // Option C: auto-compute design_flag_* based on image description content.
+  // Called at submission time — flags are set once and Editorial QA can override.
+  const computeDesignFlags = () => {
+    const isUrl = (s) => s && (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("/"));
+
+    return {
+      // Banner — always needs image work if no URL is set
+      design_flag_banner: !banner.banner_image || !!banner.banner_image_note,
+
+      // Overview — has a media note or existing media URL that needs replacement
+      design_flag_overview: !!overview.overview_media_note,
+
+      // Key Benefits — any card has an icon_description (text, not a URL)
+      design_flag_kb: (kbData.kb_cards || []).some(
+        c => c.icon_description && !isUrl(c.icon_description)
+      ),
+
+      // Features / Apps — any item has an image_note
+      design_flag_fa: (faData.fa_items || []).some(
+        i => !!i.image_note
+      ),
+
+      // Related Content — any card has an image_note
+      design_flag_rc: (rcData.rc_cards || []).some(
+        c => !!c.image_note
+      ),
+
+      // Promo — has a background image note
+      design_flag_promo: !!promoData.promo_bg_note,
+
+      // Training & Support — any card icon is a text description (not a URL)
+      design_flag_ts: [tsData.ts_card1_icon, tsData.ts_card2_icon, tsData.ts_card3_icon].some(
+        icon => icon && !isUrl(icon)
+      ),
+    };
+  };
+
   const submit = async () => {
     setSaving(true);
     setError("");
@@ -412,7 +458,8 @@ export default function NewRequest({ go, user, draftId }) {
     };
 
     try {
-      const payload = buildPayload("editorial_qa");
+      const designFlags = computeDesignFlags();
+      const payload = { ...buildPayload("editorial_qa"), ...designFlags };
       let requestId = draftDbId;
 
       if (draftDbId) {
@@ -452,7 +499,7 @@ export default function NewRequest({ go, user, draftId }) {
         to_status: "editorial_qa"
       });
 
-      go("detail", requestId);
+      go("detail", requestId, { submitted: true });
     } catch (e) {
       setError(`Error: ${e.message}`);
     } finally {
@@ -472,6 +519,18 @@ export default function NewRequest({ go, user, draftId }) {
 
   return (
     <div className="fade-in" style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "'Rubik', sans-serif" }}>
+
+      {/* Draft Saved Toast */}
+      {draftSaved && (
+        <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 9999,
+          background: "#181313", color: "#fff", borderRadius: 10, padding: "0.75rem 1.4rem",
+          display: "flex", alignItems: "center", gap: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+          fontSize: 13, fontWeight: 500, animation: "fadeIn 0.2s ease", fontFamily: "'Rubik',sans-serif",
+          border: "1px solid rgba(0,155,114,0.4)" }}>
+          <span style={{ fontSize: 18 }}>✅</span>
+          <span>Draft saved successfully</span>
+        </div>
+      )}
 
       {/* Revision Notes Panel */}
       {draftId && returnComments.length > 0 && (
@@ -572,7 +631,7 @@ export default function NewRequest({ go, user, draftId }) {
 
         {/* Right: Save as Draft + Preview & Submit */}
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          {step === 2 && banner.page_title && pageType && (
+          {step === 2 && pageType && (
             <button onClick={saveDraft} disabled={saving}
               style={{
                 background: "#F3F3F3", color: "#3C3C3C",
@@ -772,7 +831,8 @@ export default function NewRequest({ go, user, draftId }) {
                     <Field label="CTA 2 Label" value={banner.cta2_label} onChange={v => updBanner("cta2_label", v)} placeholder="Watch Video" fieldKey="cta2_label" pageType={pageType} />
                     <Field label="CTA 2 Link"  value={banner.cta2_link}  onChange={v => updBanner("cta2_link",  v)} placeholder="/video/..." />
                   </div>
-                  <Field label="Banner Image URL" value={banner.banner_image} onChange={v => updBanner("banner_image", v)} placeholder="https://... or describe image" hint="Design QA will finalize the image" />
+                  <Field label="Banner Image URL" value={banner.banner_image} onChange={v => updBanner("banner_image", v)} placeholder="https://... (leave blank — Design QA will upload)" fieldKey="banner_image" hint="Paste a URL if you have one, otherwise leave blank and describe below" />
+                  <Field label="Banner Image Description" value={banner.banner_image_note} onChange={v => updBanner("banner_image_note", v)} placeholder='e.g. "Engineer working on a PCB board in a lab setting, bright lighting, blue tones"' multiline fieldKey="banner_image_note" hint="Describe the image you need — Design QA will source or create it" />
                 </div>
                 </div>
                 <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>

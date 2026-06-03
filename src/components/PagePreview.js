@@ -96,12 +96,16 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       </div>}
 
       {/* Banner Section */}
-      <div data-section="banner" className="banner-section" style={{
-        background: banner_image
-          ? `url('${banner_image}') center/cover`
-          : "linear-gradient(135deg, #181313, #3C3C3C)",
-      }}>
-        {!banner_image && <div className="banner-bg-pattern" />}
+      <div data-section="banner" className="banner-section">
+        {/* Background image */}
+        <img
+          src={banner_image || "/defasult-banner-image.png"}
+          alt=""
+          className="banner-bg-img"
+          onError={e => { e.currentTarget.style.display = "none"; }}
+        />
+        {/* Dark overlay */}
+        <div className="banner-overlay" />
         <div className="banner-inner">
           <span className="banner-tag">{pageType}</span>
           <h1 className={`banner-title${!page_title ? " placeholder" : ""}`}>

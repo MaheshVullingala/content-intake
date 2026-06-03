@@ -23,22 +23,25 @@ export default function Register({ onSwitch }) {
 
     setLoading(true);
     try {
-      const timeout = setTimeout(() => {
-        setLoading(false);
-        setError("Request timed out — please check your connection and try again.");
-      }, 12000);
-      const { error } = await supabase.auth.signUp({
+      const signUp = supabase.auth.signUp({
         email:    form.email,
         password: form.password,
         options: {
           data: { name: form.name.trim(), department: form.department },
         },
       });
-      clearTimeout(timeout);
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 15000)
+      );
+      const { error } = await Promise.race([signUp, timeout]);
       if (error) { setError(error.message); return; }
       setSuccess(true);
     } catch(e) {
-      setError("Registration failed — please try again.");
+      if (e.message === "timeout") {
+        setError("Registration timed out — please check your connection and try again.");
+      } else {
+        setError("Registration failed — please try again.");
+      }
     } finally {
       setLoading(false);
     }

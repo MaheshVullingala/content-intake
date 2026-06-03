@@ -15,9 +15,12 @@ export default function Dashboard({ go, user }) {
   const [filterRole,    setFilterRole]    = useState("all");   // role key or "all"
   const m = ROLE_META[user.role];
 
-  const fetchRequests = async (retryCount = 0) => {
+  const fetchRequests = async ({ fromSave = false } = {}) => {
     setLoading(true);
     try {
+      // If coming from a save, wait for Supabase to fully commit
+      if (fromSave) await new Promise(r => setTimeout(r, 500));
+
       let query = supabase
         .from("requests")
         .select("*, users!requests_created_by_fkey(name, role)")
@@ -27,12 +30,6 @@ export default function Dashboard({ go, user }) {
       const { data, error } = await query;
       if (error) { console.error("Dashboard fetch error:", error); return; }
       const rows = data || [];
-
-      // If we get 0 rows but we just saved, Supabase may not have committed yet — retry once
-      if (rows.length === 0 && retryCount < 2) {
-        await new Promise(r => setTimeout(r, 600));
-        return fetchRequests(retryCount + 1);
-      }
 
       setRequests(rows);
 
@@ -73,8 +70,13 @@ export default function Dashboard({ go, user }) {
     fetchRequests();
   };
 
-  // "My Tasks" = requests where this role can act (editorial_qa → editorial_qa status, etc.)
-  const myTasks = requests.filter(r => canAct(user.role, r.status));
+  // "My Tasks" = requests where this role can act + for stakeholders also include their drafts
+  const myTasks = requests.filter(r => {
+    if (canAct(user.role, r.status)) return true;
+    // Stakeholders always see their own drafts (including returned ones) in My Tasks
+    if (user.role === "stakeholder" && r.status === "draft" && r.created_by === user.id) return true;
+    return false;
+  });
   const actionable = myTasks;
 
   // "All Requests" filtered list

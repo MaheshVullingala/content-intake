@@ -49,13 +49,14 @@ const SEO_FIELDS = [
 ];
 
 const BANNER_FIELDS = [
-  ["page_title",   "Page Title"],
-  ["sub_title",    "Sub Title"],
-  ["cta1_label",   "CTA 1 Label"],
-  ["cta1_link",    "CTA 1 Link"],
-  ["cta2_label",   "CTA 2 Label"],
-  ["cta2_link",    "CTA 2 Link"],
-  ["banner_image", "Banner Image URL"],
+  ["page_title",        "Page Title"],
+  ["sub_title",         "Sub Title"],
+  ["cta1_label",        "CTA 1 Label"],
+  ["cta1_link",         "CTA 1 Link"],
+  ["cta2_label",        "CTA 2 Label"],
+  ["cta2_link",         "CTA 2 Link"],
+  ["banner_image",      "Banner Image URL"],
+  ["banner_image_note", "Banner Image Description"],
 ];
 
 const OVERVIEW_FIELDS = [
@@ -232,7 +233,7 @@ export default function ReqDetail({ reqId, go, user }) {
       const ALLOWED = new Set([
         "page_type","status","created_by","updated_at",
         "seo_page_location","seo_meta_title","seo_meta_description","seo_meta_keywords",
-        "page_title","sub_title","cta1_label","cta1_link","cta2_label","cta2_link","banner_image",
+        "page_title","sub_title","cta1_label","cta1_link","cta2_label","cta2_link","banner_image","banner_image_note",
         "overview_label","overview_impact","overview_description","overview_media_url","overview_media_type","overview_media_note",
         "kb_label","kb_impact","kb_description","kb_cards",
         "fa_label","fa_impact","fa_description","fa_view_type","fa_items","fa_columns","fa_rows",
@@ -657,13 +658,13 @@ export default function ReqDetail({ reqId, go, user }) {
                 )}
               </div>
 
-              {/* Pending approval stakeholder — show full page preview inline */}
-              {isStakeholderOwner && req.status === "pending_approval" && (
+              {/* Editorial QA + pending approval stakeholder — show full page preview inline */}
+              {(isEditorialQA || isStakeholderOwner) && (
                 <div style={{ background: "#ffffff", border: "1px solid #E0E0E0", borderRadius: 10, overflow: "hidden" }}>
                   <PagePreview req={liveData} pageType={req.page_type} fullPage={false} />
                 </div>
               )}
-              {!(isStakeholderOwner && req.status === "pending_approval") && (
+              {!(isEditorialQA || isStakeholderOwner) && (
                 <div className="card">
                 <h3 style={{ fontSize: 13, marginBottom: 12 }}>Content Summary</h3>
                 <p className="section-group-header" style={{ marginTop: 0 }}>🔍 SEO Meta Data</p>

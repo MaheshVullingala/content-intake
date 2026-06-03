@@ -84,7 +84,7 @@ export default function App() {
     }, 2 * 60 * 1000); // every 2 minutes
 
     // Safety timeout — if loading takes more than 6s, stop
-    const timeout = setTimeout(() => setLoading(false), 6000);
+    const timeout = setTimeout(() => setLoading(false), 8000);
 
     return () => {
       subscription.unsubscribe();
@@ -94,23 +94,27 @@ export default function App() {
   }, []);
 
   const logout = async () => {
+    // Always clear local state immediately — don't wait for Supabase
+    setUser(null);
+    setView("dashboard");
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      await supabase.auth.signOut();
-      clearTimeout(timeout);
+      const signOut = supabase.auth.signOut();
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000)
+      );
+      await Promise.race([signOut, timeout]);
     } catch(e) {
-      console.error("Logout error:", e);
-    } finally {
-      // Always clear user state even if signOut fails
-      setUser(null);
-      setView("dashboard");
+      // Silent — user is already signed out locally
+      console.warn("Logout request did not complete:", e.message);
     }
   };
 
-  const go = (v, id = null) => {
+  const [navParams, setNavParams] = useState({});
+
+  const go = (v, id = null, params = {}) => {
     setView(v);
     setReqId(id);
+    setNavParams(params);
   };
 
   // Loading screen
@@ -155,7 +159,7 @@ export default function App() {
         {view === "dashboard" && <Dashboard go={go} user={user} />}
         {view === "new"       && <NewRequest go={go} user={user} />}
         {view === "edit"      && <NewRequest go={go} user={user} draftId={reqId} />}
-        {view === "detail"    && <ReqDetail reqId={reqId} go={go} user={user} />}
+        {view === "detail"    && <ReqDetail reqId={reqId} go={go} user={user} navParams={navParams} />}
         {view === "admin"     && <AdminPanel user={user} />}
       </main>
     </div>

@@ -13,15 +13,19 @@ export default function Login({ onSwitch }) {
     setLoading(true);
     setError("");
     try {
-      const timeout = setTimeout(() => {
-        setLoading(false);
-        setError("Request timed out — please check your connection and try again.");
-      }, 12000);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      clearTimeout(timeout);
+      // Race the sign-in against a 15s timeout
+      const signIn = supabase.auth.signInWithPassword({ email, password });
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 15000)
+      );
+      const { error } = await Promise.race([signIn, timeout]);
       if (error) setError(error.message);
     } catch(e) {
-      setError("Login failed — please try again.");
+      if (e.message === "timeout") {
+        setError("Sign in timed out — please check your connection and try again.");
+      } else {
+        setError("Sign in failed — please try again.");
+      }
     } finally {
       setLoading(false);
     }

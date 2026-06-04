@@ -63,14 +63,6 @@ export default function Login({ onSwitch }) {
         {loading ? "Signing in..." : "Login »»"}
       </button>
 
-      <div className="login-divider">
-        <span className="login-divider-text">Don't have an account?</span>
-      </div>
-
-      <button type="button" className="login-register-btn" onClick={() => onSwitch("register")}>
-        Create an account
-      </button>
-
     </form>
   );
 }

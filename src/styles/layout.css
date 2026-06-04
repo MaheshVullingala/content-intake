@@ -47,7 +47,7 @@
 .navbar-beta {
   font-size: 9px;
   font-weight: 600;
-  background: rgba(20, 184, 166, 0.15);
+  background: rgba(62, 197, 203, 0.15);
   color: var(--color-accent-light);
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-sm);

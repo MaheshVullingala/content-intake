@@ -603,15 +603,15 @@ export default function NewRequest({ go, user, draftId }) {
                   display: "flex", alignItems: "center", gap: 6,
                   borderRadius: 999,
                   padding: "5px 14px 5px 8px",
-                  background: done ? "rgba(20,184,166,0.12)" : active ? "#181313" : "#f1f5f9",
-                  border: done ? "1px solid rgba(20,184,166,0.3)" : active ? "1px solid #14b8a6" : "1px solid #E0E0E0",
+                  background: done ? "rgba(62,197,203,0.12)" : active ? "#181313" : "#f1f5f9",
+                  border: done ? "1px solid rgba(62,197,203,0.3)" : active ? "1px solid #3ec5cb" : "1px solid #E0E0E0",
                 }}>
                   <div style={{
                     width: 20, height: 20, borderRadius: "50%",
-                    background: done ? "#14b8a6" : active ? "#14b8a6" : "#E0E0E0",
+                    background: done ? "#3ec5cb" : active ? "#3ec5cb" : "#E0E0E0",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 11, fontWeight: 600,
-                    color: done ? "#0f172a" : active ? "#fff" : "#94a3b8",
+                    color: done ? "#0f2744" : active ? "#fff" : "#94a3b8",
                     flexShrink: 0,
                   }}>
                     {done ? "✓" : n}
@@ -647,9 +647,9 @@ export default function NewRequest({ go, user, draftId }) {
           {step === 2 && (
             <button onClick={() => setStep(3)} disabled={!isValid()}
               style={{
-                background: isValid() ? "#14b8a6" : "#f9f9f9",
+                background: isValid() ? "#3ec5cb" : "#f9f9f9",
                 color: isValid() ? "#fff" : "#B5B5B5",
-                border: isValid() ? "1.5px solid #14b8a6" : "1.5px solid #E0E0E0",
+                border: isValid() ? "1.5px solid #3ec5cb" : "1.5px solid #E0E0E0",
                 borderRadius: 8, padding: "0.55rem 1.2rem",
                 fontSize: 13, fontWeight: 500,
                 cursor: isValid() ? "pointer" : "not-allowed",
@@ -745,7 +745,7 @@ export default function NewRequest({ go, user, draftId }) {
                     marginRight: 2,
                     background: isActive ? "#181313" : "transparent",
                     border: "none",
-                    borderBottom: isActive ? "2px solid #14b8a6" : "2px solid transparent",
+                    borderBottom: isActive ? "2px solid #3ec5cb" : "2px solid transparent",
                     cursor: "pointer",
                     whiteSpace: "nowrap",
                     transition: "all 0.15s",
@@ -756,7 +756,7 @@ export default function NewRequest({ go, user, draftId }) {
                       {s.label}
                     </span>
                     {isDone && !isNA && (
-                      <span style={{ fontSize: 11, color: "#14b8a6", fontWeight: 600 }}>✓</span>
+                      <span style={{ fontSize: 11, color: "#3ec5cb", fontWeight: 600 }}>✓</span>
                     )}
                     {isNA && (
                       <span style={{ fontSize: 10, color: "#94a3b8" }}>—</span>

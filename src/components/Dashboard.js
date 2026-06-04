@@ -136,9 +136,9 @@ export default function Dashboard({ go, user }) {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 10, marginBottom: 26 }}>
         {stats.map(s => (
-          <div key={s.key} style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 10, padding: "0.9rem 0.8rem", textAlign: "center" }}>
-            <div style={{ fontSize: 24, fontWeight: 500, color: s.count > 0 ? "#181313" : "#B5B5B5" }}>{s.count}</div>
-            <div style={{ fontSize: 9, color: "#B5B5B5", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 4, lineHeight: 1.4 }}>{s.label}</div>
+          <div key={s.key} className="stat-card">
+            <div className="stat-card-count" style={{ color: s.count > 0 ? "#181313" : "#B5B5B5" }}>{s.count}</div>
+            <div className="stat-card-label">{s.label}</div>
           </div>
         ))}
       </div>
@@ -222,15 +222,15 @@ export default function Dashboard({ go, user }) {
 
                 const returnBadgeLabel = isDesignQuery ? "DESIGN QUERY" : isEditorialReturn ? "RETURNED" : "RETURNED";
                 const returnBadgeBg    = isDesignQuery ? "#eff6ff" : "#fff3cd";
-                const returnBadgeColor = isDesignQuery ? "#1d4ed8" : "#856404";
+                const returnBadgeColor = isDesignQuery ? "#1b5793" : "#856404";
                 const returnBadgeBorder= isDesignQuery ? "#3b82f633" : "#ffc10744";
                 const commentBtnBg     = isDesignQuery ? "#eff6ff" : "#fff3cd";
-                const commentBtnColor  = isDesignQuery ? "#1d4ed8" : "#856404";
+                const commentBtnColor  = isDesignQuery ? "#1b5793" : "#856404";
                 const commentBtnBorder = isDesignQuery ? "#3b82f666" : "#ffc10766";
                 const commentBtnIcon   = isDesignQuery ? "💬" : "↩";
 
                 return (
-                  <tr key={req.id} style={{ borderBottom: i < displayRows.length - 1 ? "1px solid #F9F9F9" : "none", background: act ? "#FAFAFA" : isDesignQuery ? "#f0f7ff" : isReturnedDraft ? "#fffbf0" : "#fff" }}>
+                  <tr key={req.id} style={{ borderBottom: i < displayRows.length - 1 ? "1px solid #F9F9F9" : "none", background: act ? "#FAFAFA" : isDesignQuery ? "#e8f4fb" : isReturnedDraft ? "#fffbf0" : "#fff" }}>
                     <td style={{ padding: "0.9rem 1.2rem", fontSize: 14, color: "#181313", fontWeight: 400 }}>
                       {req.page_title || <span style={{ color: "#B5B5B5", fontStyle: "italic" }}>Untitled</span>}
                       {isDraft && !isReturnedDraft && <span style={{ marginLeft: 8, fontSize: 10, background: "#F3F3F3", color: "#B5B5B5", border: "1px solid #E0E0E0", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>DRAFT</span>}

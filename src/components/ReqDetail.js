@@ -27,14 +27,14 @@ const DesignFlagToggle = ({ sectionKey, value, onChange }) => {
       style={{ display:"inline-flex", alignItems:"center", gap:8, cursor:"pointer", userSelect:"none",
         padding:"6px 14px", borderRadius:20, marginBottom:14, transition:"all 0.15s",
         background: flagged ? "#f0fdf4" : "#F9F9F9",
-        border: `1px solid ${flagged ? "#009B7244" : "#E0E0E0"}`,
+        border: `1px solid ${flagged ? "#2c90b244" : "#E0E0E0"}`,
       }}>
-      <span style={{ width:16, height:16, borderRadius:4, border:`2px solid ${flagged ? "#009B72" : "#D0D0D0"}`,
-        background: flagged ? "#009B72" : "#fff", display:"flex", alignItems:"center", justifyContent:"center",
+      <span style={{ width:16, height:16, borderRadius:4, border:`2px solid ${flagged ? "#2c90b2" : "#D0D0D0"}`,
+        background: flagged ? "#2c90b2" : "#fff", display:"flex", alignItems:"center", justifyContent:"center",
         flexShrink:0, transition:"all 0.15s" }}>
         {flagged && <span style={{ color:"#fff", fontSize:10, lineHeight:1 }}>✓</span>}
       </span>
-      <span style={{ fontSize:12, fontWeight: flagged ? 600 : 400, color: flagged ? "#009B72" : "#B5B5B5" }}>
+      <span style={{ fontSize:12, fontWeight: flagged ? 600 : 400, color: flagged ? "#2c90b2" : "#B5B5B5" }}>
         🎨 Flag for Design QA image work
       </span>
     </div>
@@ -503,7 +503,7 @@ export default function ReqDetail({ reqId, go, user }) {
               <button
                 onClick={doReturn}
                 disabled={saving || !returnComment.trim()}
-                style={{ background: !returnComment.trim() ? "#F3F3F3" : isDesignQA ? "#1d4ed8" : "#c0392b", color: !returnComment.trim() ? "#B5B5B5" : "#fff", border: "none", borderRadius: 8, padding: "0.7rem", fontSize: 14, fontWeight: 500, cursor: !returnComment.trim() ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s" }}>
+                style={{ background: !returnComment.trim() ? "#F3F3F3" : isDesignQA ? "#1b5793" : "#c0392b", color: !returnComment.trim() ? "#B5B5B5" : "#fff", border: "none", borderRadius: 8, padding: "0.7rem", fontSize: 14, fontWeight: 500, cursor: !returnComment.trim() ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s" }}>
                 {saving ? "Sending..." : isDesignQA ? "💬 Send Query to Stakeholder" : "↩ Send Back to Stakeholder"}
               </button>
               <button onClick={() => { setShowReturnModal(false); setReturnComment(""); }} disabled={saving}
@@ -614,8 +614,8 @@ export default function ReqDetail({ reqId, go, user }) {
                   {(liveData.overview_media_note || liveData.promo_bg_note || liveData.banner_image_note ||
                     liveData.design_flag_banner || liveData.design_flag_overview || liveData.design_flag_promo ||
                     liveData.design_flag_kb || liveData.design_flag_fa || liveData.design_flag_rc || liveData.design_flag_ts) && (
-                    <div style={{ background: "#f0f7ff", border: "1px solid #3b82f633", borderRadius: 10, padding: "1rem 1.2rem", marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>📌 Image Requirements flagged by Editorial QA</div>
+                    <div style={{ background: "#e8f4fb", border: "1px solid #3b82f633", borderRadius: 10, padding: "1rem 1.2rem", marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#1b5793", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>📌 Image Requirements flagged by Editorial QA</div>
                       {[
                         ["Banner Image",              liveData.design_flag_banner,   "Flagged by Editorial QA"],
                         ["Overview Media",            liveData.design_flag_overview || liveData.overview_media_note, liveData.overview_media_note || "Flagged by Editorial QA"],
@@ -628,7 +628,7 @@ export default function ReqDetail({ reqId, go, user }) {
                         <div key={label} style={{ display: "flex", gap: 10, paddingBottom: 8, marginBottom: 8, borderBottom: "1px solid #3b82f611" }}>
                           <span style={{ fontSize: 16, flexShrink: 0 }}>📷</span>
                           <div>
-                            <div style={{ fontSize: 11, fontWeight: 600, color: "#1d4ed8", marginBottom: 2 }}>{label}</div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: "#1b5793", marginBottom: 2 }}>{label}</div>
                             <div style={{ fontSize: 12, color: "#1e3a8a", lineHeight: 1.55 }}>{note}</div>
                           </div>
                         </div>
@@ -807,7 +807,7 @@ export default function ReqDetail({ reqId, go, user }) {
                     <span style={{ fontSize: 12, color: "#646464" }}>{filledCount} / {slots.length} filled</span>
                   </div>
                   <div style={{ height: 6, background: "#F3F3F3", borderRadius: 4, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${(filledCount / slots.length) * 100}%`, background: "#009B72", borderRadius: 4, transition: "width 0.4s ease" }} />
+                    <div style={{ height: "100%", width: `${(filledCount / slots.length) * 100}%`, background: "#2c90b2", borderRadius: 4, transition: "width 0.4s ease" }} />
                   </div>
                 </div>
 
@@ -849,7 +849,7 @@ export default function ReqDetail({ reqId, go, user }) {
                   };
 
                   return (
-                    <div key={slot.key} className="card" style={{ background: "#fff", border: isFilled ? "1px solid #009B7244" : "1px solid #E0E0E0" }}>
+                    <div key={slot.key} className="card" style={{ background: "#fff", border: isFilled ? "1px solid #2c90b244" : "1px solid #E0E0E0" }}>
                       {/* Header */}
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                         <span style={{ fontSize: 18 }}>{slot.icon}</span>
@@ -859,15 +859,15 @@ export default function ReqDetail({ reqId, go, user }) {
                         </div>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20,
                           background: isFilled ? "#f0fdf4" : "#fffbeb",
-                          color:      isFilled ? "#009B72"  : "#f59e0b",
-                          border:     `1px solid ${isFilled ? "#009B7233" : "#f59e0b44"}` }}>
+                          color:      isFilled ? "#2c90b2"  : "#f59e0b",
+                          border:     `1px solid ${isFilled ? "#2c90b233" : "#f59e0b44"}` }}>
                           {isFilled ? "✓ Filled" : "⚠ Pending"}
                         </span>
                       </div>
 
                       {/* Stakeholder / editorial note */}
                       {slot.note && (
-                        <div style={{ background: "#f0f7ff", border: "1px solid #3b82f622", borderLeft: "3px solid #3b82f6", borderRadius: 8, padding: "0.6rem 0.8rem", marginBottom: 12, fontSize: 12, color: "#1d4ed8", lineHeight: 1.6 }}>
+                        <div style={{ background: "#e8f4fb", border: "1px solid #3b82f622", borderLeft: "3px solid #3b82f6", borderRadius: 8, padding: "0.6rem 0.8rem", marginBottom: 12, fontSize: 12, color: "#1b5793", lineHeight: 1.6 }}>
                           <span style={{ fontWeight: 600 }}>Image note: </span>{slot.note}
                         </div>
                       )}
@@ -891,7 +891,7 @@ export default function ReqDetail({ reqId, go, user }) {
                           {isImg
                             ? <img src={currentVal} alt={slot.label} style={{ width: "100%", maxHeight: 180, objectFit: "cover", display: "block" }} onError={e => { e.currentTarget.style.display = "none"; }} />
                             : <div style={{ padding: "0.6rem 0.8rem", fontSize: 12, color: "#646464" }}>
-                                <a href={currentVal} target="_blank" rel="noreferrer" style={{ color: "#009B72" }}>↗ {currentVal}</a>
+                                <a href={currentVal} target="_blank" rel="noreferrer" style={{ color: "#2c90b2" }}>↗ {currentVal}</a>
                               </div>
                           }
                         </div>
@@ -1026,12 +1026,12 @@ export default function ReqDetail({ reqId, go, user }) {
                   <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10, padding:"1.5rem 0" }}>
                     <svg width="70" height="70" viewBox="80 80 180 180">
                       <rect x="80" y="80" width="180" height="180" fill="none"/>
-                      <rect x="153" y="153" width="34" height="34" fill="#1f1a1a" stroke="#009B72" strokeWidth="2.5" rx="2" style={{ animation:"pcb-chip 2s ease-in-out infinite" }}/>
+                      <rect x="153" y="153" width="34" height="34" fill="#1f1a1a" stroke="#2c90b2" strokeWidth="2.5" rx="2" style={{ animation:"pcb-chip 2s ease-in-out infinite" }}/>
                       <path className="pcb-tr"  d="M170 153 L170 100" style={{ animationDelay:"0s" }}/>
                       <path className="pcb-tr2" d="M170 187 L170 240" style={{ animationDelay:".2s" }}/>
                       <path className="pcb-tr"  d="M153 170 L100 170" style={{ animationDelay:".1s" }}/>
                       <path className="pcb-tr2" d="M187 170 L240 170" style={{ animationDelay:".15s" }}/>
-                      {[[170,94,0,"#009B72"],[170,246,.2,"#00c98d"],[94,170,.1,"#009B72"],[246,170,.15,"#00c98d"]].map(([cx,cy,d,f],i)=>(
+                      {[[170,94,0,"#2c90b2"],[170,246,.2,"#3ec5cb"],[94,170,.1,"#2c90b2"],[246,170,.15,"#3ec5cb"]].map(([cx,cy,d,f],i)=>(
                         <g key={i}>
                           <circle cx={cx} cy={cy} r="7"   fill="#181313" stroke={f} strokeWidth="2" style={{ animation:`pcb-pad 2s ${d}s ease-in-out infinite` }}/>
                           <circle cx={cx} cy={cy} r="3.5" fill={f}                                  style={{ animation:`pcb-pad 2s ${d}s ease-in-out infinite` }}/>
@@ -1129,7 +1129,7 @@ export default function ReqDetail({ reqId, go, user }) {
                 <button onClick={doAdvance} disabled={saving} className="btn-primary btn-full" style={{ justifyContent: "center" }}>
                   {saving ? "Processing..." : "Submit for Stakeholder Approval"}
                 </button>
-                <button onClick={() => setShowReturnModal(true)} disabled={saving} style={{ width: "100%", background: "#eff6ff", color: "#1d4ed8", border: "1px solid #3b82f633", borderRadius: 8, padding: "0.65rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
+                <button onClick={() => setShowReturnModal(true)} disabled={saving} style={{ width: "100%", background: "#eff6ff", color: "#1b5793", border: "1px solid #3b82f633", borderRadius: 8, padding: "0.65rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
                   💬 Query Stakeholder
                 </button>
               </div>
@@ -1197,7 +1197,7 @@ export default function ReqDetail({ reqId, go, user }) {
           {/* ── Returned Draft: Stakeholder resubmit panel ── */}
           {isReturnedDraft && isStakeholderOwner && (() => {
             const isDesignQuery = isQueriedByDesignQA;
-            const accentColor   = isDesignQuery ? "#1d4ed8" : "#856404";
+            const accentColor   = isDesignQuery ? "#1b5793" : "#856404";
             const borderColor   = isDesignQuery ? "#3b82f633" : "#ffc107";
             const bgColor       = isDesignQuery ? "#eff6ff"   : "#fff8e6";
             const noteColor     = isDesignQuery ? "#1e40af"   : "#856404";
@@ -1255,7 +1255,7 @@ export default function ReqDetail({ reqId, go, user }) {
                 {editData && <div className="alert alert-warning" style={{ marginBottom: 10 }}>⚠️ Unsaved edits will be saved automatically on resubmit.</div>}
 
                 <button onClick={doResubmit} disabled={saving || (replyRequired && !comment.trim())}
-                  style={{ width: "100%", background: saving || (replyRequired && !comment.trim()) ? "#B5B5B5" : isDesignQuery ? "#1d4ed8" : "#0e7a3d", color: "#fff", border: "none", borderRadius: 8, padding: "0.75rem", fontSize: 14, fontWeight: 500, cursor: saving || (replyRequired && !comment.trim()) ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                  style={{ width: "100%", background: saving || (replyRequired && !comment.trim()) ? "#B5B5B5" : isDesignQuery ? "#1b5793" : "#0e7a3d", color: "#fff", border: "none", borderRadius: 8, padding: "0.75rem", fontSize: 14, fontWeight: 500, cursor: saving || (replyRequired && !comment.trim()) ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                   {saving ? "Submitting..." : resubmitLabel}
                 </button>
               </div>

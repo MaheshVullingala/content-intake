@@ -96,7 +96,7 @@
 .login-heading {
   font-size: 28px;
   font-weight: 400;
-  color: #0f2744;
+  color: #0f172a;
   margin-bottom: 32px;
   line-height: 1.2;
 }
@@ -122,7 +122,7 @@
   border-radius: 0;
   padding: 8px 0;
   font-size: 14px;
-  color: #0f2744;
+  color: #0f172a;
   outline: none;
   box-shadow: none;
   -webkit-box-shadow: none;
@@ -137,7 +137,7 @@
 .login-input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
   box-shadow: 0 0 0 1000px #fff inset !important;
-  -webkit-text-fill-color: #0f2744 !important;
+  -webkit-text-fill-color: #0f172a !important;
   border-bottom-color: #cbd5e1 !important;
 }
 
@@ -160,7 +160,7 @@
 
 .login-submit {
   width: 100%;
-  background: #1b5793;
+  background: #1d4ed8;
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -428,46 +428,4 @@
   padding: 2rem 2.5rem;
   background: #f8fafc;
   min-height: calc(100vh - 56px);
-}
-
-/* ══════════════════════════════════════════════════════════
-   LOGIN — divider + register button
-   ══════════════════════════════════════════════════════════ */
-
-.login-divider {
-  display: flex;
-  align-items: center;
-  margin: 20px 0 14px;
-}
-.login-divider::before,
-.login-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #e2e8f0;
-}
-.login-divider-text {
-  font-size: 12px;
-  color: #94a3b8;
-  padding: 0 12px;
-  white-space: nowrap;
-}
-
-.login-register-btn {
-  width: 100%;
-  background: #fff;
-  color: #1557a0;
-  border: 1.5px solid #1557a0;
-  border-radius: 6px;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: var(--font-body);
-  letter-spacing: 0.04em;
-  transition: background 0.15s, color 0.15s;
-}
-.login-register-btn:hover {
-  background: #1557a0;
-  color: #fff;
 }

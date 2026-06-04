@@ -14,8 +14,8 @@ export default function Navbar({ go, view, user, logout }) {
 
   return (
     <nav style={{
-      background: "#1e293b",
-      borderBottom: "1px solid #334155",
+      background: "#000000",
+      borderBottom: "1px solid #1e4f8a",
       padding: "0 2.5rem",
       height: 56,
       display: "flex",
@@ -29,10 +29,10 @@ export default function Navbar({ go, view, user, logout }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{
           width: 32, height: 32,
-          background: "#14b8a6",
+          background: "#3ec5cb",
           borderRadius: 8,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 13, fontWeight: 700, color: "#0f172a",
+          fontSize: 13, fontWeight: 700, color: "#0f2744",
           fontFamily: "'Rubik', sans-serif",
           cursor: "pointer",
           flexShrink: 0,
@@ -43,8 +43,8 @@ export default function Navbar({ go, view, user, logout }) {
           Content Intake
         </span>
         <span style={{
-          fontSize: 10, background: "rgba(20,184,166,0.15)",
-          color: "#14b8a6", border: "1px solid rgba(20,184,166,0.3)",
+          fontSize: 10, background: "rgba(62,197,203,0.15)",
+          color: "#3ec5cb", border: "1px solid rgba(62,197,203,0.3)",
           borderRadius: 4, padding: "1px 6px", fontFamily: "'Rubik', sans-serif", fontWeight: 500,
         }}>BETA</span>
       </div>
@@ -58,7 +58,7 @@ export default function Navbar({ go, view, user, logout }) {
 
         {user.role === "stakeholder" && (
           <button onClick={() => go("new")}
-            style={{ background: "#14b8a6", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik', sans-serif", color: "#0f172a", display: "flex", alignItems: "center", gap: 6, transition: "opacity 0.15s" }}
+            style={{ background: "#3ec5cb", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik', sans-serif", color: "#0f2744", display: "flex", alignItems: "center", gap: 6, transition: "opacity 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
             + New Request
@@ -73,8 +73,8 @@ export default function Navbar({ go, view, user, logout }) {
         )}
 
         {/* User info */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, borderLeft: "1px solid #334155", paddingLeft: 20 }}>
-          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#0f172a", border: "1px solid #334155", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#94a3b8", fontFamily: "'Rubik', sans-serif", fontWeight: 500 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, borderLeft: "1px solid #1e4f8a", paddingLeft: 20 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#0f2744", border: "1px solid #1e4f8a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#94a3b8", fontFamily: "'Rubik', sans-serif", fontWeight: 500 }}>
             {user.name?.charAt(0)?.toUpperCase() || "U"}
           </div>
           <div>
@@ -82,9 +82,9 @@ export default function Navbar({ go, view, user, logout }) {
             <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Rubik', sans-serif" }}>{user.role?.replace(/_/g, " ")}</div>
           </div>
           <button onClick={handleLogout} disabled={loggingOut}
-            style={{ background: "none", border: "1px solid #334155", borderRadius: 6, padding: "0.3rem 0.75rem", fontSize: 12, color: loggingOut ? "#475569" : "#94a3b8", cursor: loggingOut ? "not-allowed" : "pointer", fontFamily: "'Rubik', sans-serif", transition: "all 0.15s", marginLeft: 4, opacity: loggingOut ? 0.6 : 1 }}
+            style={{ background: "none", border: "1px solid #1e4f8a", borderRadius: 6, padding: "0.3rem 0.75rem", fontSize: 12, color: loggingOut ? "#475569" : "#94a3b8", cursor: loggingOut ? "not-allowed" : "pointer", fontFamily: "'Rubik', sans-serif", transition: "all 0.15s", marginLeft: 4, opacity: loggingOut ? 0.6 : 1 }}
             onMouseEnter={e => { if (!loggingOut) { e.currentTarget.style.borderColor = "#94a3b8"; e.currentTarget.style.color = "#f1f5f9"; } }}
-            onMouseLeave={e => { if (!loggingOut) { e.currentTarget.style.borderColor = "#334155"; e.currentTarget.style.color = "#94a3b8"; } }}>
+            onMouseLeave={e => { if (!loggingOut) { e.currentTarget.style.borderColor = "#1e4f8a"; e.currentTarget.style.color = "#94a3b8"; } }}>
             {loggingOut ? "Signing out..." : "Sign out"}
           </button>
         </div>

@@ -1,27 +1,42 @@
 /* ============================================================
    tokens.css — Design tokens & CSS custom properties
-   All colours, spacing, radii and shadows in one place.
-   Never hardcode a hex in a component — use a token.
+   Palette: Ocean Deep (extracted from login-background.jpg)
+   #1b5793 deep blue → #216f9f → #2c90b2 → #3ec5cb teal
    ============================================================ */
 
 :root {
+  /* ── Ocean Deep: Primary blues ────────────────────────── */
+  --color-primary:        #1b5793;   /* Deep blue — buttons, links, nav active */
+  --color-primary-hover:  #154a7e;   /* Slightly darker on hover */
+  --color-primary-light:  #216f9f;   /* Mid blue — secondary actions */
+  --color-primary-tint:   rgba(27, 87, 147, 0.10);
+  --color-primary-border: rgba(27, 87, 147, 0.25);
+
+  /* ── Ocean Deep: Accent teal ──────────────────────────── */
+  --color-accent:         #3ec5cb;   /* Teal — CTAs, highlights, active states */
+  --color-accent-hover:   #2cb0b6;
+  --color-accent-dark:    #2c90b2;   /* Mid teal — badges, progress */
+  --color-accent-tint:    rgba(62, 197, 203, 0.12);
+  --color-accent-border:  rgba(62, 197, 203, 0.30);
+  --color-accent-light:   #a8e8ec;   /* Light teal — backgrounds */
+
+  /* ── Ocean Deep: Full gradient stops ─────────────────── */
+  --color-grad-start:     #1b5793;
+  --color-grad-mid1:      #216f9f;
+  --color-grad-mid2:      #2c90b2;
+  --color-grad-end:       #3ec5cb;
+  --color-gradient:       linear-gradient(135deg, #1b5793 0%, #216f9f 35%, #2c90b2 65%, #3ec5cb 100%);
+
   /* ── Palette: Dark / Navbar ───────────────────────────── */
-  --color-bg-dark:       #0f172a;
-  --color-navbar:        #1e293b;
-  --color-border-dark:   #334155;
-  --color-text-nav:      #f1f5f9;
-  --color-text-nav-dim:  #94a3b8;
+  --color-bg-dark:        #0f2744;   /* Deepest navy — loading screen, modals */
+  --color-navbar:         #163a6b;   /* Dark blue navbar */
+  --color-border-dark:    #1e4f8a;   /* Navbar borders */
+  --color-text-nav:       #f1f5f9;
+  --color-text-nav-dim:   #93c5d0;   /* Muted teal-white for secondary nav text */
 
-  /* ── Palette: Brand (Midnight Steel teal) ─────────────── */
-  --color-accent:        #14b8a6;
-  --color-accent-light:  #5eead4;
-  --color-accent-dark:   #0f766e;
-  --color-accent-tint:   rgba(20, 184, 166, 0.12);
-  --color-accent-border: rgba(20, 184, 166, 0.30);
-
-  /* ── Palette: PCB / Design QA teal ───────────────────── */
-  --color-pcb-primary:   #009B72;
-  --color-pcb-light:     #00c98d;
+  /* ── Palette: PCB / Design QA ────────────────────────── */
+  --color-pcb-primary:    #2c90b2;   /* Aligned with mid-teal */
+  --color-pcb-light:      #3ec5cb;
 
   /* ── Palette: Neutral (light side) ───────────────────── */
   --color-night:   #181313;
@@ -32,21 +47,22 @@
   --color-ghost:   #F9F9F9;
   --color-white:   #FFFFFF;
   --color-border:  #E0E0E0;
-  --color-bg-app:  #f8fafc;
+  --color-bg-app:  #f0f6fa;          /* Tinted light blue app background */
+  --color-surface: #e8f4fb;          /* Lightest blue — card backgrounds */
 
   /* ── Palette: Semantic ────────────────────────────────── */
   --color-success:        #2a7a4b;
   --color-success-bg:     #ecfdf5;
   --color-success-border: rgba(42, 122, 75, 0.25);
   --color-error:          #c0392b;
-  --color-error-bg:       #3a1010;
+  --color-error-bg:       #fff5f5;
   --color-error-border:   rgba(192, 57, 43, 0.25);
   --color-warning:        #d97706;
   --color-warning-bg:     #fffbeb;
   --color-warning-border: rgba(245, 158, 11, 0.25);
-  --color-info-bg:        #f0f7ff;
-  --color-info-border:    rgba(59, 130, 246, 0.15);
-  --color-info-text:      #1d4ed8;
+  --color-info-bg:        #e8f4fb;
+  --color-info-border:    rgba(27, 87, 147, 0.20);
+  --color-info-text:      #1b5793;
   --color-amber:          #ffc107;
 
   /* ── Spacing scale ────────────────────────────────────── */
@@ -61,18 +77,18 @@
   --space-12: 48px;
 
   /* ── Border radius ────────────────────────────────────── */
-  --radius-sm:  4px;
-  --radius-md:  7px;
-  --radius-lg:  10px;
-  --radius-xl:  12px;
-  --radius-2xl: 16px;
+  --radius-sm:   4px;
+  --radius-md:   7px;
+  --radius-lg:   10px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
   --radius-full: 9999px;
 
   /* ── Shadows ──────────────────────────────────────────── */
-  --shadow-sm:  0 1px 4px rgba(0, 0, 0, 0.08);
-  --shadow-md:  0 2px 16px rgba(0, 0, 0, 0.06);
-  --shadow-lg:  0 8px 40px rgba(0, 0, 0, 0.15);
-  --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.04);
+  --shadow-sm:   0 1px 4px rgba(27, 87, 147, 0.08);
+  --shadow-md:   0 2px 16px rgba(27, 87, 147, 0.08);
+  --shadow-lg:   0 8px 40px rgba(27, 87, 147, 0.15);
+  --shadow-card: 0 2px 16px rgba(27, 87, 147, 0.06);
 
   /* ── Typography ───────────────────────────────────────── */
   --font-body:  'Rubik', sans-serif;
@@ -89,12 +105,12 @@
   --text-4xl:  32px;
 
   /* ── Z-index scale ────────────────────────────────────── */
-  --z-base:    1;
+  --z-base:     1;
   --z-dropdown: 100;
-  --z-sticky:  200;
-  --z-overlay: 500;
-  --z-modal:   999;
-  --z-toast:   1000;
+  --z-sticky:   200;
+  --z-overlay:  500;
+  --z-modal:    999;
+  --z-toast:    1000;
 
   /* ── Transitions ──────────────────────────────────────── */
   --transition-fast:   0.15s ease;

@@ -76,7 +76,7 @@
 }
 
 .status-chip.draft            { background: var(--color-smoke); color: var(--color-dim); border-color: var(--color-border); }
-.status-chip.editorial_qa     { background: #eff6ff; color: #1d4ed8; border-color: rgba(29,78,216,0.2); }
+.status-chip.editorial_qa     { background: #eff6ff; color: #1b5793; border-color: rgba(29,78,216,0.2); }
 .status-chip.design_qa        { background: rgba(0,155,114,0.08); color: var(--color-pcb-primary); border-color: rgba(0,155,114,0.2); }
 .status-chip.pending_approval { background: #fffbeb; color: #d97706; border-color: rgba(217,119,6,0.25); }
 .status-chip.web_team         { background: var(--color-success-bg); color: var(--color-success); border-color: var(--color-success-border); }
@@ -126,7 +126,7 @@
 
 /* Return / Query badges */
 .badge-returned { background: rgba(217,119,6,0.1); color: #d97706; border: 1px solid rgba(217,119,6,0.25); border-radius: var(--radius-full); padding: 2px 8px; font-size: 10px; font-weight: 600; }
-.badge-queried  { background: rgba(29,78,216,0.08); color: #1d4ed8; border: 1px solid rgba(29,78,216,0.2); border-radius: var(--radius-full); padding: 2px 8px; font-size: 10px; font-weight: 600; }
+.badge-queried  { background: rgba(29,78,216,0.08); color: #1b5793; border: 1px solid rgba(29,78,216,0.2); border-radius: var(--radius-full); padding: 2px 8px; font-size: 10px; font-weight: 600; }
 
 /* ══════════════════════════════════════════════════════════
    FILTER BAR (All Requests view)
@@ -268,3 +268,44 @@
 }
 .revision-note-meta { font-size: var(--text-xs); color: #856404; font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
 .revision-note-text { font-size: var(--text-base); color: var(--color-onyx); line-height: 1.55; }
+
+/* ══════════════════════════════════════════════════════════
+   STAT CARDS — gradient top border (Ocean Deep)
+   ══════════════════════════════════════════════════════════ */
+
+.stat-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #E0E0E0;
+  border-top: none;
+  border-radius: 10px;
+  padding: 0.9rem 0.8rem;
+  text-align: center;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, #1b5793, #216f9f, #2c90b2, #3ec5cb);
+  border-radius: 10px 10px 0 0;
+}
+
+.stat-card-count {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.stat-card-label {
+  font-size: 9px;
+  color: #B5B5B5;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 4px;
+  line-height: 1.4;
+}

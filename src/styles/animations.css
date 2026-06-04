@@ -31,15 +31,15 @@
 /* PCB loader animations */
 @keyframes pcb-flow { 0% { stroke-dashoffset: 300; } 100% { stroke-dashoffset: 0; } }
 @keyframes pcb-pad  { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
-@keyframes pcb-chip { 0%, 100% { opacity: 0.5; stroke: #009B72; } 50% { opacity: 1; stroke: #00c98d; } }
+@keyframes pcb-chip { 0%, 100% { opacity: 0.5; stroke: #2c90b2; } 50% { opacity: 1; stroke: #3ec5cb; } }
 @keyframes pcb-bar  { 0% { width: 0%; } 60% { width: 80%; } 100% { width: 100%; } }
 @keyframes pcb-txt  { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }
 
 /* PCB shared classes */
-.pcb-tr  { fill: none; stroke: #009B72; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 300; animation: pcb-flow 2s linear infinite; }
-.pcb-tr2 { fill: none; stroke: #00c98d; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 300; animation: pcb-flow 2s linear infinite; }
-.pcb-pad { fill: none; stroke: #009B72; stroke-width: 2.5; animation: pcb-pad 2s ease-in-out infinite; }
-.pcb-pd2 { fill: none; stroke: #00c98d; stroke-width: 2.5; animation: pcb-pad 2s ease-in-out infinite; }
+.pcb-tr  { fill: none; stroke: #2c90b2; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 300; animation: pcb-flow 2s linear infinite; }
+.pcb-tr2 { fill: none; stroke: #3ec5cb; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 300; animation: pcb-flow 2s linear infinite; }
+.pcb-pad { fill: none; stroke: #2c90b2; stroke-width: 2.5; animation: pcb-pad 2s ease-in-out infinite; }
+.pcb-pd2 { fill: none; stroke: #3ec5cb; stroke-width: 2.5; animation: pcb-pad 2s ease-in-out infinite; }
 
 /* ── Motion utilities ─────────────────────────────────────── */
 .fade-in       { animation: fadeIn 0.25s ease forwards; }

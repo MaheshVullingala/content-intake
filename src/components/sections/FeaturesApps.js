@@ -33,7 +33,7 @@ function ListView({ items = [], onChange }) {
           <h3 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>List Items</h3>
           <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{items.length}/20 items · Checkmark style</p>
         </div>
-        <button onClick={addItem} disabled={items.length >= 20}
+        <button type="button" onClick={addItem} disabled={items.length >= 20}
           style={{ background: items.length >= 20 ? "#F3F3F3" : "#181313", color: items.length >= 20 ? "#B5B5B5" : "#fff", border: "none", borderRadius: 8, padding: "0.45rem 1rem", fontSize: 13, fontWeight: 500, cursor: items.length >= 20 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
           + Add Item
         </button>
@@ -43,7 +43,7 @@ function ListView({ items = [], onChange }) {
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
           <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
           <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>No items yet. Add at least 1 list item.</div>
-          <button onClick={addItem} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first item</button>
+          <button type="button" onClick={addItem} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first item</button>
         </div>
       )}
 
@@ -55,11 +55,11 @@ function ListView({ items = [], onChange }) {
               placeholder="Enter list item text..."
               style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#181313", fontFamily: "'Rubik',sans-serif" }} />
             <div style={{ display: "flex", gap: 4 }}>
-              <button onClick={() => moveItem(idx, -1)} disabled={idx === 0}
+              <button type="button" onClick={() => moveItem(idx, -1)} disabled={idx === 0}
                 style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464" }}>↑</button>
-              <button onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1}
+              <button type="button" onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1}
                 style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 11, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464" }}>↓</button>
-              <button onClick={() => removeItem(item.id)}
+              <button type="button" onClick={() => removeItem(item.id)}
                 style={{ background: "#fff5f5", border: "1px solid #c0392b33", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 11, cursor: "pointer", color: "#c0392b" }}>✕</button>
             </div>
           </div>
@@ -67,7 +67,7 @@ function ListView({ items = [], onChange }) {
       </div>
 
       {items.length > 0 && items.length < 20 && (
-        <button onClick={addItem}
+        <button type="button" onClick={addItem}
           style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
@@ -97,7 +97,7 @@ function TabsView({ items = [], onChange, orientation }) {
           <h3 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>{orientation === "horizontal" ? "Horizontal" : "Vertical"} Tabs</h3>
           <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{items.length}/10 tabs</p>
         </div>
-        <button onClick={addTab} disabled={items.length >= 10}
+        <button type="button" onClick={addTab} disabled={items.length >= 10}
           style={{ background: items.length >= 10 ? "#F3F3F3" : "#181313", color: items.length >= 10 ? "#B5B5B5" : "#fff", border: "none", borderRadius: 8, padding: "0.45rem 1rem", fontSize: 13, fontWeight: 500, cursor: items.length >= 10 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
           + Add Tab
         </button>
@@ -107,7 +107,7 @@ function TabsView({ items = [], onChange, orientation }) {
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
           <div style={{ fontSize: 24, marginBottom: 8 }}>📑</div>
           <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>No tabs yet. Add at least 1 tab.</div>
-          <button onClick={addTab} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first tab</button>
+          <button type="button" onClick={addTab} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first tab</button>
         </div>
       )}
 
@@ -120,11 +120,11 @@ function TabsView({ items = [], onChange, orientation }) {
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#181313" }}>{tab.title || `Tab ${idx + 1}`}</span>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button onClick={() => moveTab(idx, -1)} disabled={idx === 0}
+                <button type="button" onClick={() => moveTab(idx, -1)} disabled={idx === 0}
                   style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464" }}>↑</button>
-                <button onClick={() => moveTab(idx, 1)} disabled={idx === items.length - 1}
+                <button type="button" onClick={() => moveTab(idx, 1)} disabled={idx === items.length - 1}
                   style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464" }}>↓</button>
-                <button onClick={() => removeTab(tab.id)}
+                <button type="button" onClick={() => removeTab(tab.id)}
                   style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: "pointer" }}>✕</button>
               </div>
             </div>
@@ -150,7 +150,7 @@ function TabsView({ items = [], onChange, orientation }) {
       </div>
 
       {items.length > 0 && items.length < 10 && (
-        <button onClick={addTab}
+        <button type="button" onClick={addTab}
           style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
@@ -200,11 +200,11 @@ function TableView({ columns = [], rows = [], onColumnsChange, onRowsChange }) {
           <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{columns.length}/6 columns · {rows.length}/20 rows</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={addColumn} disabled={columns.length >= 6}
+          <button type="button" onClick={addColumn} disabled={columns.length >= 6}
             style={{ background: "#F3F3F3", color: columns.length >= 6 ? "#B5B5B5" : "#3C3C3C", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.45rem 0.9rem", fontSize: 12, fontWeight: 500, cursor: columns.length >= 6 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
             + Column
           </button>
-          <button onClick={addRow} disabled={rows.length >= 20 || columns.length === 0}
+          <button type="button" onClick={addRow} disabled={rows.length >= 20 || columns.length === 0}
             style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 0.9rem", fontSize: 12, fontWeight: 500, cursor: rows.length >= 20 || columns.length === 0 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: columns.length === 0 ? 0.4 : 1 }}>
             + Row
           </button>
@@ -215,7 +215,7 @@ function TableView({ columns = [], rows = [], onColumnsChange, onRowsChange }) {
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
           <div style={{ fontSize: 24, marginBottom: 8 }}>📊</div>
           <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>Start by adding columns, then add rows.</div>
-          <button onClick={addColumn} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first column</button>
+          <button type="button" onClick={addColumn} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first column</button>
         </div>
       )}
 
@@ -234,7 +234,7 @@ function TableView({ columns = [], rows = [], onColumnsChange, onRowsChange }) {
                       <input value={col.header} onChange={e => updateColumnHeader(col.id, e.target.value)}
                         placeholder={`Column ${idx + 1} header`}
                         style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 12, color: "#F3F3F3", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }} />
-                      <button onClick={() => removeColumn(col.id)}
+                      <button type="button" onClick={() => removeColumn(col.id)}
                         style={{ background: "transparent", border: "none", color: "#646464", cursor: "pointer", fontSize: 12, padding: "0 2px", flexShrink: 0 }}>✕</button>
                     </div>
                   </th>
@@ -252,7 +252,7 @@ function TableView({ columns = [], rows = [], onColumnsChange, onRowsChange }) {
               {rows.map((row, rIdx) => (
                 <tr key={row.id} style={{ background: rIdx % 2 === 0 ? "#fff" : "#F9F9F9", borderTop: "1px solid #F3F3F3" }}>
                   <td style={{ padding: "0.4rem 0.6rem", borderRight: "1px solid #F3F3F3", textAlign: "center" }}>
-                    <button onClick={() => removeRow(row.id)}
+                    <button type="button" onClick={() => removeRow(row.id)}
                       style={{ background: "transparent", border: "none", color: "#c0392b", cursor: "pointer", fontSize: 12 }}>✕</button>
                   </td>
                   {columns.map((col, cIdx) => (
@@ -270,7 +270,7 @@ function TableView({ columns = [], rows = [], onColumnsChange, onRowsChange }) {
       )}
 
       {columns.length > 0 && rows.length < 20 && (
-        <button onClick={addRow}
+        <button type="button" onClick={addRow}
           style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
@@ -296,7 +296,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA }) 
     <div className="na-placeholder">
       <div className="icon">—</div>
       <div className="text">Features / Applications section marked as Not Applicable</div>
-      <button onClick={onToggleNA} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
+      <button type="button" onClick={onToggleNA} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
     </div>
   );
 
@@ -325,7 +325,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA }) 
         <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 14 }}>Select View Type</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {VIEW_TYPES.map(vt => (
-            <button key={vt.key} onClick={() => upd("fa_view_type", vt.key)}
+            <button type="button" key={vt.key} onClick={() => upd("fa_view_type", vt.key)}
               style={{ background: data.fa_view_type === vt.key ? "#181313" : "#F9F9F9", border: `2px solid ${data.fa_view_type === vt.key ? "#181313" : "#E0E0E0"}`, borderRadius: 10, padding: "0.9rem 1rem", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
               <div style={{ fontSize: 18, marginBottom: 6 }}>{vt.icon}</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: data.fa_view_type === vt.key ? "#F3F3F3" : "#181313" }}>{vt.label}</div>

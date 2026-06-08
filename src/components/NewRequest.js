@@ -4,7 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import { PAGE_TYPES, getSectionsForPageType } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
-import AIAssist from "@/components/AIAssist";
+import AIAssistant from "@/components/AIAssistant";
+import SectionAIAssist from "@/components/SectionAIAssist";
 import KeyBenefits from "@/components/sections/KeyBenefits";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 import FeaturesApps from "@/components/sections/FeaturesApps";
@@ -40,8 +41,8 @@ const CHAR_LIMITS = {
   ts_label:40, ts_impact:80,
 };
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint, fieldKey, pageType, charLimit }) => {
-  const limit = charLimit || (fieldKey ? CHAR_LIMITS[fieldKey] : null);
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, charLimit }) => {
+  const limit = charLimit || null;
   const len   = (value || "").length;
   const over  = limit && len > limit;
   return (
@@ -50,16 +51,11 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
         <label className="field-label" style={{ margin: 0 }}>
           {label}{required && <span className="req"> *</span>}
         </label>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {limit && (
-            <span style={{ fontSize: 10, fontWeight: 500, color: over ? "#c0392b" : len > limit * 0.85 ? "#856404" : "#B5B5B5", fontFamily: "monospace" }}>
-              {len}/{limit}
-            </span>
-          )}
-          {fieldKey && (
-            <AIAssist fieldKey={fieldKey} currentValue={value} pageType={pageType || "Product"} onAccept={onChange} />
-          )}
-        </div>
+        {limit && (
+          <span style={{ fontSize: 10, fontWeight: 500, color: over ? "#c0392b" : len > limit * 0.85 ? "#856404" : "#B5B5B5", fontFamily: "monospace" }}>
+            {len}/{limit}
+          </span>
+        )}
       </div>
       {multiline
         ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea"
@@ -517,6 +513,22 @@ export default function NewRequest({ go, user, draftId }) {
     </div>
   );
 
+  // ── AI Section Generation handler ──────────────────────────────────────────
+  const handleAIGenerate = (sectionKey, data) => {
+    if (sectionKey === "seo_meta")         setSeoData(p   => ({ ...p, ...data }));
+    else if (sectionKey === "banner")      setBanner(p    => ({ ...p, ...data }));
+    else if (sectionKey === "overview")    setOverview(p  => ({ ...p, ...data }));
+    else if (sectionKey === "key_benefits") {
+      const { kb_cards, ...rest } = data;
+      setKbData(p => ({ ...p, ...rest, ...(kb_cards ? { kb_cards: kb_cards.map((c, i) => ({ ...c, id: `kb-ai-${i}-${Date.now()}` })) } : {}) }));
+    }
+    else if (sectionKey === "features_apps")    setFaData(p    => ({ ...p, ...data }));
+    else if (sectionKey === "customer_stories") setCsData(p    => ({ ...p, ...data }));
+    else if (sectionKey === "promo_section")    setPromoData(p => ({ ...p, ...data }));
+    else if (sectionKey === "related_content")  setRcData(p    => ({ ...p, ...data }));
+    else if (sectionKey === "training_support") setTsData(p    => ({ ...p, ...data }));
+  };
+
   return (
     <div className="fade-in" style={{ maxWidth: "100%", margin: "0 auto", fontFamily: "'Rubik', sans-serif" }}>
 
@@ -783,11 +795,12 @@ export default function NewRequest({ go, user, draftId }) {
                   <div className="card">
                     <div className="card-header">
                       <div><h3>🔍 SEO Meta Data</h3><p>Required for all page types · Helps search engines find and rank your page</p></div>
+                      <SectionAIAssist sectionKey="seo_meta" currentContent={`${seoData.seo_meta_title} ${seoData.seo_meta_description}`} onAccept={(d) => setSeoData(p => ({ ...p, ...d }))} />
                     </div>
-                    <Field label="Page Location" required value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" fieldKey="seo_page_location" hint="The URL path where this page will live on the site" />
-                    <Field label="Meta Title" required value={seoData.seo_meta_title} onChange={v => updSeo("seo_meta_title", v)} placeholder="e.g. Xcelium Logic Simulator | Cadence" fieldKey="seo_meta_title" hint="Shown in browser tabs and search results — 50–70 characters" />
-                    <Field label="Meta Description" required value={seoData.seo_meta_description} onChange={v => updSeo("seo_meta_description", v)} placeholder="e.g. Accelerate SoC verification with Cadence Xcelium..." multiline fieldKey="seo_meta_description" hint="Shown in search results — 120–160 characters" />
-                    <Field label="Meta Keywords" value={seoData.seo_meta_keywords} onChange={v => updSeo("seo_meta_keywords", v)} placeholder="e.g. logic simulator, SoC verification, mixed-signal" multiline fieldKey="seo_meta_keywords" hint="Comma-separated keywords" />
+                    <Field label="Page Location" required value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" hint="The URL path where this page will live on the site" />
+                    <Field label="Meta Title" required value={seoData.seo_meta_title} onChange={v => updSeo("seo_meta_title", v)} placeholder="e.g. Xcelium Logic Simulator | Cadence" hint="Shown in browser tabs and search results — 50–70 characters" />
+                    <Field label="Meta Description" required value={seoData.seo_meta_description} onChange={v => updSeo("seo_meta_description", v)} placeholder="e.g. Accelerate SoC verification with Cadence Xcelium..." multiline hint="Shown in search results — 120–160 characters" />
+                    <Field label="Meta Keywords" value={seoData.seo_meta_keywords} onChange={v => updSeo("seo_meta_keywords", v)} placeholder="e.g. logic simulator, SoC verification, mixed-signal" multiline hint="Comma-separated keywords" />
                     <div style={{ marginTop:20, background:"#fff", border:"1px solid #E0E0E0", borderRadius:10, padding:"1rem 1.2rem" }}>
                       <p style={{ fontSize:10, color:"#B5B5B5", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10, fontWeight:600 }}>Google Search Preview</p>
                       <div style={{ fontSize:12, color:"#1a0dab", fontWeight:500, marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{seoData.seo_meta_title || <span style={{ color:"#B5B5B5", fontStyle:"italic" }}>Meta title will appear here</span>}</div>
@@ -816,34 +829,40 @@ export default function NewRequest({ go, user, draftId }) {
                 <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                 <div className="card">
                   <div className="card-header">
+                    <SectionAIAssist sectionKey="banner" currentContent={`${banner.page_title} ${banner.sub_title}`} onAccept={(d) => setBanner(p => ({ ...p, ...d }))} />
                     <div>
                       <h3>Banner Section</h3>
                       <p>Common to all page types · Required</p>
                     </div>
                   </div>
-                  <Field label="Page Title" required value={banner.page_title} onChange={v => updBanner("page_title", v)} placeholder="e.g. Xcelium Logic Simulator" fieldKey="page_title" pageType={pageType} />
-                  <Field label="Sub Title"  value={banner.sub_title}  onChange={v => updBanner("sub_title",  v)} placeholder="e.g. Industry-leading simulation platform" fieldKey="sub_title" pageType={pageType} />
+                  <Field label="Page Title" required value={banner.page_title} onChange={v => updBanner("page_title", v)} placeholder="e.g. Xcelium Logic Simulator" />
+                  <Field label="Sub Title"  value={banner.sub_title}  onChange={v => updBanner("sub_title",  v)} placeholder="e.g. Industry-leading simulation platform" />
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <Field label="CTA 1 Label" value={banner.cta1_label} onChange={v => updBanner("cta1_label", v)} placeholder="Read Blog" fieldKey="cta1_label" pageType={pageType} />
+                    <Field label="CTA 1 Label" value={banner.cta1_label} onChange={v => updBanner("cta1_label", v)} placeholder="Read Blog" />
                     <Field label="CTA 1 Link"  value={banner.cta1_link}  onChange={v => updBanner("cta1_link",  v)} placeholder="/blog/..." />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <Field label="CTA 2 Label" value={banner.cta2_label} onChange={v => updBanner("cta2_label", v)} placeholder="Watch Video" fieldKey="cta2_label" pageType={pageType} />
+                    <Field label="CTA 2 Label" value={banner.cta2_label} onChange={v => updBanner("cta2_label", v)} placeholder="Watch Video" />
                     <Field label="CTA 2 Link"  value={banner.cta2_link}  onChange={v => updBanner("cta2_link",  v)} placeholder="/video/..." />
                   </div>
-                  <Field label="Banner Image URL" value={banner.banner_image} onChange={v => updBanner("banner_image", v)} placeholder="https://... (leave blank — Design QA will upload)" fieldKey="banner_image" hint="Paste a URL if you have one, otherwise leave blank and describe below" />
-                  <Field label="Banner Image Description" value={banner.banner_image_note} onChange={v => updBanner("banner_image_note", v)} placeholder='e.g. "Engineer working on a PCB board in a lab setting, bright lighting, blue tones"' multiline fieldKey="banner_image_note" hint="Describe the image you need — Design QA will source or create it" />
+                  <Field label="Banner Image URL" value={banner.banner_image} onChange={v => updBanner("banner_image", v)} placeholder="https://... (leave blank — Design QA will upload)" hint="Paste a URL if you have one, otherwise leave blank and describe below" />
+                  <Field label="Banner Image Description" value={banner.banner_image_note} onChange={v => updBanner("banner_image_note", v)} placeholder='e.g. "Engineer working on a PCB board in a lab setting, bright lighting, blue tones"' multiline hint="Describe the image you need — Design QA will source or create it" />
                 </div>
                 </div>
                 <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                   <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                  <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
+                  <PagePreview req={previewData} activeSection={activeSection} />
                 </div>
               </div>
             )}
 
             {/* Key Benefits */}
             {activeSection === "key_benefits" && (
+              <>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Key Benefits</h3>
+                    <SectionAIAssist sectionKey="key_benefits" currentContent={kbData.kb_impact} onAccept={(d) => { const { kb_cards, ...rest } = d; setKbData(p => ({ ...p, ...rest, ...(kb_cards ? { kb_cards: kb_cards.map((c,i) => ({ ...c, id:`kb-ai-${i}-${Date.now()}` })) } : {}) })); }} />
+                  </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
@@ -870,22 +889,27 @@ export default function NewRequest({ go, user, draftId }) {
                       <KeyBenefits
                         data={kbData}
                         onChange={setKbData}
-                        pageType={pageType}
                         isNA={false}
                         onToggleNA={() => toggleNA("key_benefits")}
                       />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
               </div>
+            </>
             )}
 
             {/* Features / Applications */}
             {activeSection === "features_apps" && (
+              <>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Features / Apps</h3>
+                    <SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => setFaData(p => ({ ...p, ...d }))} />
+                  </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
@@ -912,15 +936,21 @@ export default function NewRequest({ go, user, draftId }) {
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
               </div>
+            </>
             )}
 
             {/* Customer Stories */}
             {activeSection === "customer_stories" && (
+              <>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Customer Stories</h3>
+                    <SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />
+                  </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div><h3 style={{ fontSize: 14, margin: 0 }}>💬 Customer Stories</h3></div>
@@ -933,14 +963,20 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
+            </>
             )}
 
             {/* Promo Section */}
             {activeSection === "promo_section" && (
+              <>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Promo Section</h3>
+                    <SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />
+                  </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div><h3 style={{ fontSize: 14, margin: 0 }}>📣 Promo Section</h3></div>
@@ -953,14 +989,20 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
+            </>
             )}
 
             {/* Related Content */}
             {activeSection === "related_content" && (
+              <>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Related Content</h3>
+                    <SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />
+                  </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div><h3 style={{ fontSize: 14, margin: 0 }}>📄 Related Content</h3></div>
@@ -973,10 +1015,11 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
+            </>
             )}
 
             {/* Resources */}
@@ -993,7 +1036,7 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1021,7 +1064,7 @@ export default function NewRequest({ go, user, draftId }) {
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1030,6 +1073,11 @@ export default function NewRequest({ go, user, draftId }) {
 
             {/* Training & Support */}
             {activeSection === "training_support" && (
+              <>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Training & Support</h3>
+                    <SectionAIAssist sectionKey="training_support" currentContent={tsData.ts_impact} onAccept={(d) => setTsData(p => ({ ...p, ...d }))} />
+                  </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                   <div>
@@ -1050,11 +1098,12 @@ export default function NewRequest({ go, user, draftId }) {
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
               </div>
+            </>
             )}
 
             {/* Overview */}
@@ -1082,9 +1131,9 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div className="card">
-                      <Field label="Label" value={overview.overview_label} onChange={v => updOverview("overview_label", v)} placeholder='e.g. "OVERVIEW"' hint="Small caps tag above the heading (optional)" fieldKey="overview_label" pageType={pageType} />
-                      <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" fieldKey="overview_impact" pageType={pageType} />
-                      <Field label="Description" required value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline fieldKey="overview_description" pageType={pageType} />
+                      <Field label="Label" value={overview.overview_label} onChange={v => updOverview("overview_label", v)} placeholder='e.g. "OVERVIEW"' hint="Small caps tag above the heading (optional)" />
+                      <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" />
+                      <Field label="Description" required value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline />
 
                       <div className="divider" />
                       <p className="field-label">Image / Diagram / Video — Optional</p>
@@ -1101,11 +1150,11 @@ export default function NewRequest({ go, user, draftId }) {
                         </div>
                       </div>
                       <Field label="Media URL" value={overview.overview_media_url} onChange={v => updOverview("overview_media_url", v)} placeholder="https://... or leave for Design QA" />
-                      <Field label="Notes for Design QA" value={overview.overview_media_note} onChange={v => updOverview("overview_media_note", v)} placeholder="e.g. Diagram showing the simulation workflow" hint="Describe what image or diagram you need" fieldKey="overview_media_note" pageType={pageType} />
+                      <Field label="Notes for Design QA" value={overview.overview_media_note} onChange={v => updOverview("overview_media_note", v)} placeholder="e.g. Diagram showing the simulation workflow" hint="Describe what image or diagram you need" />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
+                      <PagePreview req={previewData} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1122,7 +1171,7 @@ export default function NewRequest({ go, user, draftId }) {
         <>
           <div style={{ marginBottom: 20 }}>
             <p className="text-xs text-uppercase text-muted mb-8">Full Page Preview</p>
-            <PagePreview req={previewData} pageType={pageType} activeSection={activeSection} />
+            <PagePreview req={previewData} activeSection={activeSection} />
           </div>
 
           {/* Section summary */}
@@ -1165,6 +1214,22 @@ export default function NewRequest({ go, user, draftId }) {
             </button>
           </div>
         </>
+      )}
+
+      {/* ── Floating AI Assistant ── */}
+      {step === 2 && (
+        <AIAssistant
+          availableSections={[
+            "seo_meta", "banner", "overview",
+            ...(sections.some(s => s.key === "key_benefits")     ? ["key_benefits"]     : []),
+            ...(sections.some(s => s.key === "features_apps")    ? ["features_apps"]    : []),
+            ...(sections.some(s => s.key === "customer_stories") ? ["customer_stories"] : []),
+            ...(sections.some(s => s.key === "promo_section")    ? ["promo_section"]    : []),
+            ...(sections.some(s => s.key === "related_content")  ? ["related_content"]  : []),
+            ...(sections.some(s => s.key === "training_support") ? ["training_support"] : []),
+          ]}
+          onGenerate={handleAIGenerate}
+        />
       )}
     </div>
   );

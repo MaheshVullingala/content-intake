@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const { prompt } = await request.json();
+    const { prompt, systemPrompt } = await request.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
@@ -13,6 +13,19 @@ export async function POST(request) {
       return NextResponse.json({ error: "API key not configured" }, { status: 500 });
     }
 
+    const messages = [{ role: "user", content: prompt }];
+
+    const body = {
+      model:      "claude-haiku-4-5",
+      max_tokens: 1000,
+      messages,
+    };
+
+    // Add system prompt if provided (used for section-level generation)
+    if (systemPrompt) {
+      body.system = systemPrompt;
+    }
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -20,11 +33,7 @@ export async function POST(request) {
         "x-api-key":         apiKey,
         "anthropic-version": "2023-06-01",
       },
-      body: JSON.stringify({
-        model:      "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        messages:   [{ role: "user", content: prompt }],
-      }),
+      body: JSON.stringify(body),
     });
 
     const data = await response.json();

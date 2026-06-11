@@ -1,4 +1,5 @@
 "use client";
+import ImageField from "@/components/ImageField";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
   <div className="field-wrap">
@@ -15,11 +16,11 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
 
 const CARD_LABELS = ["Blog", "Webinar", "White Paper", "Case Study", "Video", "Data Sheet", "eBook", "Article", "News", "Tutorial"];
 
-export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton, requestId = "draft" }) {
   const cards = data.rc_cards || [];
   const upd   = (key, val) => onChange({ ...data, [key]: val });
 
-  const addCard    = () => { if (cards.length >= 3) return; upd("rc_cards", [...cards, { id: `rc-${Date.now()}`, image_url: "", image_note: "", label: "", title: "", description: "", link: "" }]); };
+  const addCard    = () => { if (cards.length >= 3) return; upd("rc_cards", [...cards, { id: `rc-${Date.now()}`, image_ref: null, label: "", title: "", description: "", link: "" }]); };
   const updateCard = (id, field, val) => upd("rc_cards", cards.map(c => c.id === id ? { ...c, [field]: val } : c));
   const removeCard = (id) => upd("rc_cards", cards.filter(c => c.id !== id));
 

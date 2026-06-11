@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import ImageField from "@/components/ImageField";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
   <div className="field-wrap">
@@ -80,7 +81,7 @@ function ListView({ items = [], onChange }) {
 
 // ── Tabs View ──────────────────────────────────────────────────
 function TabsView({ items = [], onChange, orientation }) {
-  const addTab    = () => { if (items.length >= 10) return; onChange([...items, { id: `tab-${Date.now()}`, title: "", description: "", image_url: "", image_note: "", cta_label: "", cta_link: "" }]); };
+  const addTab    = () => { if (items.length >= 10) return; onChange([...items, { id: `tab-${Date.now()}`, title: "", description: "", image_ref: null, cta_label: "", cta_link: "" }]); };
   const updateTab = (id, field, val) => onChange(items.map(t => t.id === id ? { ...t, [field]: val } : t));
   const removeTab = (id) => onChange(items.filter(t => t.id !== id));
   const moveTab   = (idx, dir) => {
@@ -134,8 +135,13 @@ function TabsView({ items = [], onChange, orientation }) {
 
             <div style={{ paddingTop: 12, borderTop: "1px solid #F3F3F3", marginTop: 4 }}>
               <div style={{ fontSize: 11, color: "#646464", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Image</div>
-              <Field label="Image URL" value={tab.image_url} onChange={v => updateTab(tab.id, "image_url", v)} placeholder="https://... or leave for Design QA" />
-              <Field label="Image Description / Note for Design QA" value={tab.image_note} onChange={v => updateTab(tab.id, "image_note", v)} placeholder="e.g. Screenshot of the dashboard interface" hint="Describe the image needed — Design QA will source from library" />
+              <ImageField
+                label="Tab Image"
+                value={tab.image_ref || null}
+                onChange={v => updateTab(tab.id, "image_ref", v)}
+                fieldKey={`features-apps_tab-${idx + 1}_image`}
+                requestId={requestId}
+              />
             </div>
 
             <div style={{ paddingTop: 12, borderTop: "1px solid #F3F3F3", marginTop: 4 }}>
@@ -284,7 +290,7 @@ function TableView({ columns = [], rows = [], onUpdate }) {
 }
 
 // ── Main Component ─────────────────────────────────────────────
-export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton, requestId = "draft" }) {
   // Safely parse JSONB fields that may come as strings from Supabase
   const parseJ = (val, fb = []) => {
     if (!val) return fb;

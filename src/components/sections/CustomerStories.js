@@ -1,4 +1,5 @@
 "use client";
+import ImageField from "@/components/ImageField";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
   <div className="field-wrap">
@@ -13,11 +14,11 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
   </div>
 );
 
-export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton, requestId = "draft" }) {
   const items = data.cs_items || [];
   const upd   = (key, val) => onChange({ ...data, [key]: val });
 
-  const addItem    = () => { if (items.length >= 10) return; upd("cs_items", [...items, { id: `cs-${Date.now()}`, quote: "", customer: "" }]); };
+  const addItem    = () => { if (items.length >= 10) return; upd("cs_items", [...items, { id: `cs-${Date.now()}`, quote: "", customer: "", logo_ref: null }]); };
   const updateItem = (id, field, val) => upd("cs_items", items.map(i => i.id === id ? { ...i, [field]: val } : i));
   const removeItem = (id) => upd("cs_items", items.filter(i => i.id !== id));
   const moveItem   = (idx, dir) => {
@@ -95,6 +96,13 @@ export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA,
               onChange={v => updateItem(item.id, "customer", v)}
               placeholder="e.g. Joe Citeno, GE Power"
               hint="Name and company of the customer" />
+            <ImageField
+              label="Customer Logo"
+              value={item.logo_ref || null}
+              onChange={v => updateItem(item.id, "logo_ref", v)}
+              fieldKey={`customer-stories_item-${idx + 1}_logo`}
+              requestId={requestId}
+            />
           </div>
         ))}
       </div>

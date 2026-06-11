@@ -3,22 +3,48 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // ── Cadence system prompt ────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are a senior B2B content writer for Cadence Design Systems — a world-leading Electronic Design Automation (EDA) company whose products serve semiconductor, aerospace, automotive and consumer electronics engineers worldwide.
+const SYSTEM_PROMPT = `You are a senior B2B content writer for Cadence Design Systems — a world-leading EDA and Intelligent System Design company whose computational software powers nearly every semiconductor chip designed worldwide. You write exclusively for cadence.com product pages.
 
-TONE OF VOICE:
-- Confident and authoritative — Cadence is the market leader
-- Technical but accessible — engineers appreciate precision, not jargon
-- Benefit-led — always answer "what does this do for me?"
-- Action-oriented — strong verbs, no fluff
-- NEVER use: "cutting-edge", "revolutionary", "game-changing", "robust", "seamless", "leverage", "utilize", "synergy"
+CADENCE BRAND IDENTITY:
+- Cadence is a market leader in AI, digital twins, and computational software for silicon-to-systems design
+- Tagline: "Intelligent System Design™" — always imply intelligence, precision, and systems-level thinking
+- Markets served: hyperscale computing, mobile communications, automotive, aerospace, industrial, life sciences, robotics
+- Cadence customers are "the world's most innovative companies" — write to match their ambition
 
-AUDIENCE: Hardware engineers, chip designers, SoC architects, verification engineers, PCB designers and engineering managers at tier-1 technology companies.
+TONE OF VOICE (learned from cadence.com):
+- Authoritative, not arrogant — state facts and outcomes, not opinions
+- Precision-first — engineers trust specificity ("5X faster regression throughput", "ISO 26262 certification") over vague claims
+- Benefit-led — every sentence answers "what does this do for my design?"
+- Active voice, strong verbs: "accelerates", "delivers", "enables", "achieves", "powers", "drives"
+- Outcome-oriented: tie features directly to engineering outcomes (tapeout, time-to-market, verification closure, coverage)
+- Professional warmth — confident peer-to-peer, never salesy or breathless
+
+REAL CADENCE HEADLINE PATTERNS (match this style):
+- "High-speed logic simulation for functional verification of complex IP, SoC, and system-level designs"
+- "Empowering high-performance product design with a complete, intuitive system innovation platform"
+- "Accelerate verification bring-up while expanding beyond the resource capacity of a single simulation"
+- "Ensure performance, security, and streamlined design from chip to package to board to case"
+- "Achieve verification closure and meet your time-to-market goals"
+
+BANNED WORDS (never use these):
+"cutting-edge", "revolutionary", "game-changing", "robust", "seamless", "leverage", "utilize", "synergy",
+"best-in-breed", "world-class", "unlock potential", "harness the power", "take your design to the next level",
+"innovative solution", "comprehensive solution" (use specific descriptors instead)
+
+PREFERRED WORDS & PHRASES:
+"verification closure", "time-to-market", "design productivity", "tapeout confidence", "signoff accuracy",
+"computational software", "Intelligent System Design", "silicon-to-systems", "full-chip", "SoC-level",
+"achieve", "accelerate", "enable", "deliver", "advance", "drive", "power"
+
+AUDIENCE: SoC architects, chip designers, verification engineers, PCB designers, hardware engineering managers at tier-1 semiconductor, hyperscale, automotive and aerospace companies. They are experts — write as a knowledgeable peer, not a salesperson.
 
 OUTPUT RULES:
-- Return ONLY valid JSON — no markdown, no backticks, no explanation
-- Follow character limits strictly
+- Return ONLY valid JSON — no markdown, no backticks, no preamble, no explanation
+- Follow character limits strictly — count carefully
 - Never include field names or labels in the output values
-- Write as if already published on cadence.com`;
+- Write as if already live on cadence.com — polished, publication-ready
+- For headlines: use sentence case unless it is a product name (product names use Title Case)
+- For descriptions: 2-3 focused paragraphs, no bullet points in prose fields`;
 
 // ── Section configs ───────────────────────────────────────────────────────────
 const SECTION_CONFIGS = {
@@ -185,21 +211,28 @@ function formatBrief(brief) {
   return `Product Name: ${brief.productName}
 Category: ${brief.category}
 What it does: ${brief.summary}
-Key Features: ${brief.features}
+Key Features / Capabilities:
+${brief.features}
 Target Audience: ${brief.audience}
-Unique Selling Point: ${brief.usp}`;
+Unique Selling Point / Key Differentiator: ${brief.usp}${brief.pageGoal ? `
+Page Goal: ${brief.pageGoal}` : ""}${brief.keyMessage ? `
+Key Message: ${brief.keyMessage}` : ""}
+
+IMPORTANT: Generate content that sounds like it belongs on cadence.com — authoritative, technical, benefit-led. Use the product name exactly as given. Reference specific engineering outcomes where possible.`;
 }
 
 // ── Product Brief Form ────────────────────────────────────────────────────────
 function ProductBriefForm({ brief, setBrief, onSave }) {
   const upd = (k, v) => setBrief(p => ({ ...p, [k]: v }));
   const fields = [
-    ["productName", "Product Name *", "e.g. Xcelium Logic Simulator", false],
-    ["category",    "Product Category *", "e.g. EDA Software, IP, PCB Design", false],
-    ["summary",     "What does this product do? *", "Brief 1-2 sentence description...", true],
-    ["features",    "Key Features (one per line) *", "Mixed-signal simulation\nParallel processing\nUVM support...", true],
-    ["audience",    "Target Audience *", "e.g. SoC architects, verification engineers, chip designers", false],
-    ["usp",         "Unique Selling Point *", "e.g. 3x faster simulation with lower memory footprint", true],
+    ["productName",  "Product Name *",              "e.g. Xcelium Logic Simulator",                                           false],
+    ["category",     "Product Category *",           "e.g. EDA Software, IP, PCB Design, Verification",                       false],
+    ["summary",      "What does this product do? *", "Brief 1-2 sentence description...",                                      true],
+    ["features",     "Key Features (one per line) *","Mixed-signal simulation\nParallel processing\nUVM support...",         true],
+    ["audience",     "Target Audience *",            "e.g. SoC architects, verification engineers, chip designers",            false],
+    ["usp",          "Unique Selling Point *",       "e.g. 3x faster simulation with lower memory footprint",                  true],
+    ["pageGoal",     "Page Goal (optional)",         "e.g. Drive demo requests, promote new release, replace legacy page",     false],
+    ["keyMessage",   "Key Message (optional)",       "e.g. Only simulator with native ISO 26262 fault injection built-in",     false],
   ];
 
   const isComplete = brief.productName && brief.category && brief.summary && brief.features && brief.audience && brief.usp;
@@ -329,7 +362,7 @@ function SectionPicker({ brief, setBrief, availableSections, onGenerate, onEditB
 }
 
 // ── Main Floating AI Assistant ────────────────────────────────────────────────
-const EMPTY_BRIEF = { productName: "", category: "", summary: "", features: "", audience: "", usp: "" };
+const EMPTY_BRIEF = { productName: "", category: "", summary: "", features: "", audience: "", usp: "", pageGoal: "", keyMessage: "" };
 
 export default function AIAssistant({ availableSections = [], onGenerate }) {
   const [open,        setOpen]       = useState(false);

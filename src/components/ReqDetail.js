@@ -760,42 +760,51 @@ export default function ReqDetail({ reqId, go, user }) {
           {/* ── Image Mapping — Design QA ── */}
           {tab === "image_map" && isDesignQA && (() => {
             // Build dynamic slots from all sections that have image requirements
+            // Helper: get reference label from image_ref object
+            const refLabel = (ref) => {
+              if (!ref) return null;
+              if (ref.type === "description") return { icon: "📝", text: ref.value };
+              if (ref.type === "link")        return { icon: "🔗", text: ref.value, url: ref.url };
+              if (ref.type === "attachment")  return { icon: "📎", text: ref.value, url: ref.url };
+              return null;
+            };
+
             const buildSlots = () => {
               const s = [];
               // Banner
-              if (liveData.design_flag_banner || liveData.banner_image === "" || liveData.banner_image === null)
-                s.push({ type: "top", key: "banner_image", label: "Banner Image", note: "", section: "Banner", icon: "🖼️", urlVal: editData?.banner_image ?? liveData.banner_image ?? "" });
+              s.push({ type: "top", key: "banner_image", label: "Banner Image", ref: refLabel(liveData.banner_image_ref), section: "Banner", icon: "🖼️", urlVal: editData?.banner_image ?? liveData.banner_image ?? "" });
               // Overview
-              if (liveData.overview_media_note || liveData.design_flag_overview)
-                s.push({ type: "top", key: "overview_media_url", label: "Overview Media", note: liveData.overview_media_note || "", section: "Overview", icon: "📷", urlVal: editData?.overview_media_url ?? liveData.overview_media_url ?? "" });
+              s.push({ type: "top", key: "overview_media_url", label: "Overview Media", ref: refLabel(liveData.overview_media_ref), section: "Overview", icon: "📷", urlVal: editData?.overview_media_url ?? liveData.overview_media_url ?? "" });
               // Promo
-              if (liveData.promo_bg_note || liveData.design_flag_promo)
-                s.push({ type: "top", key: "promo_bg_image", label: "Promo Background", note: liveData.promo_bg_note || "", section: "Promo Section", icon: "🎨", urlVal: editData?.promo_bg_image ?? liveData.promo_bg_image ?? "" });
-              // KB cards — icon per card
+              s.push({ type: "top", key: "promo_bg_image", label: "Promo Background", ref: refLabel(liveData.promo_bg_image_ref), section: "Promo Section", icon: "🎨", urlVal: editData?.promo_bg_image ?? liveData.promo_bg_image ?? "" });
+              // KB cards
               (liveData.kb_cards || []).forEach((card, i) => {
-                if (card.icon_description || liveData.design_flag_kb)
-                  s.push({ type: "card", cardArr: "kb_cards", cardIdx: i, cardField: "icon_url", key: `kb_card_${i}_icon`, label: `KB Card ${i+1} Icon`, note: card.icon_description || "", section: "Key Benefits", icon: "💡", urlVal: card.icon_url || "" });
+                s.push({ type: "card", cardArr: "kb_cards", cardIdx: i, cardField: "icon_url", key: `kb_card_${i}_icon`, label: `KB Card ${i+1} — Icon`, ref: card.icon_description ? { icon: "📝", text: card.icon_description } : refLabel(card.image_ref), section: "Key Benefits", icon: "💡", urlVal: card.icon_url || "" });
               });
-              // FA tabs — image per tab
+              // FA tabs
               (liveData.fa_items || []).forEach((item, i) => {
-                if (item.image_note || liveData.design_flag_fa)
-                  s.push({ type: "card", cardArr: "fa_items", cardIdx: i, cardField: "image_url", key: `fa_item_${i}_img`, label: `Features Tab ${i+1} Image`, note: item.image_note || "", section: "Features / Apps", icon: "⚙️", urlVal: item.image_url || "" });
+                s.push({ type: "card", cardArr: "fa_items", cardIdx: i, cardField: "image_url", key: `fa_item_${i}_img`, label: `Features Tab ${i+1} — Image`, ref: refLabel(item.image_ref), section: "Features / Apps", icon: "⚙️", urlVal: item.image_url || "" });
               });
-              // RC cards — image per card
+              // CS items
+              (liveData.cs_items || []).forEach((item, i) => {
+                s.push({ type: "card", cardArr: "cs_items", cardIdx: i, cardField: "logo_url", key: `cs_item_${i}_logo`, label: `Customer Story ${i+1} — Logo`, ref: refLabel(item.logo_ref), section: "Customer Stories", icon: "💬", urlVal: item.logo_url || "" });
+              });
+              // RC cards
               (liveData.rc_cards || []).forEach((card, i) => {
-                if (card.image_note || liveData.design_flag_rc)
-                  s.push({ type: "card", cardArr: "rc_cards", cardIdx: i, cardField: "image_url", key: `rc_card_${i}_img`, label: `Related Content Card ${i+1}`, note: card.image_note || "", section: "Related Content", icon: "📄", urlVal: card.image_url || "" });
+                s.push({ type: "card", cardArr: "rc_cards", cardIdx: i, cardField: "image_url", key: `rc_card_${i}_img`, label: `Related Content Card ${i+1}`, ref: refLabel(card.image_ref), section: "Related Content", icon: "📄", urlVal: card.image_url || "" });
               });
-              // Training & Support card icons
+              // RP cards
+              (liveData.rp_cards || []).forEach((card, i) => {
+                s.push({ type: "card", cardArr: "rp_cards", cardIdx: i, cardField: "image_url", key: `rp_card_${i}_img`, label: `Related Product Card ${i+1}`, ref: refLabel(card.image_ref), section: "Related Products", icon: "📦", urlVal: card.image_url || "" });
+              });
+              // Training & Support
               [1,2,3].forEach(n => {
-                const iconNote = liveData[`ts_card${n}_icon`];
-                if (iconNote || liveData.design_flag_ts)
-                  s.push({ type: "top", key: `ts_card${n}_icon`, label: `Support Card ${n} Icon`, note: iconNote || "", section: "Training & Support", icon: "🎓", urlVal: editData?.[`ts_card${n}_icon`] ?? liveData[`ts_card${n}_icon`] ?? "" });
+                s.push({ type: "top", key: `ts_card${n}_icon`, label: `Support Card ${n} Icon`, ref: null, section: "Training & Support", icon: "🎓", urlVal: editData?.[`ts_card${n}_icon`] ?? liveData[`ts_card${n}_icon`] ?? "" });
               });
               return s;
             };
             const slots = buildSlots();
-            const filledCount = slots.filter(s => s.urlVal.trim()).length;
+            const filledCount = slots.filter(s => s.urlVal && s.urlVal.trim()).length;
 
             return (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -865,11 +874,19 @@ export default function ReqDetail({ reqId, go, user }) {
                         </span>
                       </div>
 
-                      {/* Stakeholder / editorial note */}
-                      {slot.note && (
-                        <div style={{ background: "#e8f4fb", border: "1px solid #3b82f622", borderLeft: "3px solid #3b82f6", borderRadius: 8, padding: "0.6rem 0.8rem", marginBottom: 12, fontSize: 12, color: "#1b5793", lineHeight: 1.6 }}>
-                          <span style={{ fontWeight: 600 }}>Image note: </span>{slot.note}
-                        </div>
+                      {/* Stakeholder reference — collapses after design uploads */}
+                      {slot.ref && (
+                        <details open={!isFilled} style={{ marginBottom: 12 }}>
+                          <summary style={{ fontSize: 11, fontWeight: 600, color: isFilled ? "#B5B5B5" : "#1b5793", cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", gap: 6, userSelect: "none" }}>
+                            <span>{slot.ref.icon}</span>
+                            <span>{isFilled ? "Stakeholder reference (archived)" : "Stakeholder reference"}</span>
+                            <span style={{ marginLeft: "auto", fontSize: 10 }}>{isFilled ? "▶ show" : "▼ hide"}</span>
+                          </summary>
+                          <div style={{ marginTop: 8, background: isFilled ? "#F9F9F9" : "#e8f4fb", border: `1px solid ${isFilled ? "#E0E0E0" : "#3b82f622"}`, borderLeft: `3px solid ${isFilled ? "#E0E0E0" : "#3b82f6"}`, borderRadius: 8, padding: "0.6rem 0.8rem", fontSize: 12, color: isFilled ? "#B5B5B5" : "#1b5793", lineHeight: 1.6 }}>
+                            {slot.ref.text}
+                            {slot.ref.url && <a href={slot.ref.url} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: "#2c90b2" }}>Open ↗</a>}
+                          </div>
+                        </details>
                       )}
 
                       {/* URL input + upload */}

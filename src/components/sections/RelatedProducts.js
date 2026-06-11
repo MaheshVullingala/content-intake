@@ -1,4 +1,5 @@
 "use client";
+import ImageField from "@/components/ImageField";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
   <div className="field-wrap">
@@ -13,11 +14,11 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
   </div>
 );
 
-export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA }) {
+export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA, requestId = "draft" }) {
   const cards = data.rp_cards || [];
   const upd   = (key, val) => onChange({ ...data, [key]: val });
 
-  const addCard    = () => { if (cards.length >= 12) return; upd("rp_cards", [...cards, { id: `rp-${Date.now()}`, title: "", description: "", cta_label: "Learn More", cta_link: "" }]); };
+  const addCard    = () => { if (cards.length >= 12) return; upd("rp_cards", [...cards, { id: `rp-${Date.now()}`, title: "", description: "", cta_label: "Learn More", cta_link: "", image_ref: null }]); };
   const updateCard = (id, field, val) => upd("rp_cards", cards.map(c => c.id === id ? { ...c, [field]: val } : c));
   const removeCard = (id) => upd("rp_cards", cards.filter(c => c.id !== id));
   const moveCard   = (idx, dir) => {
@@ -114,6 +115,13 @@ export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA 
                 onChange={v => updateCard(card.id, "cta_link", v)}
                 placeholder="/products/verisium-manager" />
             </div>
+            <ImageField
+              label="Product Thumbnail"
+              value={card.image_ref || null}
+              onChange={v => updateCard(card.id, "image_ref", v)}
+              fieldKey={`related-products_card-${idx + 1}_image`}
+              requestId={requestId}
+            />
           </div>
         ))}
       </div>

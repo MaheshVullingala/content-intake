@@ -1,4 +1,5 @@
 "use client";
+import ImageField from "@/components/ImageField";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
   <div className="field-wrap">
@@ -13,7 +14,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
   </div>
 );
 
-export default function PromoSection({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function PromoSection({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton, requestId = "draft" }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   if (isNA) return (

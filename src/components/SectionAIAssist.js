@@ -2,22 +2,48 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
-const SYSTEM_PROMPT = `You are a senior B2B content writer for Cadence Design Systems — a world-leading Electronic Design Automation (EDA) company whose products serve semiconductor, aerospace, automotive and consumer electronics engineers worldwide.
+const SYSTEM_PROMPT = `You are a senior B2B content writer for Cadence Design Systems — a world-leading EDA and Intelligent System Design company whose computational software powers nearly every semiconductor chip designed worldwide. You write exclusively for cadence.com product pages.
 
-TONE OF VOICE:
-- Confident and authoritative — Cadence is the market leader
-- Technical but accessible — engineers appreciate precision, not jargon
-- Benefit-led — always answer "what does this do for me?"
-- Action-oriented — strong verbs, no fluff
-- NEVER use: "cutting-edge", "revolutionary", "game-changing", "robust", "seamless", "leverage", "utilize", "synergy"
+CADENCE BRAND IDENTITY:
+- Cadence is a market leader in AI, digital twins, and computational software for silicon-to-systems design
+- Tagline: "Intelligent System Design™" — always imply intelligence, precision, and systems-level thinking
+- Markets served: hyperscale computing, mobile communications, automotive, aerospace, industrial, life sciences, robotics
+- Cadence customers are "the world's most innovative companies" — write to match their ambition
 
-AUDIENCE: Hardware engineers, chip designers, SoC architects, verification engineers, PCB designers and engineering managers at tier-1 technology companies.
+TONE OF VOICE (learned from cadence.com):
+- Authoritative, not arrogant — state facts and outcomes, not opinions
+- Precision-first — engineers trust specificity ("5X faster regression throughput", "ISO 26262 certification") over vague claims
+- Benefit-led — every sentence answers "what does this do for my design?"
+- Active voice, strong verbs: "accelerates", "delivers", "enables", "achieves", "powers", "drives"
+- Outcome-oriented: tie features directly to engineering outcomes (tapeout, time-to-market, verification closure, coverage)
+- Professional warmth — confident peer-to-peer, never salesy or breathless
+
+REAL CADENCE HEADLINE PATTERNS (match this style):
+- "High-speed logic simulation for functional verification of complex IP, SoC, and system-level designs"
+- "Empowering high-performance product design with a complete, intuitive system innovation platform"
+- "Accelerate verification bring-up while expanding beyond the resource capacity of a single simulation"
+- "Ensure performance, security, and streamlined design from chip to package to board to case"
+- "Achieve verification closure and meet your time-to-market goals"
+
+BANNED WORDS (never use these):
+"cutting-edge", "revolutionary", "game-changing", "robust", "seamless", "leverage", "utilize", "synergy",
+"best-in-breed", "world-class", "unlock potential", "harness the power", "take your design to the next level",
+"innovative solution", "comprehensive solution" (use specific descriptors instead)
+
+PREFERRED WORDS & PHRASES:
+"verification closure", "time-to-market", "design productivity", "tapeout confidence", "signoff accuracy",
+"computational software", "Intelligent System Design", "silicon-to-systems", "full-chip", "SoC-level",
+"achieve", "accelerate", "enable", "deliver", "advance", "drive", "power"
+
+AUDIENCE: SoC architects, chip designers, verification engineers, PCB designers, hardware engineering managers at tier-1 semiconductor, hyperscale, automotive and aerospace companies. They are experts — write as a knowledgeable peer, not a salesperson.
 
 OUTPUT RULES:
-- Return ONLY valid JSON — no markdown, no backticks, no explanation
-- Follow character limits strictly
+- Return ONLY valid JSON — no markdown, no backticks, no preamble, no explanation
+- Follow character limits strictly — count carefully
 - Never include field names or labels in the output values
-- Write as if already published on cadence.com`;
+- Write as if already live on cadence.com — polished, publication-ready
+- For headlines: use sentence case unless it is a product name (product names use Title Case)
+- For descriptions: 2-3 focused paragraphs, no bullet points in prose fields`;
 
 // ── Per-section prompt builders ───────────────────────────────────────────────
 const buildPrompt = (sectionKey, mode, currentContent, direction) => {
@@ -32,18 +58,18 @@ const buildPrompt = (sectionKey, mode, currentContent, direction) => {
     },
     banner: {
       fields: `{
-  "page_title": "max 70 chars - product name + powerful descriptor, Title Case",
-  "sub_title": "max 120 chars - expands title with key value proposition",
-  "cta1_label": "max 30 chars - primary action verb e.g. Request Demo",
-  "cta2_label": "max 30 chars - secondary action e.g. Watch Video"
+  "page_title": "max 70 chars - Product Name + short powerful descriptor, Title Case, e.g. 'Xcelium Logic Simulator | Accelerate Verification Closure'",
+  "sub_title": "max 120 chars - one sentence expanding on the title with the primary engineering benefit, e.g. 'High-speed simulation for functional verification of complex IP, SoC, and system-level designs'",
+  "cta1_label": "max 30 chars - primary CTA, action verb e.g. 'Request Demo', 'Download Datasheet', 'Start Free Trial'",
+  "cta2_label": "max 30 chars - secondary CTA e.g. 'Watch Overview', 'View Technical Brief', 'Explore Features'"
 }`,
       context: "banner section for a Cadence product page",
     },
     overview: {
       fields: `{
-  "overview_label": "max 30 chars - short section tag e.g. OVERVIEW",
-  "overview_impact": "max 100 chars - bold headline highlighting #1 key benefit",
-  "overview_description": "max 600 chars - 2-3 paragraphs describing capabilities and benefits"
+  "overview_label": "max 30 chars - uppercase section tag e.g. 'OVERVIEW', 'PRODUCT HIGHLIGHTS', 'ABOUT'",
+  "overview_impact": "max 100 chars - bold headline stating the primary engineering outcome, e.g. 'Deliver verification closure faster across complex SoC and full-chip designs'",
+  "overview_description": "max 600 chars - 2-3 paragraphs. Para 1: what the product does and who it is for. Para 2: key technical capabilities with specific outcomes. Para 3: how it fits into the broader Cadence Intelligent System Design ecosystem or flow. No bullet points. No buzzwords."
 }`,
       context: "overview section for a Cadence product page",
     },
@@ -104,26 +130,30 @@ const buildPrompt = (sectionKey, mode, currentContent, direction) => {
   if (!config) return null;
 
   if (mode === "improve") {
-    return `The user has written this draft content for the ${config.context}:
+    return `A stakeholder has written this draft content for the ${config.context}:
 
 "${currentContent}"
 
-Rewrite it in professional Cadence brand voice. Keep their key points and intent but make it compelling, benefit-led and polished. Follow all character limits exactly.
+Your task: rewrite it to match cadence.com standards. Keep their intent and key facts but:
+- Elevate to Cadence brand voice (authoritative, precise, benefit-led)
+- Replace vague language with specific engineering outcomes
+- Remove any buzzwords or marketing fluff
+- Ensure it reads like it belongs on a live cadence.com product page
 
-Return ONLY this JSON (no extra text):
+Follow all character limits exactly. Return ONLY this JSON (no extra text):
 ${config.fields}`;
   }
 
   if (mode === "direction") {
-    return `Generate content for the ${config.context}.
+    return `Generate professional cadence.com-standard content for the ${config.context}.
 
-The user wants to convey:
+The stakeholder wants to convey:
 "${direction}"
 
-${currentContent ? `They also have this existing draft for reference:\n"${currentContent}"\n` : ""}
-Generate professional content based on their direction. Make it compelling and on-brand for Cadence.
+${currentContent ? `They also have this existing draft for context (do not copy it, use it as reference only):\n"${currentContent}"\n` : ""}
+Write in Cadence brand voice: authoritative, technically precise, outcome-focused. Sound like a cadence.com product page.
 
-Return ONLY this JSON (no extra text):
+Follow all character limits exactly. Return ONLY this JSON (no extra text):
 ${config.fields}`;
   }
 
@@ -204,18 +234,22 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
   const popup = open && (
     <>
       {/* Backdrop */}
-      <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9990, background: "rgba(0,0,0,0.2)" }} />
+      <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 9990, background: "rgba(0,0,0,0.45)" }} />
 
       {/* Panel */}
       <div style={{
         position: "fixed",
-        bottom: 28,
-        right: 28,
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
         zIndex: 9991,
-        width: 380,
+        width: "min(560px, 92vw)",
+        maxHeight: "85vh",
+        display: "flex",
+        flexDirection: "column",
         background: "#fff",
         borderRadius: 16,
-        boxShadow: "0 16px 60px rgba(27,87,147,0.2)",
+        boxShadow: "0 24px 80px rgba(27,87,147,0.25)",
         border: "1px solid rgba(27,87,147,0.15)",
         overflow: "hidden",
         fontFamily: "'Rubik', sans-serif",
@@ -233,7 +267,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
             style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
         </div>
 
-        <div style={{ padding: "1.1rem" }}>
+        <div style={{ padding: "1.1rem", overflowY: "auto", flex: 1 }}>
 
           {/* ── Step 1: Mode selection ── */}
           {!mode && !result && (

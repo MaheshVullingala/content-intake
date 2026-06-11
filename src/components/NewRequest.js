@@ -6,6 +6,7 @@ import { PAGE_TYPES, getSectionsForPageType } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
 import AIAssistant from "@/components/AIAssistant";
 import SectionAIAssist from "@/components/SectionAIAssist";
+import ImageField from "@/components/ImageField";
 import KeyBenefits from "@/components/sections/KeyBenefits";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 import FeaturesApps from "@/components/sections/FeaturesApps";
@@ -25,13 +26,13 @@ import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview
 
 const EMPTY_SEO = { seo_page_location:"", seo_meta_title:"", seo_meta_description:"", seo_meta_keywords:"" };
 
-const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image:"", banner_image_note:"" };
-const EMPTY_OVERVIEW = { overview_label:"", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_note:"" };
+const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image_ref:null };
+const EMPTY_OVERVIEW = { overview_label:"", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_ref:null };
 
 const CHAR_LIMITS = {
-  page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300, banner_image:500, banner_image_note:300,
+  page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300,
   seo_page_location:300, seo_meta_title:70, seo_meta_description:160, seo_meta_keywords:300,
-  overview_label:30, overview_impact:100, overview_description:600, overview_media_note:300,
+  overview_label:30, overview_impact:100, overview_description:600,
   kb_label:30, kb_impact:100, kb_description:300,
   fa_label:30, fa_impact:100, fa_description:300,
   cs_label:30, cs_impact:100,
@@ -136,8 +137,8 @@ export default function NewRequest({ go, user, draftId }) {
       if (error || !data) { go("dashboard"); return; }
       setPageType(data.page_type || "");
       setSeoData({ seo_page_location: data.seo_page_location||"", seo_meta_title: data.seo_meta_title||"", seo_meta_description: data.seo_meta_description||"", seo_meta_keywords: data.seo_meta_keywords||"" });
-      setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image: data.banner_image||"", banner_image_note: data.banner_image_note||"" });
-      setOverview({ overview_label: data.overview_label||"", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_note: data.overview_media_note||"" });
+      setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image_ref: data.banner_image_ref||null });
+      setOverview({ overview_label: data.overview_label||"", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null });
       if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: data.kb_label||"", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
       if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: data.fa_label||"", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
       if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: data.cs_label||"", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
@@ -191,8 +192,7 @@ export default function NewRequest({ go, user, draftId }) {
     page_title: banner.page_title, sub_title: banner.sub_title,
     cta1_label: banner.cta1_label, cta1_link: banner.cta1_link,
     cta2_label: banner.cta2_label, cta2_link: banner.cta2_link,
-    banner_image:      banner.banner_image,
-    banner_image_note: banner.banner_image_note,
+    banner_image_ref:  banner.banner_image_ref,
     // Overview
     ...(!naMap["overview"] ? {
       overview_label:       overview.overview_label,
@@ -200,7 +200,7 @@ export default function NewRequest({ go, user, draftId }) {
       overview_description: overview.overview_description,
       overview_media_url:   overview.overview_media_url,
       overview_media_type:  overview.overview_media_type,
-      overview_media_note:  overview.overview_media_note,
+      overview_media_ref:   overview.overview_media_ref,
     } : {}),
     // Key Benefits
     ...(!naMap["key_benefits"] ? {
@@ -418,10 +418,10 @@ export default function NewRequest({ go, user, draftId }) {
 
     return {
       // Banner — always needs image work if no URL is set
-      design_flag_banner: !banner.banner_image || !!banner.banner_image_note,
+      design_flag_banner: !!banner.banner_image_ref,
 
       // Overview — has a media note or existing media URL that needs replacement
-      design_flag_overview: !!overview.overview_media_note,
+      design_flag_overview: !!overview.overview_media_ref,
 
       // Key Benefits — any card has an icon_description (text, not a URL)
       design_flag_kb: (kbData.kb_cards || []).some(
@@ -850,8 +850,7 @@ export default function NewRequest({ go, user, draftId }) {
                     <Field label="CTA 2 Label" value={banner.cta2_label} onChange={v => updBanner("cta2_label", v)} placeholder="Watch Video" />
                     <Field label="CTA 2 Link"  value={banner.cta2_link}  onChange={v => updBanner("cta2_link",  v)} placeholder="/video/..." />
                   </div>
-                  <Field label="Banner Image URL" value={banner.banner_image} onChange={v => updBanner("banner_image", v)} placeholder="https://... (leave blank — Design QA will upload)" hint="Paste a URL if you have one, otherwise leave blank and describe below" />
-                  <Field label="Banner Image Description" value={banner.banner_image_note} onChange={v => updBanner("banner_image_note", v)} placeholder='e.g. "Engineer working on a PCB board in a lab setting, bright lighting, blue tones"' multiline hint="Describe the image you need — Design QA will source or create it" />
+                  <ImageField label="Banner Image" value={banner.banner_image_ref} onChange={v => updBanner("banner_image_ref", v)} fieldKey="banner_bg-image" requestId={draftId || "draft"} />
                 </div>
                 </div>
                 <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
@@ -879,6 +878,7 @@ export default function NewRequest({ go, user, draftId }) {
                         onChange={setKbData}
                         isNA={false}
                         onToggleNA={() => toggleNA("key_benefits")}
+                        requestId={draftId || "draft"}
                         aiAssistButton={<SectionAIAssist sectionKey="key_benefits" currentContent={kbData.kb_impact} onAccept={(d) => { const { kb_cards, ...rest } = d; setKbData(p => ({ ...p, ...rest, ...(kb_cards ? { kb_cards: kb_cards.map((c,i) => ({ ...c, id:`kb-ai-${i}-${Date.now()}` })) } : {}) })); }} />}
                         naButton={<button onClick={() => toggleNA("key_benefits")} className={`btn-na${naMap["key_benefits"] ? " active" : ""}`}>{naMap["key_benefits"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>}
                       />
@@ -906,7 +906,7 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} aiAssistButton={<SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => setFaData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("features_apps")} className={`btn-na${naMap["features_apps"] ? " active" : ""}`}>{naMap["features_apps"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
+                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => setFaData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("features_apps")} className={`btn-na${naMap["features_apps"] ? " active" : ""}`}>{naMap["features_apps"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -926,7 +926,7 @@ export default function NewRequest({ go, user, draftId }) {
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Customer Stories marked as Not Applicable</div><button onClick={() => toggleNA("customer_stories")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} aiAssistButton={<SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -942,7 +942,7 @@ export default function NewRequest({ go, user, draftId }) {
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Promo Section marked as Not Applicable</div><button onClick={() => toggleNA("promo_section")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} aiAssistButton={<SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("promo_section")} className={`btn-na${naMap["promo_section"] ? " active" : ""}`}>{naMap["promo_section"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
+                    <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("promo_section")} className={`btn-na${naMap["promo_section"] ? " active" : ""}`}>{naMap["promo_section"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -958,7 +958,7 @@ export default function NewRequest({ go, user, draftId }) {
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Content marked as Not Applicable</div><button onClick={() => toggleNA("related_content")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} aiAssistButton={<SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("related_content")} className={`btn-na${naMap["related_content"] ? " active" : ""}`}>{naMap["related_content"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("related_content")} className={`btn-na${naMap["related_content"] ? " active" : ""}`}>{naMap["related_content"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -988,7 +988,7 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <RelatedProducts data={rpData} onChange={setRpData} isNA={false} onToggleNA={() => toggleNA("related_products")} />
+                      <RelatedProducts data={rpData} onChange={setRpData} isNA={false} onToggleNA={() => toggleNA("related_products")} requestId={draftId || "draft"} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -1008,7 +1008,7 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} aiAssistButton={<SectionAIAssist sectionKey="training_support" currentContent={tsData.ts_impact} onAccept={(d) => setTsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("training_support")} className={`btn-na${naMap["training_support"] ? " active" : ""}`}>{naMap["training_support"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
+                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="training_support" currentContent={tsData.ts_impact} onAccept={(d) => setTsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("training_support")} className={`btn-na${naMap["training_support"] ? " active" : ""}`}>{naMap["training_support"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -1059,7 +1059,7 @@ export default function NewRequest({ go, user, draftId }) {
                           ))}
                         </div>
                       </div>
-                      <Field label="Media URL" value={overview.overview_media_url} onChange={v => updOverview("overview_media_url", v)} placeholder="https://... or leave for Design QA" />
+                      <ImageField label="Media / Image" value={overview.overview_media_ref} onChange={v => updOverview("overview_media_ref", v)} fieldKey="overview_media" requestId={draftId || "draft"} />
                       <Field label="Notes for Design QA" value={overview.overview_media_note} onChange={v => updOverview("overview_media_note", v)} placeholder="e.g. Diagram showing the simulation workflow" hint="Describe what image or diagram you need" />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>

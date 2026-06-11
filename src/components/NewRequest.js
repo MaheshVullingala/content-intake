@@ -69,6 +69,12 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
   );
 };
 
+const parseJSONB = (val, fb = []) => {
+  if (!val) return fb;
+  if (typeof val === "string") { try { return JSON.parse(val); } catch { return fb; } }
+  return val;
+};
+
 export default function NewRequest({ go, user, draftId }) {
   const [step,          setStep]         = useState(draftId ? 2 : 1);
   const [draftDbId,     setDraftDbId]    = useState(draftId || null);
@@ -133,7 +139,7 @@ export default function NewRequest({ go, user, draftId }) {
       setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image: data.banner_image||"", banner_image_note: data.banner_image_note||"" });
       setOverview({ overview_label: data.overview_label||"", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_note: data.overview_media_note||"" });
       if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: data.kb_label||"", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
-      if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: data.fa_label||"", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: data.fa_items||[], fa_columns: data.fa_columns||[], fa_rows: data.fa_rows||[] });
+      if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: data.fa_label||"", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
       if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: data.cs_label||"", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
       if (data.promo_title) setPromoData({ promo_bg_image: data.promo_bg_image||"", promo_bg_note: data.promo_bg_note||"", promo_label: data.promo_label||"", promo_title: data.promo_title||"", promo_description: data.promo_description||"", promo_btn_label: data.promo_btn_label||"", promo_btn_link: data.promo_btn_link||"" });
       if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: data.rc_label||"", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
@@ -829,10 +835,9 @@ export default function NewRequest({ go, user, draftId }) {
                 <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                 <div className="card">
                   <div className="card-header">
-                    <SectionAIAssist sectionKey="banner" currentContent={`${banner.page_title} ${banner.sub_title}`} onAccept={(d) => setBanner(p => ({ ...p, ...d }))} />
-                    <div>
-                      <h3>Banner Section</h3>
-                      <p>Common to all page types · Required</p>
+                    <div><h3>Banner Section</h3><p>Common to all page types · Required</p></div>
+                    <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                      <SectionAIAssist sectionKey="banner" currentContent={`${banner.page_title} ${banner.sub_title}`} onAccept={(d) => setBanner(p => ({ ...p, ...d }))} />
                     </div>
                   </div>
                   <Field label="Page Title" required value={banner.page_title} onChange={v => updBanner("page_title", v)} placeholder="e.g. Xcelium Logic Simulator" />
@@ -859,24 +864,7 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Key Benefits */}
             {activeSection === "key_benefits" && (
               <>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Key Benefits</h3>
-                    <SectionAIAssist sectionKey="key_benefits" currentContent={kbData.kb_impact} onAccept={(d) => { const { kb_cards, ...rest } = d; setKbData(p => ({ ...p, ...rest, ...(kb_cards ? { kb_cards: kb_cards.map((c,i) => ({ ...c, id:`kb-ai-${i}-${Date.now()}` })) } : {}) })); }} />
-                  </div>
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>Key Benefits Section</h3>
-                    <p className="text-xs text-muted mt-4">
-                      {sections.find(s => s.key === "key_benefits")?.required ? "Required for this page type" : "Optional for this page type"}
-                    </p>
-                  </div>
-                  <button onClick={() => toggleNA("key_benefits")}
-                    style={{ background: naMap["key_benefits"] ? "#181313" : "#F3F3F3", color: naMap["key_benefits"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["key_benefits"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
-
                 {naMap["key_benefits"] ? (
                   <div className="na-placeholder">
                     <div className="icon">—</div>
@@ -891,6 +879,8 @@ export default function NewRequest({ go, user, draftId }) {
                         onChange={setKbData}
                         isNA={false}
                         onToggleNA={() => toggleNA("key_benefits")}
+                        aiAssistButton={<SectionAIAssist sectionKey="key_benefits" currentContent={kbData.kb_impact} onAccept={(d) => { const { kb_cards, ...rest } = d; setKbData(p => ({ ...p, ...rest, ...(kb_cards ? { kb_cards: kb_cards.map((c,i) => ({ ...c, id:`kb-ai-${i}-${Date.now()}` })) } : {}) })); }} />}
+                        naButton={<button onClick={() => toggleNA("key_benefits")} className={`btn-na${naMap["key_benefits"] ? " active" : ""}`}>{naMap["key_benefits"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>}
                       />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
@@ -906,23 +896,7 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Features / Applications */}
             {activeSection === "features_apps" && (
               <>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Features / Apps</h3>
-                    <SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => setFaData(p => ({ ...p, ...d }))} />
-                  </div>
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>🔧 Features / Applications</h3>
-                    <p className="text-xs text-muted mt-4">
-                      {sections.find(s => s.key === "features_apps")?.required ? "Required for this page type" : "Optional for this page type"}
-                    </p>
-                  </div>
-                  <button onClick={() => toggleNA("features_apps")}
-                    style={{ background: naMap["features_apps"] ? "#181313" : "#F3F3F3", color: naMap["features_apps"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["features_apps"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
                 {naMap["features_apps"] ? (
                   <div className="na-placeholder">
                     <div className="icon">—</div>
@@ -932,7 +906,7 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} />
+                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} aiAssistButton={<SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => setFaData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("features_apps")} className={`btn-na${naMap["features_apps"] ? " active" : ""}`}>{naMap["features_apps"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -947,22 +921,12 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Customer Stories */}
             {activeSection === "customer_stories" && (
               <>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Customer Stories</h3>
-                    <SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />
-                  </div>
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div><h3 style={{ fontSize: 14, margin: 0 }}>💬 Customer Stories</h3></div>
-                  <button onClick={() => toggleNA("customer_stories")} style={{ background: naMap["customer_stories"] ? "#181313" : "#F3F3F3", color: naMap["customer_stories"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["customer_stories"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
                 {naMap["customer_stories"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Customer Stories marked as Not Applicable</div><button onClick={() => toggleNA("customer_stories")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} /></div>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} aiAssistButton={<SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -973,22 +937,12 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Promo Section */}
             {activeSection === "promo_section" && (
               <>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Promo Section</h3>
-                    <SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />
-                  </div>
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div><h3 style={{ fontSize: 14, margin: 0 }}>📣 Promo Section</h3></div>
-                  <button onClick={() => toggleNA("promo_section")} style={{ background: naMap["promo_section"] ? "#181313" : "#F3F3F3", color: naMap["promo_section"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["promo_section"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
                 {naMap["promo_section"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Promo Section marked as Not Applicable</div><button onClick={() => toggleNA("promo_section")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} /></div>
+                    <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} aiAssistButton={<SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("promo_section")} className={`btn-na${naMap["promo_section"] ? " active" : ""}`}>{naMap["promo_section"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -999,22 +953,12 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Related Content */}
             {activeSection === "related_content" && (
               <>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Related Content</h3>
-                    <SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />
-                  </div>
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div><h3 style={{ fontSize: 14, margin: 0 }}>📄 Related Content</h3></div>
-                  <button onClick={() => toggleNA("related_content")} style={{ background: naMap["related_content"] ? "#181313" : "#F3F3F3", color: naMap["related_content"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["related_content"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
                 {naMap["related_content"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Content marked as Not Applicable</div><button onClick={() => toggleNA("related_content")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} /></div>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} aiAssistButton={<SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("related_content")} className={`btn-na${naMap["related_content"] ? " active" : ""}`}>{naMap["related_content"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -1025,12 +969,6 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Resources */}
             {activeSection === "resources" && (
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div><h3 style={{ fontSize: 14, margin: 0 }}>📚 Resources</h3></div>
-                  <button onClick={() => toggleNA("resources")} style={{ background: naMap["resources"] ? "#181313" : "#F3F3F3", color: naMap["resources"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["resources"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
                 {naMap["resources"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Resources marked as Not Applicable</div><button onClick={() => toggleNA("resources")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
@@ -1045,16 +983,6 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Related Products */}
             {activeSection === "related_products" && (
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>Related Products</h3>
-                    <p className="text-xs text-muted mt-4">Optional for this page type</p>
-                  </div>
-                  <button onClick={() => toggleNA("related_products")}
-                    style={{ background: naMap["related_products"] ? "#181313" : "#F3F3F3", color: naMap["related_products"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["related_products"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
                 {naMap["related_products"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Products marked as Not Applicable</div><button onClick={() => toggleNA("related_products")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
@@ -1074,27 +1002,13 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Training & Support */}
             {activeSection === "training_support" && (
               <>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <h3 style={{ margin:0, fontSize:14, fontWeight:500 }}>Training & Support</h3>
-                    <SectionAIAssist sectionKey="training_support" currentContent={tsData.ts_impact} onAccept={(d) => setTsData(p => ({ ...p, ...d }))} />
-                  </div>
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>Training & Support</h3>
-                    <p className="text-xs text-muted mt-4">Optional — pre-filled with default content</p>
-                  </div>
-                  <button onClick={() => toggleNA("training_support")}
-                    style={{ background: naMap["training_support"] ? "#181313" : "#F3F3F3", color: naMap["training_support"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["training_support"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
                 {naMap["training_support"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Training & Support marked as Not Applicable</div><button onClick={() => toggleNA("training_support")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} />
+                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} aiAssistButton={<SectionAIAssist sectionKey="training_support" currentContent={tsData.ts_impact} onAccept={(d) => setTsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("training_support")} className={`btn-na${naMap["training_support"] ? " active" : ""}`}>{naMap["training_support"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -1109,19 +1023,6 @@ export default function NewRequest({ go, user, draftId }) {
             {/* Overview */}
             {activeSection === "overview" && (
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <div>
-                    <h3 style={{ fontSize: 14, margin: 0 }}>Overview Section</h3>
-                    <p className="text-xs text-muted mt-4">
-                      {sections.find(s => s.key === "overview")?.required ? "Required for this page type" : "Optional for this page type"}
-                    </p>
-                  </div>
-                  <button onClick={() => toggleNA("overview")}
-                    style={{ background: naMap["overview"] ? "#181313" : "#F3F3F3", color: naMap["overview"] ? "#fff" : "#646464", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                    {naMap["overview"] ? "✓ Marked N/A — Undo" : "Mark as N/A"}
-                  </button>
-                </div>
-
                 {naMap["overview"] ? (
                   <div className="na-placeholder">
                     <div className="icon">—</div>
@@ -1131,6 +1032,15 @@ export default function NewRequest({ go, user, draftId }) {
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div className="card">
+                      <div className="card-header">
+                        <div><h3>Overview — Content</h3><p>Impact statement, description and optional media</p></div>
+                        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                          <SectionAIAssist sectionKey="overview" currentContent={overview.overview_impact} onAccept={(d) => setOverview(p => ({ ...p, ...d }))} />
+                          <button onClick={() => toggleNA("overview")} className={`btn-na${naMap["overview"] ? " active" : ""}`}>
+                            {naMap["overview"] ? "✓ N/A — Undo" : "Mark as N/A"}
+                          </button>
+                        </div>
+                      </div>
                       <Field label="Label" value={overview.overview_label} onChange={v => updOverview("overview_label", v)} placeholder='e.g. "OVERVIEW"' hint="Small caps tag above the heading (optional)" />
                       <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" />
                       <Field label="Description" required value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline />

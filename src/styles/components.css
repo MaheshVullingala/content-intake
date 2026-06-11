@@ -53,6 +53,24 @@
 }
 .btn-ghost:hover { border-color: var(--color-onyx); color: var(--color-night); }
 
+/* Mark as N/A button — matches Create Account style */
+.btn-na {
+  background: #fff;
+  color: #1557a0;
+  border: 1.5px solid #1557a0;
+  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font-body);
+  letter-spacing: 0.03em;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-na:hover { background: #1557a0; color: #fff; }
+.btn-na.active { background: #1557a0; color: #fff; }
+
 .btn-success {
   background: var(--color-success);
   color: #ffffff;

@@ -13,7 +13,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
   </div>
 );
 
-export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA, aiAssistButton }) {
   const items = data.cs_items || [];
   const upd   = (key, val) => onChange({ ...data, [key]: val });
 
@@ -40,10 +40,7 @@ export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA,
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header">
           <div><h3>Customer Stories — Header</h3><p>Label and impact statement</p></div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {aiAssistButton}
-            {naButton}
-          </div>
+          {aiAssistButton}
         </div>
         <Field label="Label" value={data.cs_label || ""} onChange={v => upd("cs_label", v)}
           placeholder='e.g. "ENDORSEMENTS"' hint="Small caps tag above the heading (optional)" />

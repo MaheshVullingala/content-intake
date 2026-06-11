@@ -31,7 +31,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint }) => (
   </div>
 );
 
-export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA, aiAssistButton }) {
   // Merge with defaults so fields are pre-filled
   const d   = { ...DEFAULTS, ...data };
   const upd = (key, val) => onChange({ ...d, [key]: val });
@@ -66,10 +66,7 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header">
           <div><h3>Section Header</h3><p>Label and impact statement</p></div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {aiAssistButton}
-            {naButton}
-          </div>
+          {aiAssistButton}
         </div>
         <Field label="Label" value={d.ts_label} onChange={v => upd("ts_label", v)} placeholder="TRAINING AND SUPPORT" />
         <Field label="Impact Statement" value={d.ts_impact} onChange={v => upd("ts_impact", v)} placeholder="Need Help?" />

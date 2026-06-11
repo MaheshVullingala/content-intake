@@ -13,7 +13,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
   </div>
 );
 
-export default function PromoSection({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function PromoSection({ data = {}, onChange, isNA, onToggleNA, aiAssistButton }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   if (isNA) return (
@@ -29,10 +29,7 @@ export default function PromoSection({ data = {}, onChange, isNA, onToggleNA, ai
       <div className="card">
         <div className="card-header">
           <div><h3>Promo Section</h3><p>Full-width banner with background image and CTA</p></div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {aiAssistButton}
-            {naButton}
-          </div>
+          {aiAssistButton}
         </div>
 
         <div style={{ paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #F3F3F3" }}>

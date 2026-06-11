@@ -162,36 +162,34 @@ function TabsView({ items = [], onChange, orientation }) {
 }
 
 // ── Table View ─────────────────────────────────────────────────
-function TableView({ columns = [], rows = [], onUpdate }) {
+function TableView({ columns = [], rows = [], onColumnsChange, onRowsChange }) {
   const addColumn = () => {
     if (columns.length >= 6) return;
     const newCol = { id: `col-${Date.now()}`, header: "" };
     const newCols = [...columns, newCol];
-    onUpdate({ fa_columns: newCols, fa_rows: rows.map(r => ({ ...r, [newCol.id]: "" })) });
+    onColumnsChange(newCols);
+    onRowsChange(rows.map(r => ({ ...r, [newCol.id]: "" })));
   };
 
   const removeColumn = (colId) => {
-    onUpdate({
-      fa_columns: columns.filter(c => c.id !== colId),
-      fa_rows: rows.map(r => { const nr = { ...r }; delete nr[colId]; return nr; })
-    });
+    onColumnsChange(columns.filter(c => c.id !== colId));
+    onRowsChange(rows.map(r => { const nr = { ...r }; delete nr[colId]; return nr; }));
   };
 
   const updateColumnHeader = (colId, val) => {
-    onUpdate({ fa_columns: columns.map(c => c.id === colId ? { ...c, header: val } : c), fa_rows: rows });
+    onColumnsChange(columns.map(c => c.id === colId ? { ...c, header: val } : c));
   };
 
   const addRow = () => {
     if (rows.length >= 20) return;
     const newRow = { id: `row-${Date.now()}` };
     columns.forEach(c => { newRow[c.id] = ""; });
-    onUpdate({ fa_columns: columns, fa_rows: [...rows, newRow] });
+    onRowsChange([...rows, newRow]);
   };
 
-  const removeRow = (rowId) => onUpdate({ fa_columns: columns, fa_rows: rows.filter(r => r.id !== rowId) });
-
+  const removeRow = (rowId) => onRowsChange(rows.filter(r => r.id !== rowId));
   const updateCell = (rowId, colId, val) => {
-    onUpdate({ fa_columns: columns, fa_rows: rows.map(r => r.id === rowId ? { ...r, [colId]: val } : r) });
+    onRowsChange(rows.map(r => r.id === rowId ? { ...r, [colId]: val } : r));
   };
 
   return (
@@ -284,21 +282,8 @@ function TableView({ columns = [], rows = [], onUpdate }) {
 }
 
 // ── Main Component ─────────────────────────────────────────────
-export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
-  // Safely parse JSONB fields that may come as strings from Supabase
-  const parseJ = (val, fb = []) => {
-    if (!val) return fb;
-    if (typeof val === "string") { try { return JSON.parse(val); } catch { return fb; } }
-    return val;
-  };
-
-  const safeColumns = parseJ(data.fa_columns, []);
-  const safeRows    = parseJ(data.fa_rows,    []);
-  const safeItems   = parseJ(data.fa_items,   []);
-
-  // Always spread parsed versions so stale string values never get re-used
-  const safeData = { ...data, fa_columns: safeColumns, fa_rows: safeRows, fa_items: safeItems };
-  const upd = (key, val) => onChange({ ...safeData, [key]: val });
+export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, aiAssistButton }) {
+  const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const VIEW_TYPES = [
     { key: "list",             label: "List",             icon: "✓", desc: "Checkmark bullet list" },
@@ -324,10 +309,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
             <h3>Features / Applications — Header</h3>
             <p>Common fields for all view types</p>
           </div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {aiAssistButton}
-            {naButton}
-          </div>
+          {aiAssistButton}
         </div>
         <Field label="Label" value={data.fa_label || ""} onChange={v => upd("fa_label", v)}
           placeholder='e.g. "FEATURES" or "APPLICATIONS"'
@@ -358,7 +340,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
       {data.fa_view_type === "list" && (
         <div className="card">
           <ListView
-            items={safeItems}
+            items={data.fa_items || []}
             onChange={v => upd("fa_items", v)}
           />
         </div>
@@ -367,7 +349,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
       {(data.fa_view_type === "tabs_horizontal" || data.fa_view_type === "tabs_vertical") && (
         <div className="card">
           <TabsView
-            items={safeItems}
+            items={data.fa_items || []}
             onChange={v => upd("fa_items", v)}
             orientation={data.fa_view_type === "tabs_horizontal" ? "horizontal" : "vertical"}
           />
@@ -377,9 +359,10 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
       {data.fa_view_type === "table" && (
         <div className="card">
           <TableView
-            columns={safeColumns}
-            rows={safeRows}
-            onUpdate={({ fa_columns, fa_rows }) => onChange({ ...safeData, fa_columns, fa_rows })}
+            columns={data.fa_columns || []}
+            rows={data.fa_rows || []}
+            onColumnsChange={v => upd("fa_columns", v)}
+            onRowsChange={v => upd("fa_rows", v)}
           />
         </div>
       )}

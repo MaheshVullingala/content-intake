@@ -15,7 +15,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
 
 const CARD_LABELS = ["Blog", "Webinar", "White Paper", "Case Study", "Video", "Data Sheet", "eBook", "Article", "News", "Tutorial"];
 
-export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, aiAssistButton }) {
   const cards = data.rc_cards || [];
   const upd   = (key, val) => onChange({ ...data, [key]: val });
 
@@ -36,10 +36,7 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header">
           <div><h3>Related Content — Header</h3><p>Label and impact statement</p></div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {aiAssistButton}
-            {naButton}
-          </div>
+          {aiAssistButton}
         </div>
         <Field label="Label" value={data.rc_label || ""} onChange={v => upd("rc_label", v)}
           placeholder='e.g. "CUSTOMER STORIES"' hint="Small caps category tag (optional)" />

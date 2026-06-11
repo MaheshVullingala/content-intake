@@ -13,7 +13,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
   </div>
 );
 
-export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
+export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiAssistButton }) {
   const cards = data.kb_cards || [];
 
   const upd = (key, val) => onChange({ ...data, [key]: val });
@@ -64,10 +64,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
             <h3>Key Benefits — Header</h3>
             <p>Label, impact statement and optional description</p>
           </div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {aiAssistButton}
-            {naButton}
-          </div>
+          {aiAssistButton}
         </div>
         <Field label="Label" value={data.kb_label || ""} onChange={v => upd("kb_label", v)}
           placeholder='e.g. "KEY BENEFITS"'

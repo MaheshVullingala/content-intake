@@ -13,10 +13,11 @@ import { supabase } from "@/lib/supabase";
  *   label      : string  — field label shown above toolbar
  *   required   : bool
  */
-export default function ImageField({ value = null, onChange, fieldKey = "image", requestId = "draft", label = "Image", required = false }) {
+export default function ImageField({ value = null, onChange, fieldKey = "image", requestId = "draft", label = "Image", required = false, hideDescription = false }) {
   const [active, setActive]     = useState(value?.type || null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError]       = useState(null);
+  const [uploading, setUploading]   = useState(false);
+  const [uploadProgress, setProgress] = useState(0);
+  const [error, setError]             = useState(null);
   const fileRef                 = useRef();
 
   const ACCEPTED = "image/jpeg,image/png,image/webp,image/svg+xml,image/gif";
@@ -51,18 +52,40 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
     if (file.size > MAX_MB * 1024 * 1024) { setError(`Max file size is ${MAX_MB}MB`); return; }
     setError(null);
     setUploading(true);
+    setProgress(0);
     try {
       const ext      = file.name.split(".").pop();
       const safeName = `${fieldKey}_${Date.now()}.${ext}`;
       const path     = `${requestId}/${safeName}`;
-      const { error: upErr } = await supabase.storage.from("attachments").upload(path, file, { upsert: true });
-      if (upErr) throw upErr;
-      const { data: { publicUrl } } = supabase.storage.from("attachments").getPublicUrl(path);
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const uploadUrl   = `${supabaseUrl}/storage/v1/object/attachments/${path}`;
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", uploadUrl);
+        xhr.setRequestHeader("Authorization", `Bearer ${supabaseKey}`);
+        xhr.setRequestHeader("apikey", supabaseKey);
+        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+        xhr.setRequestHeader("x-upsert", "true");
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable) setProgress(Math.round((ev.loaded / ev.total) * 100));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Upload failed: ${xhr.statusText}`));
+        };
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.send(file);
+      });
+
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/attachments/${path}`;
       onChange({ type: "attachment", value: file.name, url: publicUrl, path });
     } catch (err) {
       setError("Upload failed: " + err.message);
     } finally {
       setUploading(false);
+      setProgress(0);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
@@ -71,20 +94,21 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
 
   // Icon button style
   const iconBtn = (mode) => {
-    const filled  = isFilled && value.type === mode;
+    const filled   = isFilled && value.type === mode;
     const isActive = active === mode;
     return {
       position: "relative",
-      width: 34, height: 34,
+      width: 36, height: 36,
       borderRadius: 8,
-      border: `1.5px solid ${isActive ? "#1b5793" : filled ? "#3ec5cb" : "#E0E0E0"}`,
-      background: isActive ? "#1b5793" : filled ? "#f0fafb" : "#fff",
-      color: isActive ? "#fff" : filled ? "#3ec5cb" : "#999",
+      border: `1.5px solid ${isActive ? "#1b5793" : filled ? "#3ec5cb" : "#c8d4e0"}`,
+      background: isActive ? "#1b5793" : filled ? "#e8f8f9" : "#f0f4f8",
+      color: isActive ? "#fff" : filled ? "#3ec5cb" : "#3C3C3C",
       cursor: "pointer",
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 16,
+      fontSize: 17,
       transition: "all 0.15s",
       flexShrink: 0,
+      boxShadow: isActive ? "0 2px 8px rgba(27,87,147,0.2)" : "none",
     };
   };
 
@@ -96,32 +120,41 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
 
   return (
     <div className="field-wrap" style={{ marginBottom: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <label className="field-label" style={{ margin: 0 }}>
+      {/* Label row */}
+      {label && (
+        <label className="field-label" style={{ display: "block", marginBottom: 4 }}>
           {label}{required && <span className="req"> *</span>}
         </label>
-        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          {/* Description icon */}
-          <button type="button" title="Add description / notes for Design QA" style={iconBtn("description")} onClick={() => toggle("description")}>
-            📝
-            {isFilled && value.type === "description" && <span style={dot} />}
-          </button>
-          {/* Link icon */}
-          <button type="button" title="Paste an image URL" style={iconBtn("link")} onClick={() => toggle("link")}>
-            🔗
-            {isFilled && value.type === "link" && <span style={dot} />}
-          </button>
-          {/* Attachment icon */}
-          <button type="button" title="Upload a reference image from your computer" style={iconBtn("attachment")} onClick={() => toggle("attachment")}>
-            📎
-            {isFilled && value.type === "attachment" && <span style={dot} />}
-          </button>
-          {/* Clear */}
-          {isFilled && (
-            <button type="button" title="Clear" onClick={clear}
-              style={{ background: "none", border: "none", color: "#c0392b", cursor: "pointer", fontSize: 13, padding: "0 2px" }}>✕</button>
-          )}
-        </div>
+      )}
+      {/* Helper note */}
+      <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8, lineHeight: 1.5 }}>
+        Choose how to provide this image for Design QA:
+      </div>
+      {/* Icon toolbar — below the note */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+        <button type="button" title="Upload a reference image from your computer" style={iconBtn("attachment")} onClick={() => toggle("attachment")}>
+          📎
+          {isFilled && value.type === "attachment" && <span style={dot} />}
+        </button>
+        <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Upload</span>
+        <button type="button" title="Paste an image URL" style={iconBtn("link")} onClick={() => toggle("link")}>
+          🔗
+          {isFilled && value.type === "link" && <span style={dot} />}
+        </button>
+        <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Paste URL</span>
+        {!hideDescription && (
+          <>
+            <button type="button" title="Add description / notes for Design QA" style={iconBtn("description")} onClick={() => toggle("description")}>
+              📝
+              {isFilled && value.type === "description" && <span style={dot} />}
+            </button>
+            <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Describe</span>
+          </>
+        )}
+        {isFilled && (
+          <button type="button" title="Clear" onClick={clear}
+            style={{ background: "none", border: "none", color: "#c0392b", cursor: "pointer", fontSize: 13, padding: "0 4px", marginLeft: 4 }}>✕ Clear</button>
+        )}
       </div>
 
       {/* Filled preview (when panel closed) */}
@@ -187,7 +220,12 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
               onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.background = "#fafafa"; }}
             >
               {uploading ? (
-                <div style={{ fontSize: 13, color: "#1b5793" }}>Uploading…</div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 13, color: "#1b5793", marginBottom: 8 }}>Uploading… {uploadProgress}%</div>
+                  <div style={{ background: "#E0E0E0", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                    <div style={{ background: "#1b5793", height: "100%", width: `${uploadProgress}%`, transition: "width 0.2s ease", borderRadius: 4 }} />
+                  </div>
+                </div>
               ) : (
                 <>
                   <div style={{ fontSize: 24, marginBottom: 6 }}>📎</div>

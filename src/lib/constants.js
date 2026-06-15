@@ -72,10 +72,10 @@ export const SECTIONS = {
     icon: "🔍",
     description: "Page location, meta title, meta description and keywords for search engines",
     pageTypes: {
-      "Product":           { required: true },
-      "Solutions":         { required: true },
-      "Glossary":          { required: true },
-      "On-demand Webinar": { required: true },
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: false },
+      "On-demand Webinar": { required: false },
     },
   },
   banner: {
@@ -191,11 +191,15 @@ export const SECTIONS = {
 };
 
 export const getSectionsForPageType = (pageType) => {
-  return Object.entries(SECTIONS)
+  const all = Object.entries(SECTIONS)
     .filter(([, s]) => s.pageTypes[pageType] != null)
     .map(([key, s]) => ({
       key,
       ...s,
       required: s.pageTypes[pageType]?.required ?? false,
     }));
+  // Move SEO Meta Data to last tab
+  const seoIdx = all.findIndex(s => s.key === "seo_meta");
+  if (seoIdx > -1) all.push(all.splice(seoIdx, 1)[0]);
+  return all;
 };

@@ -1,13 +1,13 @@
 "use client";
 import ImageField from "@/components/ImageField";
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle }) => (
   <div className="field-wrap">
     <label className="field-label">
       {label}{required && <span className="req"> *</span>}
     </label>
     {multiline
-      ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" />
+      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
       : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
     }
     {hint && <div className="field-hint">{hint}</div>}
@@ -43,8 +43,7 @@ export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA,
         <div className="card-header">
           <div><h3>Related Products — Header</h3><p>Label, impact statement and description</p></div>
         </div>
-        <Field label="Label" value={data.rp_label || ""} onChange={v => upd("rp_label", v)}
-          placeholder='e.g. "RELATED PRODUCTS"' hint="Small caps tag above the heading (optional)" />
+        <Field label="Label" value="RELATED PRODUCTS" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required value={data.rp_impact || ""} onChange={v => upd("rp_impact", v)}
           placeholder='e.g. "A Collection of Products to Fully Explore"' multiline />
         <Field label="Description" value={data.rp_description || ""} onChange={v => upd("rp_description", v)}

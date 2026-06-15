@@ -2,13 +2,13 @@
 import { useState } from "react";
 import ImageField from "@/components/ImageField";
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle }) => (
   <div className="field-wrap">
     <label className="field-label">
       {label}{required && <span className="req"> *</span>}
     </label>
     {multiline
-      ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" />
+      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
       : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
     }
     {hint && <div className="field-hint">{hint}</div>}
@@ -16,7 +16,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint 
 );
 
 // ── List View ──────────────────────────────────────────────────
-function ListView({ items = [], onChange }) {
+function ListView({ items = [], onChange, requestId = "draft" }) {
   const addItem    = () => { if (items.length >= 20) return; onChange([...items, { id: `li-${Date.now()}`, text: "" }]); };
   const updateItem = (id, text) => onChange(items.map(i => i.id === id ? { ...i, text } : i));
   const removeItem = (id) => onChange(items.filter(i => i.id !== id));
@@ -49,7 +49,7 @@ function ListView({ items = [], onChange }) {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {items.map((item, idx) => (
+        {(Array.isArray(items) ? items : []).map((item, idx) => (
           <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.6rem 0.8rem" }}>
             <span style={{ color: "#181313", fontWeight: 600, fontSize: 14, flexShrink: 0 }}>✓</span>
             <input value={item.text} onChange={e => updateItem(item.id, e.target.value)}
@@ -80,7 +80,7 @@ function ListView({ items = [], onChange }) {
 }
 
 // ── Tabs View ──────────────────────────────────────────────────
-function TabsView({ items = [], onChange, orientation }) {
+function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
   const addTab    = () => { if (items.length >= 10) return; onChange([...items, { id: `tab-${Date.now()}`, title: "", description: "", image_ref: null, cta_label: "", cta_link: "" }]); };
   const updateTab = (id, field, val) => onChange(items.map(t => t.id === id ? { ...t, [field]: val } : t));
   const removeTab = (id) => onChange(items.filter(t => t.id !== id));
@@ -113,7 +113,7 @@ function TabsView({ items = [], onChange, orientation }) {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {items.map((tab, idx) => (
+        {(Array.isArray(items) ? items : []).map((tab, idx) => (
           <div key={tab.id} className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 12, borderBottom: "1px solid #F3F3F3" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -307,10 +307,34 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
   const upd = (key, val) => onChange({ ...safeData, [key]: val });
 
   const VIEW_TYPES = [
-    { key: "list",             label: "List",             icon: "✓", desc: "Checkmark bullet list" },
-    { key: "tabs_horizontal",  label: "Horizontal Tabs",  icon: "▭", desc: "Tabs across the top" },
-    { key: "tabs_vertical",    label: "Vertical Tabs",    icon: "▯", desc: "Tabs on the left side" },
-    { key: "table",            label: "Table",            icon: "⊞", desc: "Rows and columns" },
+    {
+      key:   "list",
+      label: "List",
+      icon:  "✓",
+      desc:  "Checkmark bullet list",
+      when:  "Best for: 4–8 short feature highlights. Simple, scannable. No images needed.",
+    },
+    {
+      key:   "tabs_horizontal",
+      label: "Horizontal Tabs",
+      icon:  "▭",
+      desc:  "Tabs across the top",
+      when:  "Best for: 3–6 distinct features/applications each needing a title, description and image. Users click to explore.",
+    },
+    {
+      key:   "tabs_vertical",
+      label: "Vertical Tabs",
+      icon:  "▯",
+      desc:  "Tabs on the left side",
+      when:  "Best for: same as Horizontal Tabs but with longer tab labels or more items (up to 10). Works well for application categories.",
+    },
+    {
+      key:   "table",
+      label: "Table",
+      icon:  "⊞",
+      desc:  "Rows and columns",
+      when:  "Best for: comparing features across products or tiers (up to 6 columns × 20 rows). Ideal for spec sheets.",
+    },
   ];
 
   if (isNA) return (
@@ -335,9 +359,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
             {naButton}
           </div>
         </div>
-        <Field label="Label" value={data.fa_label || ""} onChange={v => upd("fa_label", v)}
-          placeholder='e.g. "FEATURES" or "APPLICATIONS"'
-          hint="Small caps tag above the heading (optional)" />
+        <Field label="Label" value="FEATURES" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required value={data.fa_impact || ""} onChange={v => upd("fa_impact", v)}
           placeholder="e.g. Transforming Semiconductor Design with Cadence Cerebrus AI Studio"
           multiline hint="Large heading for this section" />
@@ -350,11 +372,12 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
         <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 14 }}>Select View Type</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {VIEW_TYPES.map(vt => (
-            <button type="button" key={vt.key} onClick={() => upd("fa_view_type", vt.key)}
-              style={{ background: data.fa_view_type === vt.key ? "#181313" : "#F9F9F9", border: `2px solid ${data.fa_view_type === vt.key ? "#181313" : "#E0E0E0"}`, borderRadius: 10, padding: "0.9rem 1rem", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
-              <div style={{ fontSize: 18, marginBottom: 6 }}>{vt.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: data.fa_view_type === vt.key ? "#F3F3F3" : "#181313" }}>{vt.label}</div>
-              <div style={{ fontSize: 11, color: data.fa_view_type === vt.key ? "#B5B5B5" : "#B5B5B5", marginTop: 2 }}>{vt.desc}</div>
+            <button type="button" key={vt.key} onClick={() => { const cur = parseJ(data.fa_items, []); upd("fa_view_type", vt.key); if (!Array.isArray(cur)) onChange({ ...safeData, fa_view_type: vt.key, fa_items: [], fa_columns: [], fa_rows: [] }); }}
+              style={{ background: data.fa_view_type === vt.key ? "#0f2744" : "#F9F9F9", border: `2px solid ${data.fa_view_type === vt.key ? "#1b5793" : "#E0E0E0"}`, borderRadius: 10, padding: "0.9rem 1rem", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+              <div style={{ fontSize: 22, marginBottom: 6 }}>{vt.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: data.fa_view_type === vt.key ? "#fff" : "#181313", marginBottom: 3 }}>{vt.label}</div>
+              <div style={{ fontSize: 11, color: "#B5B5B5", marginBottom: 6 }}>{vt.desc}</div>
+              <div style={{ fontSize: 12, color: data.fa_view_type === vt.key ? "#3ec5cb" : "#1b5793", lineHeight: 1.6, borderTop: `1px solid ${data.fa_view_type === vt.key ? "#1b579344" : "#E0E0E0"}`, paddingTop: 8, marginTop: 4, fontWeight: 400 }}>{vt.when}</div>
             </button>
           ))}
         </div>
@@ -366,6 +389,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
           <ListView
             items={safeItems}
             onChange={v => upd("fa_items", v)}
+            requestId={requestId}
           />
         </div>
       )}
@@ -376,6 +400,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
             items={safeItems}
             onChange={v => upd("fa_items", v)}
             orientation={data.fa_view_type === "tabs_horizontal" ? "horizontal" : "vertical"}
+            requestId={requestId}
           />
         </div>
       )}

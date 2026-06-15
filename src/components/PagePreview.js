@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 import FeaturesAppsPreview from "@/components/sections/FeaturesAppsPreview";
 import CustomerStoriesPreview from "@/components/sections/CustomerStoriesPreview";
@@ -8,7 +9,7 @@ import ResourcesPreview from "@/components/sections/ResourcesPreview";
 import RelatedProductsPreview from "@/components/sections/RelatedProductsPreview";
 import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview";
 
-export default function PagePreview({ req = {}, pageType = "Product", activeSection = "", fullPage = false }) {
+export default function PagePreview({ req = {}, pageType = "Product", activeSection = "", fullPage = false, editorialMode = false, activeEditSection = null, onEditSection = null }) {
   // Force parse all fields at entry point — handles both raw DB strings and JS objects
   const p = (v, fb) => { if (!v) return fb; if (typeof v === "string") { try { return JSON.parse(v); } catch { return fb; } } return v; };
 
@@ -73,6 +74,31 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
     ts_label, ts_card1_cta_link, ts_card2_cta_link, ts_card3_cta_link,
   };
 
+  // Editorial mode: hoverable edit button per section
+  const [hoverSection, setHoverSection] = useState(null);
+  const EditBtn = ({ sectionKey }) => {
+    if (!editorialMode) return null;
+    const isActive = activeEditSection === sectionKey;
+    return (
+      <button
+        onClick={() => onEditSection?.(sectionKey)}
+        style={{
+          position: "absolute", top: 10, right: 10,
+          background: isActive ? "#1b5793" : "#fff",
+          color: isActive ? "#fff" : "#1b5793",
+          border: `1.5px solid ${isActive ? "#1b5793" : "#1b579366"}`,
+          borderRadius: 7, padding: "4px 10px",
+          fontSize: 11, fontWeight: 600, cursor: "pointer",
+          fontFamily: "'Rubik',sans-serif",
+          opacity: hoverSection === sectionKey || isActive ? 1 : 0,
+          transition: "opacity 0.15s, background 0.15s",
+          zIndex: 10,
+        }}>
+        {isActive ? "✓ Editing" : "✎ Edit"}
+      </button>
+    );
+  };
+
   const hasOverview         = overview_impact || overview_description || activeSection === "overview";
   const hasKeyBenefits      = kb_impact || kb_cards.length > 0 || activeSection === "key_benefits";
   const hasFeatures         = fa_impact || fa_items.length > 0 || fa_columns.length > 0 || activeSection === "features_apps";
@@ -96,7 +122,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       </div>}
 
       {/* Banner Section */}
-      <div data-section="banner" className="banner-section">
+      <div data-section="banner" className="banner-section" style={{position:"relative"}} onMouseEnter={()=>setHoverSection("banner")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="banner" />
         {/* Background image */}
         <img
           src={banner_image || "/defasult-banner-image.png"}
@@ -125,7 +151,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasOverview && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="overview" className="overview-section">
+          <div data-section="overview" className="overview-section" style={{position:"relative"}} onMouseEnter={()=>setHoverSection("overview")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="overview" />
             <div className="section-container overview">
             <div className={`overview-label ${overview_label ? "filled" : "placeholder"}`}>
               {overview_label || "OVERVIEW"}
@@ -163,7 +189,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasKeyBenefits && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="key_benefits" style={{width:"100%"}}><KeyBenefitsPreview data={parsedReq} /></div>
+          <div data-section="key_benefits" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("key_benefits")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="key_benefits" /><KeyBenefitsPreview data={parsedReq} /></div>
         </>
       )}
 
@@ -171,7 +197,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasFeatures && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="features_apps" style={{width:"100%"}}><FeaturesAppsPreview data={parsedReq} /></div>
+          <div data-section="features_apps" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("features_apps")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="features_apps" /><FeaturesAppsPreview data={parsedReq} /></div>
         </>
       )}
 
@@ -179,7 +205,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasCustomerStories && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="customer_stories" style={{width:"100%"}}><CustomerStoriesPreview data={parsedReq} /></div>
+          <div data-section="customer_stories" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("customer_stories")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="customer_stories" /><CustomerStoriesPreview data={parsedReq} /></div>
         </>
       )}
 
@@ -187,7 +213,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasPromo && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="promo_section" style={{width:"100%"}}><PromoSectionPreview data={parsedReq} /></div>
+          <div data-section="promo_section" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("promo_section")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="promo_section" /><PromoSectionPreview data={parsedReq} /></div>
         </>
       )}
 
@@ -195,7 +221,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasRelatedContent && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="related_content" style={{width:"100%"}}><RelatedContentPreview data={parsedReq} /></div>
+          <div data-section="related_content" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("related_content")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="related_content" /><RelatedContentPreview data={parsedReq} /></div>
         </>
       )}
 
@@ -203,7 +229,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasResources && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="resources" style={{width:"100%"}}><ResourcesPreview data={parsedReq} /></div>
+          <div data-section="resources" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("resources")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="resources" /><ResourcesPreview data={parsedReq} /></div>
         </>
       )}
 
@@ -211,7 +237,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasRelatedProducts && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="related_products" style={{width:"100%"}}><RelatedProductsPreview data={parsedReq} /></div>
+          <div data-section="related_products" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("related_products")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="related_products" /><RelatedProductsPreview data={parsedReq} /></div>
         </>
       )}
 
@@ -219,7 +245,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       {hasTrainingSupport && (
         <>
           <div className="preview-section-divider" />
-          <div data-section="training_support" style={{width:"100%"}}><TrainingSupportPreview data={parsedReq} /></div>
+          <div data-section="training_support" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("training_support")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="training_support" /><TrainingSupportPreview data={parsedReq} /></div>
         </>
       )}
 

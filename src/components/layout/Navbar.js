@@ -1,13 +1,16 @@
 "use client";
 import { useState } from "react";
 
-export default function Navbar({ go, view, user, logout }) {
+export default function Navbar({ go, view, user, logout, onLogout, onNavigate }) {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    try { await logout(); } finally { setLoggingOut(false); }
+    try { await (onLogout || logout)(); } finally { setLoggingOut(false); }
   };
+
+  const nav = (dest) => onNavigate ? onNavigate(dest) : go(dest);
+
   if (!user) return null;
 
   const isAdmin = user.role === "admin";
@@ -36,7 +39,7 @@ export default function Navbar({ go, view, user, logout }) {
           fontFamily: "'Rubik', sans-serif",
           cursor: "pointer",
           flexShrink: 0,
-        }} onClick={() => go("dashboard")}>
+        }} onClick={() => nav("dashboard")}>
           CI
         </div>
         <span style={{ fontSize: 15, fontWeight: 500, color: "#f1f5f9", fontFamily: "'Rubik', sans-serif" }}>
@@ -51,13 +54,13 @@ export default function Navbar({ go, view, user, logout }) {
 
       {/* Right — Nav links + user */}
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <button onClick={() => go("dashboard")}
+        <button onClick={() => nav("dashboard")}
           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontFamily: "'Rubik', sans-serif", color: view === "dashboard" ? "#f1f5f9" : "#94a3b8", fontWeight: view === "dashboard" ? 500 : 400, transition: "color 0.15s" }}>
           Dashboard
         </button>
 
         {user.role === "stakeholder" && (
-          <button onClick={() => go("new")}
+          <button onClick={() => nav("new")}
             style={{ background: "#3ec5cb", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik', sans-serif", color: "#0f2744", display: "flex", alignItems: "center", gap: 6, transition: "opacity 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
             onMouseLeave={e => e.currentTarget.style.opacity = "1"}>

@@ -20,12 +20,12 @@ const DEFAULTS = {
   ts_card3_cta_link: "",
 };
 
-const Field = ({ label, value, onChange, placeholder, multiline, hint }) => (
+const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle }) => (
   <div className="field-wrap">
     <label className="field-label">{label}</label>
     {multiline
-      ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" style={{ minHeight: 70 }} />
-      : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
+      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle || { minHeight: 70 }} />
+      : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
     }
     {hint && <div className="field-hint">{hint}</div>}
   </div>
@@ -71,7 +71,7 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
             {naButton}
           </div>
         </div>
-        <Field label="Label" value={d.ts_label} onChange={v => upd("ts_label", v)} placeholder="TRAINING AND SUPPORT" />
+        <Field label="Label" value="TRAINING AND SUPPORT" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" value={d.ts_impact} onChange={v => upd("ts_impact", v)} placeholder="Need Help?" />
       </div>
 

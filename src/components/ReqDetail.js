@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabase";
 import { getStatus, ROLE_META, canAct, nextActionLabel, FLOW, returnActionLabel } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
@@ -7,9 +8,17 @@ import { PCBLoader, PCBLoaderMini } from "@/components/PCBLoader";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 import KeyBenefits from "@/components/sections/KeyBenefits";
 import FeaturesApps from "@/components/sections/FeaturesApps";
+import FeaturesAppsPreview from "@/components/sections/FeaturesAppsPreview";
 import CustomerStories from "@/components/sections/CustomerStories";
+import CustomerStoriesPreview from "@/components/sections/CustomerStoriesPreview";
+import PromoSection from "@/components/sections/PromoSection";
+import PromoSectionPreview from "@/components/sections/PromoSectionPreview";
 import RelatedContent from "@/components/sections/RelatedContent";
+import RelatedContentPreview from "@/components/sections/RelatedContentPreview";
 import RelatedProducts from "@/components/sections/RelatedProducts";
+import RelatedProductsPreview from "@/components/sections/RelatedProductsPreview";
+import TrainingSupport from "@/components/sections/TrainingSupport";
+import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview";
 
 function formatBytes(b) {
   if (b < 1024) return b + " B";
@@ -134,7 +143,7 @@ export default function ReqDetail({ reqId, go, user }) {
   const [loading,      setLoading]     = useState(true);
   const [comment,      setComment]     = useState("");
   const [tab,          setTab]         = useState("preview");
-  const [editSection,  setEditSection] = useState("seo_meta");
+  const [editSection,  setEditSection] = useState(null);
   const [editData,     setEditData]    = useState(null);
   const [uploading,    setUploading]   = useState(false);
   const [dragOver,     setDragOver]    = useState(false);
@@ -208,6 +217,8 @@ export default function ReqDetail({ reqId, go, user }) {
   const isQueriedByDesignQA  = req.status === "draft" && comments.some(c => c.is_return && c.user_role === "design_qa");
   // Either kind of return/query — for general draft-with-notes handling
   const isReturnedDraft = isReturnedByEditorial || isQueriedByDesignQA;
+  // Fresh draft — stakeholder owns it, it's in draft, and no return comments yet
+  const isFreshDraft = req.status === "draft" && isStakeholderOwner && !isReturnedDraft;
   // How many times has this been returned/queried total
   const revisionCount   = comments.filter(c => c.is_return).length;
   const stageIdx      = FLOW.indexOf(req.status);
@@ -247,7 +258,7 @@ export default function ReqDetail({ reqId, go, user }) {
         "ts_card2_icon","ts_card2_title","ts_card2_description","ts_card2_cta_label","ts_card2_cta_link",
         "ts_card3_icon","ts_card3_title","ts_card3_description","ts_card3_cta_label","ts_card3_cta_link",
         "assigned_to","assigned_by","assigned_at",
-        "design_flag_banner","design_flag_overview","design_flag_kb","design_flag_fa",
+        "design_flag_banner","design_flag_overview","design_flag_kb","design_flag_fa","design_flag_cs","design_flag_promo","design_flag_rc","design_flag_rp","design_flag_ts",
         "design_flag_rc","design_flag_promo","design_flag_ts",
       ]);
 
@@ -381,39 +392,43 @@ export default function ReqDetail({ reqId, go, user }) {
     finally { setSaving(false); }
   };
 
-  const uploadToStorage = async (file, reqId) => {
-    // Sanitise filename — remove spaces and special chars
+  const uploadToStorage = async (file, reqId, slotKey = null) => {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `${reqId}/${safeName}`; // no timestamp — same filename = same path = dedup
+    const path     = `${reqId}/${slotKey ? slotKey + "_" : ""}${Date.now()}_${safeName}`;
 
-    // Check if this file already exists in attachments for this request
-    const { data: existing } = await supabase
-      .from("attachments")
-      .select("id, public_url")
-      .eq("request_id", reqId)
-      .eq("file_name", file.name)
-      .maybeSingle();
+    // If slotKey provided — delete any existing attachment for this slot first (one per slot rule)
+    if (slotKey) {
+      const { data: existing } = await supabase
+        .from("attachments")
+        .select("id, storage_path")
+        .eq("request_id", reqId)
+        .eq("section_key", slotKey);
 
-    if (existing) {
-      // Already uploaded — return existing URL without re-uploading
-      return existing.public_url;
+      if (existing?.length) {
+        // Remove old files from storage
+        const oldPaths = existing.map(e => e.storage_path).filter(Boolean);
+        if (oldPaths.length) await supabase.storage.from("attachments").remove(oldPaths);
+        // Delete old DB rows
+        await supabase.from("attachments").delete().eq("request_id", reqId).eq("section_key", slotKey);
+      }
     }
 
+    // Upload new file
     const { error: upErr } = await supabase.storage
       .from("attachments")
       .upload(path, file, { upsert: true, contentType: file.type });
 
     if (upErr) throw new Error(upErr.message);
 
-    // getPublicUrl is synchronous
     const { data } = supabase.storage.from("attachments").getPublicUrl(path);
     if (!data?.publicUrl) throw new Error("Could not get public URL");
 
     await supabase.from("attachments").insert({
       request_id:   reqId,
+      section_key:  slotKey || null,
       user_id:      user.id,
       user_name:    user.name,
-      file_name:    file.name,
+      file_name:    safeName,
       file_type:    file.type,
       file_size:    file.size,
       storage_path: path,
@@ -564,10 +579,11 @@ export default function ReqDetail({ reqId, go, user }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isEditorialQA ? "1fr 360px" : "1fr 340px", gap: 20, alignItems: "start" }}>
         {/* Left */}
         <div>
-          {/* Tab bar */}
+          {/* Tab bar — hidden for Editorial QA (they use inline edit) */}
+          {!isEditorialQA && (
           <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
             <div className="tab-bar">
               {(isDesignQA ? [
@@ -576,14 +592,14 @@ export default function ReqDetail({ reqId, go, user }) {
                 ["attachments", `📎 Assets${attachments.length ? ` (${attachments.length})` : ""}`],
               ] : [
                 ["preview",  "👁 Overview"],
-                isEditorialQA || (isReturnedDraft && isStakeholderOwner) ? ["edit", "✎ Edit"] : null,
+                (isReturnedDraft && isStakeholderOwner) || isFreshDraft ? ["edit", "✎ Edit"] : null,
               ].filter(Boolean)).map(([t, label]) => (
                 <button key={t} onClick={() => setTab(t)} className={`tab-btn${tab === t ? " active" : ""}`}>
                   {label}
                 </button>
               ))}
             </div>
-            {tab === "edit" && (isEditorialQA || (isReturnedDraft && isStakeholderOwner)) && (
+            {tab === "edit" && (isReturnedDraft && isStakeholderOwner || isFreshDraft) && (
               <div className="tab-bar" style={{ overflowX: "auto", whiteSpace: "nowrap", scrollbarWidth: "none" }}>
                 {[
                   ["seo_meta",         "🔍 SEO Meta",         true],
@@ -603,6 +619,7 @@ export default function ReqDetail({ reqId, go, user }) {
               </div>
             )}
           </div>
+          )}
 
           {/* ── Preview Tab ── */}
           {tab === "preview" && (
@@ -649,7 +666,7 @@ export default function ReqDetail({ reqId, go, user }) {
                   onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
                   👁 Open Full Screen
                 </button>
-                {isReturnedDraft && isStakeholderOwner && (
+                {(isReturnedDraft && isStakeholderOwner || isFreshDraft) && (
                   <button onClick={() => setTab("edit")} style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", color: "#181313", border: "2px solid #181313", borderRadius: 10, padding: "0.8rem 1.6rem", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s" }}
                     onMouseEnter={e => { e.currentTarget.style.background = "#181313"; e.currentTarget.style.color = "#fff"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#181313"; }}>
@@ -658,8 +675,107 @@ export default function ReqDetail({ reqId, go, user }) {
                 )}
               </div>
 
-              {/* Editorial QA + pending approval stakeholder — show full page preview inline */}
-              {(isEditorialQA || isStakeholderOwner) && (
+              {/* Editorial QA — full page preview with popup edit modal */}
+              {isEditorialQA && (
+                <div>
+                  <div style={{ background: "#e8f4fb", border: "1px solid #1b579322", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 12, color: "#1b5793", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>&#9998;</span>
+                    <span>Hover over any section and click <strong>Edit</strong> to open the edit panel</span>
+                  </div>
+                  <div style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 10, overflow: "hidden" }}>
+                    <PagePreview
+                      req={liveData}
+                      pageType={req.page_type}
+                      editorialMode={true}
+                      activeEditSection={editSection}
+                      onEditSection={(key) => { startEdit(); setEditSection(key); }}
+                    />
+                  </div>
+
+                  {/* Edit Modal — rendered via Portal so it escapes scroll context */}
+                  {editSection && editData && typeof document !== "undefined" && createPortal(
+                    <>
+                      <div onClick={() => { cancelEdit(); setEditSection(null); }}
+                        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 9000 }} />
+                      <div style={{
+                        position: "fixed", top: "50%", left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        zIndex: 9001,
+                        width: "min(820px, 94vw)",
+                        maxHeight: "88vh",
+                        display: "flex", flexDirection: "column",
+                        background: "#fff", borderRadius: 16,
+                        boxShadow: "0 24px 80px rgba(27,87,147,0.25)",
+                        border: "1px solid rgba(27,87,147,0.15)",
+                        overflow: "hidden",
+                      }}>
+                        {/* Header */}
+                        <div style={{ padding: "18px 24px", borderBottom: "1px solid #F3F3F3", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                          <div>
+                            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#1b5793", margin: 0 }}>
+                              &#9998; Editing: {editSection.replace(/_/g, " ").replace(/\w/g, ch => ch.toUpperCase())}
+                            </h3>
+                            <p style={{ fontSize: 11, color: "#94a3b8", margin: "4px 0 0" }}>Editorial QA edit — saves directly to this request</p>
+                          </div>
+                          <button onClick={() => { cancelEdit(); setEditSection(null); }} className="btn-ghost" style={{ padding: "0.4rem 0.9rem" }}>Cancel</button>
+                        </div>
+
+                        {/* Body — scrollable, no DesignFlagToggles (auto-flagging handles that) */}
+                        <div style={{ overflowY: "auto", flex: 1, padding: "20px 24px" }}>
+                          {editSection === "seo_meta"         && SEO_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
+                          {editSection === "banner"           && BANNER_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
+                          {editSection === "overview"         && OVERVIEW_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
+                          {editSection === "key_benefits"     &&
+                            <KeyBenefits
+                              data={{ kb_label: editData.kb_label ?? req.kb_label ?? "", kb_impact: editData.kb_impact ?? req.kb_impact ?? "", kb_description: editData.kb_description ?? req.kb_description ?? "", kb_cards: editData.kb_cards ?? liveData.kb_cards }}
+                              onChange={d => setEditData(p => ({ ...p, kb_label: d.kb_label, kb_impact: d.kb_impact, kb_description: d.kb_description, kb_cards: d.kb_cards }))}
+                              requestId={req.id}
+                            />}
+                          {editSection === "features_apps"    &&
+                            <FeaturesApps
+                              data={{ fa_label: editData.fa_label ?? req.fa_label ?? "", fa_impact: editData.fa_impact ?? req.fa_impact ?? "", fa_description: editData.fa_description ?? req.fa_description ?? "", fa_view_type: editData.fa_view_type ?? req.fa_view_type ?? "", fa_items: editData.fa_items ?? liveData.fa_items, fa_columns: editData.fa_columns ?? liveData.fa_columns, fa_rows: editData.fa_rows ?? liveData.fa_rows }}
+                              onChange={d => setEditData(p => ({ ...p, fa_label: d.fa_label, fa_impact: d.fa_impact, fa_description: d.fa_description, fa_view_type: d.fa_view_type, fa_items: d.fa_items, fa_columns: d.fa_columns, fa_rows: d.fa_rows }))}
+                              requestId={req.id}
+                            />}
+                          {editSection === "customer_stories" &&
+                            <CustomerStories
+                              data={{ cs_label: editData.cs_label ?? req.cs_label ?? "", cs_impact: editData.cs_impact ?? req.cs_impact ?? "", cs_items: editData.cs_items ?? liveData.cs_items }}
+                              onChange={d => setEditData(p => ({ ...p, cs_label: d.cs_label, cs_impact: d.cs_impact, cs_items: d.cs_items }))}
+                              requestId={req.id}
+                            />}
+                          {editSection === "promo_section"    && PROMO_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
+                          {editSection === "related_content"  &&
+                            <RelatedContent
+                              data={{ rc_label: editData.rc_label ?? req.rc_label ?? "", rc_impact: editData.rc_impact ?? req.rc_impact ?? "", rc_cards: editData.rc_cards ?? liveData.rc_cards }}
+                              onChange={d => setEditData(p => ({ ...p, rc_label: d.rc_label, rc_impact: d.rc_impact, rc_cards: d.rc_cards }))}
+                              requestId={req.id}
+                            />}
+                          {editSection === "resources"        && RES_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
+                          {editSection === "related_products" &&
+                            <RelatedProducts
+                              data={{ rp_label: editData.rp_label ?? req.rp_label ?? "", rp_impact: editData.rp_impact ?? req.rp_impact ?? "", rp_description: editData.rp_description ?? req.rp_description ?? "", rp_cards: editData.rp_cards ?? liveData.rp_cards }}
+                              onChange={d => setEditData(p => ({ ...p, rp_label: d.rp_label, rp_impact: d.rp_impact, rp_description: d.rp_description, rp_cards: d.rp_cards }))}
+                              requestId={req.id}
+                            />}
+                          {editSection === "training_support" && TS_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
+                        </div>
+
+                        {/* Footer */}
+                        <div style={{ padding: "14px 24px", borderTop: "1px solid #F3F3F3", display: "flex", justifyContent: "flex-end", gap: 8, flexShrink: 0, background: "#fafafa" }}>
+                          {error && <span style={{ fontSize: 11, color: "#c0392b", alignSelf: "center", marginRight: "auto" }}>{error}</span>}
+                          <button onClick={() => { cancelEdit(); setEditSection(null); }} className="btn-ghost">Cancel</button>
+                          <button onClick={async () => { await saveEdit(); if (!saving) setEditSection(null); }} disabled={saving} className="btn-success" style={{ minWidth: 140 }}>
+                            {saving ? "Saving..." : "Save Changes"}
+                          </button>
+                        </div>
+                      </div>
+                    </>,
+                    document.body
+                  )}
+                </div>
+              )}
+              {/* Non-Editorial QA stakeholder — show full page preview inline */}
+              {(!isEditorialQA && isStakeholderOwner) && (
                 <div style={{ background: "#ffffff", border: "1px solid #E0E0E0", borderRadius: 10, overflow: "hidden" }}>
                   <PagePreview req={liveData} pageType={req.page_type} fullPage={false} />
                 </div>
@@ -846,7 +962,8 @@ export default function ReqDetail({ reqId, go, user }) {
                     setUploading(true);
                     setError("");
                     try {
-                      const publicUrl = await uploadToStorage(file, req.id);
+                      // Pass slot.key so old image for this slot gets replaced, not accumulated
+                      const publicUrl = await uploadToStorage(file, req.id, slot.key);
                       updateSlotValue(publicUrl);
                       await fetchAll();
                     } catch(e) {
@@ -889,14 +1006,14 @@ export default function ReqDetail({ reqId, go, user }) {
                         </details>
                       )}
 
-                      {/* URL input + upload */}
+                      {/* URL input + upload/replace */}
                       <div style={{ display: "flex", gap: 8, marginBottom: currentVal ? 12 : 0 }}>
                         <input value={currentVal}
                           onChange={e => updateSlotValue(e.target.value)}
                           placeholder="Paste image URL or upload below..."
                           className="input" style={{ flex: 1, fontSize: 12 }} />
-                        <label style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0 12px", cursor: uploading ? "not-allowed" : "pointer", fontSize: 12, color: "#646464", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", fontFamily: "'Rubik',sans-serif", opacity: uploading ? 0.6 : 1 }}>
-                          {uploading ? "⏳" : "📤"} Upload
+                        <label style={{ background: isFilled ? "#1b5793" : "#F3F3F3", border: `1px solid ${isFilled ? "#1b5793" : "#E0E0E0"}`, borderRadius: 7, padding: "0 12px", cursor: uploading ? "not-allowed" : "pointer", fontSize: 12, color: isFilled ? "#fff" : "#646464", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", fontFamily: "'Rubik',sans-serif", opacity: uploading ? 0.6 : 1, transition: "all 0.15s" }}>
+                          {uploading ? "⏳ Uploading…" : isFilled ? "↺ Replace" : "📤 Upload"}
                           <input type="file" accept="image/*,.svg" style={{ display: "none" }} disabled={uploading}
                             onChange={e => handleSlotUpload(e.target.files?.[0])} />
                         </label>
@@ -931,65 +1048,76 @@ export default function ReqDetail({ reqId, go, user }) {
           })()}
 
           {/* ── Edit — Editorial QA ── */}
-          {tab === "edit" && (isEditorialQA || (isReturnedDraft && isStakeholderOwner)) && (
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Edit {editSection.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</h3>
-                  <p>{isReturnedDraft && isStakeholderOwner ? "Address the revision notes and update your content" : "As Editorial QA you can overwrite any field"}</p>
+          {tab === "edit" && (!isEditorialQA && ((isReturnedDraft && isStakeholderOwner) || isFreshDraft)) && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+              {/* Left — edit form */}
+              <div className="card">
+                <div className="card-header">
+                  <div>
+                    <h3>Edit {editSection.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</h3>
+                    <p>{isReturnedDraft && isStakeholderOwner ? "Address the revision notes and update your content" : isFreshDraft ? "Review and update your content before submitting" : "As Editorial QA you can overwrite any field"}</p>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {!editData
+                      ? <button onClick={startEdit} className="btn-primary" style={{ padding: "0.45rem 1rem", fontSize: 12 }}>✎ Start Editing</button>
+                      : <>
+                          <button onClick={cancelEdit} className="btn-ghost">Cancel</button>
+                          <button onClick={saveEdit} disabled={saving} className="btn-success">{saving ? "Saving..." : "✓ Save"}</button>
+                        </>
+                    }
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {!editData
-                    ? <button onClick={startEdit} className="btn-primary" style={{ padding: "0.45rem 1rem", fontSize: 12 }}>✎ Start Editing</button>
-                    : <>
-                        <button onClick={cancelEdit} className="btn-ghost">Cancel</button>
-                        <button onClick={saveEdit} disabled={saving} className="btn-success">{saving ? "Saving..." : "✓ Save"}</button>
-                      </>
-                  }
+                <div style={{ overflowY: "auto", maxHeight: "70vh", paddingRight: 4 }}>
+                  {editSection === "seo_meta"         && SEO_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
+                  {editSection === "banner"           && <><DesignFlagToggle sectionKey="banner" value={editData?.design_flag_banner ?? liveData.design_flag_banner} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_banner", v); }} />{BANNER_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}</>}
+                  {editSection === "overview"         && <><DesignFlagToggle sectionKey="overview" value={editData?.design_flag_overview ?? liveData.design_flag_overview} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_overview", v); }} />{OVERVIEW_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}</>}
+                  {editSection === "key_benefits"     && (
+                    <><DesignFlagToggle sectionKey="kb" value={editData?.design_flag_kb ?? liveData.design_flag_kb} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_kb", v); }} />
+                    <KeyBenefits
+                      data={editData ? { kb_label: editData.kb_label ?? req.kb_label ?? "", kb_impact: editData.kb_impact ?? req.kb_impact ?? "", kb_description: editData.kb_description ?? req.kb_description ?? "", kb_cards: liveData.kb_cards } : { kb_label: req.kb_label ?? "", kb_impact: req.kb_impact ?? "", kb_description: req.kb_description ?? "", kb_cards: liveData.kb_cards }}
+                      onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), kb_label: d.kb_label, kb_impact: d.kb_impact, kb_description: d.kb_description, kb_cards: d.kb_cards })); }}
+                    /></>)}
+                  {editSection === "features_apps"    && (
+                    <><DesignFlagToggle sectionKey="fa" value={editData?.design_flag_fa ?? liveData.design_flag_fa} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_fa", v); }} />
+                    <FeaturesApps
+                      data={editData ? { fa_label: editData.fa_label ?? req.fa_label ?? "", fa_impact: editData.fa_impact ?? req.fa_impact ?? "", fa_description: editData.fa_description ?? req.fa_description ?? "", fa_view_type: editData.fa_view_type ?? req.fa_view_type ?? "", fa_items: liveData.fa_items, fa_columns: liveData.fa_columns, fa_rows: liveData.fa_rows } : { fa_label: req.fa_label ?? "", fa_impact: req.fa_impact ?? "", fa_description: req.fa_description ?? "", fa_view_type: req.fa_view_type ?? "", fa_items: liveData.fa_items, fa_columns: liveData.fa_columns, fa_rows: liveData.fa_rows }}
+                      onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), fa_label: d.fa_label, fa_impact: d.fa_impact, fa_description: d.fa_description, fa_view_type: d.fa_view_type, fa_items: d.fa_items, fa_columns: d.fa_columns, fa_rows: d.fa_rows })); }}
+                      requestId={req.id}
+                    /></>)}
+                  {editSection === "customer_stories" && (
+                    <CustomerStories
+                      data={editData ? { cs_label: editData.cs_label ?? req.cs_label ?? "", cs_impact: editData.cs_impact ?? req.cs_impact ?? "", cs_items: liveData.cs_items } : { cs_label: req.cs_label ?? "", cs_impact: req.cs_impact ?? "", cs_items: liveData.cs_items }}
+                      onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), cs_label: d.cs_label, cs_impact: d.cs_impact, cs_items: d.cs_items })); }}
+                      requestId={req.id}
+                    />
+                  )}
+                  {editSection === "promo_section"    && <><DesignFlagToggle sectionKey="promo" value={editData?.design_flag_promo ?? liveData.design_flag_promo} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_promo", v); }} />{PROMO_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}</>}
+                  {editSection === "related_content"  && (
+                    <><DesignFlagToggle sectionKey="rc" value={editData?.design_flag_rc ?? liveData.design_flag_rc} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_rc", v); }} />
+                    <RelatedContent
+                      data={editData ? { rc_label: editData.rc_label ?? req.rc_label ?? "", rc_impact: editData.rc_impact ?? req.rc_impact ?? "", rc_cards: liveData.rc_cards } : { rc_label: req.rc_label ?? "", rc_impact: req.rc_impact ?? "", rc_cards: liveData.rc_cards }}
+                      onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), rc_label: d.rc_label, rc_impact: d.rc_impact, rc_cards: d.rc_cards })); }}
+                      requestId={req.id}
+                    /></>)}
+                  {editSection === "resources"        && RES_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
+                  {editSection === "related_products" && (
+                    <RelatedProducts
+                      data={editData ? { rp_label: editData.rp_label ?? req.rp_label ?? "", rp_impact: editData.rp_impact ?? req.rp_impact ?? "", rp_description: editData.rp_description ?? req.rp_description ?? "", rp_cards: liveData.rp_cards } : { rp_label: req.rp_label ?? "", rp_impact: req.rp_impact ?? "", rp_description: req.rp_description ?? "", rp_cards: liveData.rp_cards }}
+                      onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), rp_label: d.rp_label, rp_impact: d.rp_impact, rp_description: d.rp_description, rp_cards: d.rp_cards })); }}
+                      requestId={req.id}
+                    />
+                  )}
+                  {editSection === "training_support" && <><DesignFlagToggle sectionKey="ts" value={editData?.design_flag_ts ?? liveData.design_flag_ts} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_ts", v); }} />{TS_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}</>}
                 </div>
               </div>
-              {editSection === "seo_meta"         && SEO_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
-              {editSection === "banner"           && <><DesignFlagToggle sectionKey="banner" value={editData?.design_flag_banner ?? liveData.design_flag_banner} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_banner", v); }} />{BANNER_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}</>}
-              {editSection === "overview"         && <><DesignFlagToggle sectionKey="overview" value={editData?.design_flag_overview ?? liveData.design_flag_overview} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_overview", v); }} />{OVERVIEW_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}</>}
-              {editSection === "key_benefits"     && (
-                <><DesignFlagToggle sectionKey="kb" value={editData?.design_flag_kb ?? liveData.design_flag_kb} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_kb", v); }} />
-                <KeyBenefits
-                  data={editData ? { kb_label: editData.kb_label ?? req.kb_label ?? "", kb_impact: editData.kb_impact ?? req.kb_impact ?? "", kb_description: editData.kb_description ?? req.kb_description ?? "", kb_cards: liveData.kb_cards } : { kb_label: req.kb_label ?? "", kb_impact: req.kb_impact ?? "", kb_description: req.kb_description ?? "", kb_cards: liveData.kb_cards }}
-                  onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), kb_label: d.kb_label, kb_impact: d.kb_impact, kb_description: d.kb_description, kb_cards: d.kb_cards })); }}
-                /></>)}
-              {editSection === "features_apps"    && (
-                <><DesignFlagToggle sectionKey="fa" value={editData?.design_flag_fa ?? liveData.design_flag_fa} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_fa", v); }} />
-                <FeaturesApps
-                  data={editData ? { fa_label: editData.fa_label ?? req.fa_label ?? "", fa_impact: editData.fa_impact ?? req.fa_impact ?? "", fa_description: editData.fa_description ?? req.fa_description ?? "", fa_view_type: editData.fa_view_type ?? req.fa_view_type ?? "", fa_items: liveData.fa_items, fa_columns: liveData.fa_columns, fa_rows: liveData.fa_rows } : { fa_label: req.fa_label ?? "", fa_impact: req.fa_impact ?? "", fa_description: req.fa_description ?? "", fa_view_type: req.fa_view_type ?? "", fa_items: liveData.fa_items, fa_columns: liveData.fa_columns, fa_rows: liveData.fa_rows }}
-                  onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), fa_label: d.fa_label, fa_impact: d.fa_impact, fa_description: d.fa_description, fa_view_type: d.fa_view_type, fa_items: d.fa_items, fa_columns: d.fa_columns, fa_rows: d.fa_rows })); }}
-                /></>)}
-              {editSection === "customer_stories" && (
-                <CustomerStories
-                  data={editData ? { cs_label: editData.cs_label ?? req.cs_label ?? "", cs_impact: editData.cs_impact ?? req.cs_impact ?? "", cs_items: liveData.cs_items } : { cs_label: req.cs_label ?? "", cs_impact: req.cs_impact ?? "", cs_items: liveData.cs_items }}
-                  onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), cs_label: d.cs_label, cs_impact: d.cs_impact, cs_items: d.cs_items })); }}
-                />
-              )}
-              {editSection === "promo_section"    && <><DesignFlagToggle sectionKey="promo" value={editData?.design_flag_promo ?? liveData.design_flag_promo} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_promo", v); }} />{PROMO_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}</>}
-              {editSection === "related_content"  && (
-                <><DesignFlagToggle sectionKey="rc" value={editData?.design_flag_rc ?? liveData.design_flag_rc} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_rc", v); }} />
-                <RelatedContent
-                  data={editData ? { rc_label: editData.rc_label ?? req.rc_label ?? "", rc_impact: editData.rc_impact ?? req.rc_impact ?? "", rc_cards: liveData.rc_cards } : { rc_label: req.rc_label ?? "", rc_impact: req.rc_impact ?? "", rc_cards: liveData.rc_cards }}
-                  onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), rc_label: d.rc_label, rc_impact: d.rc_impact, rc_cards: d.rc_cards })); }}
-                /></>)}
-              {editSection === "resources"        && RES_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}
-              {editSection === "related_products" && (
-                <RelatedProducts
-                  data={editData ? { rp_label: editData.rp_label ?? req.rp_label ?? "", rp_impact: editData.rp_impact ?? req.rp_impact ?? "", rp_description: editData.rp_description ?? req.rp_description ?? "", rp_cards: liveData.rp_cards } : { rp_label: req.rp_label ?? "", rp_impact: req.rp_impact ?? "", rp_description: req.rp_description ?? "", rp_cards: liveData.rp_cards }}
-                  onChange={d => { if (!editData) startEdit(); setEditData(p => ({ ...(p || req), rp_label: d.rp_label, rp_impact: d.rp_impact, rp_description: d.rp_description, rp_cards: d.rp_cards })); }}
-                />
-              )}
-              {editSection === "training_support" && <><DesignFlagToggle sectionKey="ts" value={editData?.design_flag_ts ?? liveData.design_flag_ts} onChange={v => { if (!editData) startEdit(); updEdit("design_flag_ts", v); }} />{TS_FIELDS.map(([k, label, r, ml]) => <EditField key={k} k={k} label={label} required={!!r} multiline={!!ml} />)}</>}
-              {editData && (
-                <div style={{ marginTop: 16 }}>
-                  <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                  <PagePreview req={liveData} pageType={req.page_type} />
+
+              {/* Right — live preview */}
+              <div style={{ position: "sticky", top: 16 }}>
+                <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
+                <div style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 10, overflow: "hidden", maxHeight: "80vh", overflowY: "auto" }}>
+                  <PagePreview req={editData ? { ...liveData, ...editData } : liveData} pageType={req.page_type} />
                 </div>
-              )}
+              </div>
             </div>
           )}
 
@@ -1084,15 +1212,33 @@ export default function ReqDetail({ reqId, go, user }) {
         </div>
 
         {/* Sidebar */}
-        <div>
+        <div style={isEditorialQA ? {
+          position: "sticky", top: 16,
+          height: "calc(100vh - 80px)",
+          display: "flex", flexDirection: "column",
+          background: "#fff", borderRadius: 12,
+          border: "1px solid #E0E0E0",
+          boxShadow: "0 2px 12px rgba(27,87,147,0.08)",
+          overflow: "hidden"
+        } : {}}>
 
-          {/* ── Editorial QA Review Panel ── */}
-          {actionable && isEditorialQA && (
-            <div className="card" style={{ marginBottom: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          {/* ── Editorial QA — TOP ZONE: stage tracker ── */}
+          {isEditorialQA && (
+            <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #F3F3F3", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 16 }}>✍️</span>
                 <span className="text-xs text-uppercase font-medium">Editorial QA Review</span>
+                <span className="badge" style={{ background: "#e8f4fb", color: "#1b5793", borderColor: "#1b579344", marginLeft: "auto", fontSize: 10 }}>{req.page_type}</span>
               </div>
+              <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0", lineHeight: 1.5 }}>
+                Hover over sections in the preview to edit inline. Approve or return using the buttons below.
+              </p>
+            </div>
+          )}
+
+          {/* ── Editorial QA — MIDDLE ZONE: scrollable content ── */}
+          {isEditorialQA && (
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
               {user.can_assign && (
                 <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid #F3F3F3" }}>
                   <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Assign to team member</label>
@@ -1107,9 +1253,34 @@ export default function ReqDetail({ reqId, go, user }) {
                   </div>
                 </div>
               )}
+              {/* Comments */}
+              <p className="text-xs text-uppercase font-medium mb-8">Comments ({comments.length})</p>
+              {comments.length === 0
+                ? <div style={{ color: "#B5B5B5", fontSize: 12, textAlign: "center", padding: "0.5rem 0 1rem" }}>No comments yet.</div>
+                : <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                    {comments.map(c => {
+                      const m = ROLE_META[c.user_role] || ROLE_META.stakeholder;
+                      return (
+                        <div key={c.id} style={{ background: c.is_return ? "#fff8e6" : "#F9F9F9", border: `1px solid ${c.is_return ? "#ffc10744" : "#F3F3F3"}`, borderLeft: `3px solid ${c.is_return ? "#ffc107" : "#E0E0E0"}`, borderRadius: 7, padding: "0.6rem 0.8rem" }}>
+                          <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600, marginBottom: 3, display: "flex", justifyContent: "space-between" }}>
+                            <span>{m.icon} {c.user_name}</span>
+                            <span>{new Date(c.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: "#3C3C3C", lineHeight: 1.5 }}>{c.text}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+              }
+              {error && <div className="alert alert-error" style={{ marginBottom: 10 }}>{error}</div>}
               {editData && <div className="alert alert-warning" style={{ marginBottom: 10 }}>⚠️ Save your edits before approving.</div>}
-              {error    && <div className="alert alert-error"  style={{ marginBottom: 10 }}>{error}</div>}
-              <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Add an approval note (optional)..." className="textarea" style={{ minHeight: 80, marginBottom: 10 }} />
+            </div>
+          )}
+
+          {/* ── Editorial QA — BOTTOM ZONE: always-visible actions ── */}
+          {actionable && isEditorialQA && (
+            <div style={{ padding: "12px 16px", borderTop: "1px solid #F3F3F3", background: "#fff", flexShrink: 0 }}>
+              <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Add an approval note (optional)..." className="textarea" style={{ minHeight: 64, marginBottom: 10 }} />
               <div className="flex-col gap-8">
                 <button onClick={doAdvance} disabled={saving || !!editData} className="btn-primary btn-full" style={{ opacity: saving || !!editData ? 0.5 : 1, justifyContent: "center" }}>
                   {saving ? "Processing..." : "Approve → Send to Design QA"}
@@ -1208,6 +1379,80 @@ export default function ReqDetail({ reqId, go, user }) {
                 style={{ width: "100%", background: saving ? "#B5B5B5" : "#0e7a3d", color: "#fff", border: "none", borderRadius: 8, padding: "0.8rem", fontSize: 14, fontWeight: 500, cursor: saving ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
                 {saving ? "Submitting..." : "✅ Approve & Send to Web Team"}
               </button>
+
+              {/* Return options — Option B */}
+              <div style={{ marginTop: 10, borderTop: "1px solid #F3F3F3", paddingTop: 12 }}>
+                <p style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8, textAlign: "center" }}>Something needs to change?</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <button
+                    onClick={async () => {
+                      if (!comment.trim()) { setError("Please describe the content issue before returning."); return; }
+                      setSaving(true); setError("");
+                      try {
+                        await withTimeout(supabase.from("requests").update({ status: "editorial_qa", updated_at: new Date().toISOString() }).eq("id", req.id));
+                        await withTimeout(supabase.from("comments").insert({ request_id: req.id, user_id: user.id, user_name: user.name, user_role: user.role, text: `[Return to Editorial QA] ${comment}`, is_return: true }));
+                        await withTimeout(supabase.from("status_history").insert({ request_id: req.id, user_id: user.id, user_name: user.name, from_status: "pending_approval", to_status: "editorial_qa" }));
+                        setComment(""); await fetchAll();
+                      } catch(e) { setError("Failed to return. Please try again."); }
+                      finally { setSaving(false); }
+                    }}
+                    disabled={saving}
+                    style={{ background: "#fff", color: "#1b5793", border: "1.5px solid #1b5793", borderRadius: 7, padding: "0.6rem 0.5rem", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s", textAlign: "center" }}>
+                    ↩ Return to Editorial QA
+                    <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2, fontWeight: 400 }}>Content issue</div>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!comment.trim()) { setError("Please describe the image issue before returning."); return; }
+                      setSaving(true); setError("");
+                      try {
+                        await withTimeout(supabase.from("requests").update({ status: "design_qa", updated_at: new Date().toISOString() }).eq("id", req.id));
+                        await withTimeout(supabase.from("comments").insert({ request_id: req.id, user_id: user.id, user_name: user.name, user_role: user.role, text: `[Return to Design QA] ${comment}`, is_return: true }));
+                        await withTimeout(supabase.from("status_history").insert({ request_id: req.id, user_id: user.id, user_name: user.name, from_status: "pending_approval", to_status: "design_qa" }));
+                        setComment(""); await fetchAll();
+                      } catch(e) { setError("Failed to return. Please try again."); }
+                      finally { setSaving(false); }
+                    }}
+                    disabled={saving}
+                    style={{ background: "#fff", color: "#1b5793", border: "1.5px solid #1b5793", borderRadius: 7, padding: "0.6rem 0.5rem", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s", textAlign: "center" }}>
+                    ↩ Return to Design QA
+                    <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2, fontWeight: 400 }}>Image issue</div>
+                  </button>
+                </div>
+                <p style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", marginTop: 6 }}>Use the note field above to describe what needs to change</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Fresh Draft: Stakeholder initial submit panel ── */}
+          {isFreshDraft && (
+            <div className="card" style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 16 }}>🚀</span>
+                <span className="text-xs text-uppercase font-medium">Ready to Submit?</span>
+              </div>
+              <p style={{ fontSize: 12, color: "#646464", marginBottom: 14, lineHeight: 1.65 }}>
+                Review your content using the Preview tab, then submit for Editorial QA review.
+              </p>
+              <textarea value={comment} onChange={e => setComment(e.target.value)}
+                placeholder="Add a note for Editorial QA (optional)..."
+                className="textarea" style={{ minHeight: 70, marginBottom: 10 }} />
+              {error && <div className="alert alert-error" style={{ marginBottom: 10 }}>{error}</div>}
+              <button
+                onClick={async () => {
+                  setSaving(true); setError("");
+                  try {
+                    await withTimeout(supabase.from("requests").update({ status: "editorial_qa", updated_at: new Date().toISOString() }).eq("id", req.id));
+                    if (comment.trim()) await withTimeout(supabase.from("comments").insert({ request_id: req.id, user_id: user.id, user_name: user.name, user_role: user.role, text: comment, is_return: false }));
+                    await withTimeout(supabase.from("status_history").insert({ request_id: req.id, user_id: user.id, user_name: user.name, from_status: "draft", to_status: "editorial_qa" }));
+                    setComment(""); await fetchAll();
+                  } catch(e) { setError(e.message === "Request timed out" ? "Request timed out — please try again." : "Submit failed. Please try again."); }
+                  finally { setSaving(false); }
+                }}
+                disabled={saving}
+                className="btn-primary btn-full" style={{ justifyContent: "center" }}>
+                {saving ? "Submitting..." : "🚀 Submit for Editorial QA"}
+              </button>
             </div>
           )}
 
@@ -1288,7 +1533,7 @@ export default function ReqDetail({ reqId, go, user }) {
             </div>
           )}
 
-          <div className="card">
+          {!isEditorialQA && <div className="card">
             <p className="text-xs text-uppercase font-medium mb-12">Comments ({comments.length})</p>
             {comments.length === 0
               ? <div style={{ color: "#B5B5B5", fontSize: 13, textAlign: "center", padding: "1rem 0" }}>No comments yet.</div>
@@ -1305,7 +1550,7 @@ export default function ReqDetail({ reqId, go, user }) {
                 );
               })
             }
-          </div>
+          </div>}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 "use client";
+import ImageField from "@/components/ImageField";
 import { useState } from "react";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
@@ -63,10 +64,10 @@ function TagSelector({ selected = [], onChange }) {
 }
 
 // Video / Mixed Media Carousel
-function CarouselForm({ data = {}, onChange, type }) {
+function CarouselForm({ data = {}, onChange, type, requestId = "draft" }) {
   const items  = data.items || [];
   const upd    = (key, val) => onChange({ ...data, [key]: val });
-  const addItem    = () => { if (items.length >= 9) return; upd("items", [...items, { id: `item-${Date.now()}`, title: "", url: "" }]); };
+  const addItem    = () => { if (items.length >= 9) return; upd("items", [...items, { id: `item-${Date.now()}`, title: "", url: "", thumbnail_ref: null }]); };
   const updateItem = (id, field, val) => upd("items", items.map(i => i.id === id ? { ...i, [field]: val } : i));
   const removeItem = (id) => upd("items", items.filter(i => i.id !== id));
 
@@ -100,18 +101,27 @@ function CarouselForm({ data = {}, onChange, type }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {items.map((item, idx) => (
-          <div key={item.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "start", background: "#F9F9F9", borderRadius: 8, padding: "0.75rem", border: "1px solid #E0E0E0" }}>
-            <div>
-              <label className="field-label">Title</label>
-              <input value={item.title} onChange={e => updateItem(item.id, "title", e.target.value)}
-                placeholder="Item title..." className="input" />
+          <div key={item.id} style={{ background: "#F9F9F9", borderRadius: 8, padding: "0.75rem", border: "1px solid #E0E0E0" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 8, alignItems: "start", marginBottom: 10 }}>
+              <div>
+                <label className="field-label">Title</label>
+                <input value={item.title} onChange={e => updateItem(item.id, "title", e.target.value)}
+                  placeholder="Item title..." className="input" />
+              </div>
+              <div>
+                <label className="field-label">{isVideo ? "Video URL" : "Resource URL"}</label>
+                <input value={item.url} onChange={e => updateItem(item.id, "url", e.target.value)}
+                  placeholder="https://..." className="input" />
+              </div>
+              <button onClick={() => removeItem(item.id)} style={{ marginTop: 20, background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.6rem", fontSize: 11, cursor: "pointer" }}>✕</button>
             </div>
-            <div>
-              <label className="field-label">{isVideo ? "Video URL" : "Resource URL"}</label>
-              <input value={item.url} onChange={e => updateItem(item.id, "url", e.target.value)}
-                placeholder="https://..." className="input" />
-            </div>
-            <button onClick={() => removeItem(item.id)} style={{ marginTop: 20, background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.6rem", fontSize: 11, cursor: "pointer" }}>✕</button>
+            <ImageField
+              label={isVideo ? "Video Thumbnail" : "Item Thumbnail"}
+              value={item.thumbnail_ref || null}
+              onChange={v => updateItem(item.id, "thumbnail_ref", v)}
+              fieldKey={`resources_${type}-item-${idx + 1}_thumbnail`}
+              requestId={requestId}
+            />
           </div>
         ))}
       </div>
@@ -120,7 +130,7 @@ function CarouselForm({ data = {}, onChange, type }) {
 }
 
 // Resources 1-4
-function ResourcesForm({ data = {}, onChange }) {
+function ResourcesForm({ data = {}, onChange, requestId = "draft" }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   return (
@@ -132,8 +142,13 @@ function ResourcesForm({ data = {}, onChange }) {
         </div>
         <Field label="Title" required value={data.r1_title || ""} onChange={v => upd("r1_title", v)} placeholder='e.g. "TIE Language — The Fast Path to High-Performance Embedded SoC"' />
         <Field label="Link URL" required value={data.r1_link || ""} onChange={v => upd("r1_link", v)} placeholder="https://..." />
-        <Field label="Image URL" value={data.r1_image || ""} onChange={v => upd("r1_image", v)} placeholder="https://... or leave for Design QA" />
-        <Field label="Image Description for Design QA" value={data.r1_image_note || ""} onChange={v => upd("r1_image_note", v)} placeholder='e.g. "Circuit board close-up photo"' hint="Design QA will source from library" />
+        <ImageField
+          label="Featured Image"
+          value={data.r1_image_ref || null}
+          onChange={v => upd("r1_image_ref", v)}
+          fieldKey="resources_r1-image"
+          requestId={requestId}
+        />
         <div className="field-wrap">
           <label className="field-label">Tag</label>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -230,7 +245,7 @@ const SUB_ITEMS = [
   { key: "news_blogs",      label: "News & Blogs",         icon: "📰", desc: "News and blog links with tags" },
 ];
 
-export default function Resources({ data = {}, onChange, isNA, onToggleNA }) {
+export default function Resources({ data = {}, onChange, isNA, onToggleNA, requestId = "draft" }) {
   const [activeTab, setActiveTab] = useState(null);
   const upd      = (key, val) => onChange({ ...data, [key]: val });
   const selected = data.res_selected || [];
@@ -302,10 +317,10 @@ export default function Resources({ data = {}, onChange, isNA, onToggleNA }) {
           {/* Active form */}
           <div className="card">
             {activeTab === "video_carousel" && (
-              <CarouselForm type="video" data={data.res_video_carousel || {}} onChange={v => upd("res_video_carousel", v)} />
+              <CarouselForm type="video" data={data.res_video_carousel || {}} onChange={v => upd("res_video_carousel", v)} requestId={requestId} />
             )}
             {activeTab === "mixed_carousel" && (
-              <CarouselForm type="mixed" data={data.res_mixed_carousel || {}} onChange={v => upd("res_mixed_carousel", v)} />
+              <CarouselForm type="mixed" data={data.res_mixed_carousel || {}} onChange={v => upd("res_mixed_carousel", v)} requestId={requestId} />
             )}
             {activeTab === "resources" && (
               <ResourcesForm data={data.res_resources || {}} onChange={v => upd("res_resources", v)} />

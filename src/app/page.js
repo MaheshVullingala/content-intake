@@ -27,13 +27,25 @@ export default function App() {
   const countTimer   = useRef(null);
   const currentView  = useRef("dashboard");
   const saveDraftRef = useRef(null); // NewRequest will register its save fn here
+  const [pendingNav,  setPendingNav]  = useState(null); // nav destination waiting for confirmation
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "INITIAL_SESSION") {
         if (session) {
-          try { const p = await getUserProfile(); setUser(p); } catch(e) { setUser(null); }
+          try {
+            // Timeout on getUserProfile prevents hanging on stale sessions
+            const profilePromise = getUserProfile();
+            const timeoutPromise = new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 8000));
+            const p = await Promise.race([profilePromise, timeoutPromise]);
+            setUser(p);
+          } catch(e) {
+            // Session was stale — clear and force re-login
+            setUser(null);
+            clearSupabaseStorage();
+            await supabase.auth.signOut().catch(() => {});
+          }
         } else { setUser(null); }
         setLoading(false);
       }
@@ -46,6 +58,12 @@ export default function App() {
       }
       if (event === "SIGNED_OUT") { setUser(null); setView("dashboard"); setLoading(false); }
       if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") setLoading(false);
+      if (event === "TOKEN_REFRESH_FAILED") {
+        // Token refresh failed — clear storage and force re-login
+        setUser(null);
+        clearSupabaseStorage();
+        setLoading(false);
+      }
     });
 
     const sessionCheck = setInterval(async () => {
@@ -68,6 +86,17 @@ export default function App() {
   }, [user?.id]);
 
   // ── Logout ────────────────────────────────────────────────────────────────
+  // Clear all Supabase auth tokens from localStorage — prevents stale session accumulation
+  const clearSupabaseStorage = () => {
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith("sb-") || key.startsWith("supabase") || key === "cip-auth") {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch(e) {}
+  };
+
   const logout = useCallback(async () => {
     setUser(null);
     setView("dashboard");
@@ -78,6 +107,8 @@ export default function App() {
     try {
       await Promise.race([supabase.auth.signOut(), new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 5000))]);
     } catch(e) {}
+    // Always clear localStorage after signOut to prevent token accumulation
+    clearSupabaseStorage();
   }, []);
 
   // ── Auto-logout on idle ───────────────────────────────────────────────────
@@ -169,7 +200,7 @@ export default function App() {
   // ── Main app ──────────────────────────────────────────────────────────────
   return (
     <div className="app-shell">
-      <Navbar go={go} view={view} user={user} logout={logout} />
+      <Navbar go={go} view={view} user={user} logout={logout} onNavigate={(dest) => { if ((view === "new" || view === "edit") && dest !== view) setPendingNav(dest); else go(dest); }} />
 
       {/* ── Idle Warning Toast ── */}
       {idleWarning && (
@@ -185,8 +216,8 @@ export default function App() {
 
       <main className="app-main">
         {view === "dashboard" && <Dashboard go={go} user={user} />}
-        {view === "new"       && <NewRequest go={go} user={user} saveDraftRef={saveDraftRef} />}
-        {view === "edit"      && <NewRequest go={go} user={user} draftId={reqId} saveDraftRef={saveDraftRef} />}
+        {view === "new"       && <NewRequest go={go} user={user} saveDraftRef={saveDraftRef} pendingNav={pendingNav} onClearPendingNav={() => setPendingNav(null)} />}
+        {view === "edit"      && <NewRequest go={go} user={user} draftId={reqId} saveDraftRef={saveDraftRef} pendingNav={pendingNav} onClearPendingNav={() => setPendingNav(null)} />}
         {view === "detail"    && <ReqDetail reqId={reqId} go={go} user={user} navParams={navParams} />}
         {view === "admin"     && <AdminPanel user={user} timeoutMins={timeoutMins} onTimeoutChange={setTimeoutMins} />}
       </main>

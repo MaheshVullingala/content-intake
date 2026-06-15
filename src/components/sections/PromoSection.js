@@ -38,11 +38,13 @@ export default function PromoSection({ data = {}, onChange, isNA, onToggleNA, ai
 
         <div style={{ paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #F3F3F3" }}>
           <div style={{ fontSize: 11, color: "#646464", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Background Image</div>
-          <Field label="Image URL" value={data.promo_bg_image || ""} onChange={v => upd("promo_bg_image", v)}
-            placeholder="https://... or leave for Design QA" />
-          <Field label="Image Description / Note for Design QA" value={data.promo_bg_note || ""} onChange={v => upd("promo_bg_note", v)}
-            placeholder='e.g. "Dark circuit board image with purple accent lighting"'
-            hint="Describe the background image needed — Design QA will source from library" />
+          <ImageField
+            label=""
+            value={data.promo_bg_image_ref || null}
+            onChange={v => upd("promo_bg_image_ref", v)}
+            fieldKey="promo-section_bg-image"
+            requestId={requestId}
+          />
         </div>
 
         <Field label="Label" value={data.promo_label || ""} onChange={v => upd("promo_label", v)}

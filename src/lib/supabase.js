@@ -5,9 +5,11 @@ const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    persistSession:    true,   // stay logged in between sessions
-    autoRefreshToken:  true,   // auto refresh JWT
-    detectSessionInUrl:true,   // handle password reset links
+    persistSession:     true,        // stay logged in between sessions
+    autoRefreshToken:   true,        // auto refresh JWT
+    detectSessionInUrl: true,        // handle password reset links
+    storageKey:         "cip-auth",  // unique key avoids clashes with other apps
+    storage:            typeof window !== "undefined" ? window.localStorage : undefined,
   },
 });
 

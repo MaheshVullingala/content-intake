@@ -1,13 +1,13 @@
 "use client";
 import ImageField from "@/components/ImageField";
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle }) => (
   <div className="field-wrap">
     <label className="field-label">
       {label}{required && <span className="req"> *</span>}
     </label>
     {multiline
-      ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" />
+      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
       : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
     }
     {hint && <div className="field-hint">{hint}</div>}
@@ -46,8 +46,7 @@ export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA,
             {naButton}
           </div>
         </div>
-        <Field label="Label" value={data.cs_label || ""} onChange={v => upd("cs_label", v)}
-          placeholder='e.g. "ENDORSEMENTS"' hint="Small caps tag above the heading (optional)" />
+        <Field label="Label" value="CUSTOMER STORIES" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required value={data.cs_impact || ""} onChange={v => upd("cs_impact", v)}
           placeholder='e.g. "See What Customers Have to Say"' multiline />
       </div>

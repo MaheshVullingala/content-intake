@@ -8,20 +8,39 @@ export default function Login({ onSwitch }) {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
 
+  const clearStaleTokens = () => {
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith("sb-") || key.startsWith("supabase") || key === "cip-auth") {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch(e) {}
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    // Clear any stale tokens before attempting login — prevents session accumulation
+    clearStaleTokens();
     try {
-      const timeout = setTimeout(() => {
-        setLoading(false);
-        setError("Request timed out — please check your connection and try again.");
-      }, 12000);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      clearTimeout(timeout);
-      if (error) setError(error.message);
+      const { error } = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 12000))
+      ]);
+      if (error) {
+        // If login itself times out or fails, clear again and show message
+        clearStaleTokens();
+        setError(error.message === "timeout"
+          ? "Request timed out — please check your connection and try again."
+          : error.message);
+      }
     } catch(e) {
-      setError("Login failed — please try again.");
+      clearStaleTokens();
+      setError(e.message === "timeout"
+        ? "Request timed out — please try again."
+        : "Login failed — please try again.");
     } finally {
       setLoading(false);
     }

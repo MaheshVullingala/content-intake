@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import { PAGE_TYPES, getSectionsForPageType } from "@/lib/constants";
@@ -27,7 +27,7 @@ import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview
 const EMPTY_SEO = { seo_page_location:"", seo_meta_title:"", seo_meta_description:"", seo_meta_keywords:"" };
 
 const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image_ref:null };
-const EMPTY_OVERVIEW = { overview_label:"", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_ref:null };
+const EMPTY_OVERVIEW = { overview_label:"OVERVIEW", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_ref:null };
 
 const CHAR_LIMITS = {
   page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300,
@@ -42,7 +42,7 @@ const CHAR_LIMITS = {
   ts_label:40, ts_impact:80,
 };
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint, charLimit }) => {
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, charLimit, disabled, readOnly, style: fieldStyle }) => {
   const limit = charLimit || null;
   const len   = (value || "").length;
   const over  = limit && len > limit;
@@ -59,10 +59,10 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
         )}
       </div>
       {multiline
-        ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea"
-            style={over ? { borderColor: "#c0392b" } : {}} />
-        : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input"
-            style={over ? { borderColor: "#c0392b" } : {}} />
+        ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly}
+            style={fieldStyle || (over ? { borderColor: "#c0392b" } : {})} />
+        : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly}
+            style={fieldStyle || (over ? { borderColor: "#c0392b" } : {})} />
       }
       {over && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 3 }}>⚠️ Exceeds {limit} character limit</div>}
       {hint && !over && <div className="field-hint">{hint}</div>}
@@ -76,24 +76,24 @@ const parseJSONB = (val, fb = []) => {
   return val;
 };
 
-export default function NewRequest({ go, user, draftId }) {
+export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav, onClearPendingNav }) {
   const [step,          setStep]         = useState(draftId ? 2 : 1);
   const [draftDbId,     setDraftDbId]    = useState(draftId || null);
   const [pageType,      setPageType]     = useState("");
-  const [activeSection, setActiveSection]= useState("seo_meta");
+  const [activeSection, setActiveSection]= useState("banner");
   const [seoData,       setSeoData]      = useState(EMPTY_SEO);
   const previewRef = useRef(null);
   const [banner,        setBanner]       = useState(EMPTY_BANNER);
   const [overview,      setOverview]     = useState(EMPTY_OVERVIEW);
   const [naMap,         setNaMap]        = useState({});
   const [loadingDraft,  setLoadingDraft] = useState(!!draftId);
-  const [kbData,        setKbData]       = useState({ kb_label:"", kb_impact:"", kb_description:"", kb_cards:[] });
-  const [faData,        setFaData]       = useState({ fa_label:"", fa_impact:"", fa_description:"", fa_view_type:"", fa_items:[], fa_columns:[], fa_rows:[] });
-  const [csData,        setCsData]       = useState({ cs_label:"", cs_impact:"", cs_items:[] });
+  const [kbData,        setKbData]       = useState({ kb_label:"KEY BENEFITS", kb_impact:"", kb_description:"", kb_cards:[] });
+  const [faData,        setFaData]       = useState({ fa_label:"FEATURES", fa_impact:"", fa_description:"", fa_view_type:"", fa_items:[], fa_columns:[], fa_rows:[] });
+  const [csData,        setCsData]       = useState({ cs_label:"CUSTOMER STORIES", cs_impact:"", cs_items:[] });
   const [promoData,     setPromoData]    = useState({ promo_bg_image:"", promo_bg_note:"", promo_label:"", promo_title:"", promo_description:"", promo_btn_label:"", promo_btn_link:"" });
-  const [rcData,        setRcData]       = useState({ rc_label:"", rc_impact:"", rc_cards:[] });
+  const [rcData,        setRcData]       = useState({ rc_label:"RELATED CONTENT", rc_impact:"", rc_cards:[] });
   const [resData,       setResData]      = useState({ res_label:"", res_impact:"", res_selected:[], res_video_carousel:{}, res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
-  const [rpData,        setRpData]       = useState({ rp_label:"", rp_impact:"", rp_description:"", rp_cards:[] });
+  const [rpData,        setRpData]       = useState({ rp_label:"RELATED PRODUCTS", rp_impact:"", rp_description:"", rp_cards:[] });
   const [tsData,        setTsData]       = useState({});
   const [saving,        setSaving]       = useState(false);
   const [draftSaved,    setDraftSaved]   = useState(false); // shows "Draft saved" toast
@@ -138,15 +138,15 @@ export default function NewRequest({ go, user, draftId }) {
       setPageType(data.page_type || "");
       setSeoData({ seo_page_location: data.seo_page_location||"", seo_meta_title: data.seo_meta_title||"", seo_meta_description: data.seo_meta_description||"", seo_meta_keywords: data.seo_meta_keywords||"" });
       setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image_ref: data.banner_image_ref||null });
-      setOverview({ overview_label: data.overview_label||"", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null });
-      if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: data.kb_label||"", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
-      if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: data.fa_label||"", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
-      if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: data.cs_label||"", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
+      setOverview({ overview_label: "OVERVIEW", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null });
+      if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: "KEY BENEFITS", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
+      if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: "FEATURES", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
+      if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: "CUSTOMER STORIES", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
       if (data.promo_title) setPromoData({ promo_bg_image: data.promo_bg_image||"", promo_bg_note: data.promo_bg_note||"", promo_label: data.promo_label||"", promo_title: data.promo_title||"", promo_description: data.promo_description||"", promo_btn_label: data.promo_btn_label||"", promo_btn_link: data.promo_btn_link||"" });
-      if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: data.rc_label||"", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
+      if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: "RELATED CONTENT", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
       if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
-      if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: data.rp_label||"", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
-      if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: data.ts_label, ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
+      if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
+      if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
       const { data: rc } = await supabase.from("comments").select("*").eq("request_id", draftId).eq("is_return", true).order("created_at", { ascending: false });
       setReturnComments(rc || []);
       setLoadingDraft(false);
@@ -282,7 +282,8 @@ export default function NewRequest({ go, user, draftId }) {
   });
 
   // saveDraft: pass navigate=true to go to dashboard after saving
-  const saveDraft = async (navigate = false) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const saveDraft = useCallback(async (navigate = false) => {
     if (isSavingRef.current) return; // Prevent concurrent saves
     if (!pageType) { setError("Please select a page type first."); return; }
     if (!banner.page_title) { setError("Please enter a page title before saving."); return; }
@@ -368,13 +369,45 @@ export default function NewRequest({ go, user, draftId }) {
       isSavingRef.current = false;
       setSaving(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftId, draftDbId, step, pageType, seoData, banner, overview, kbData, faData, csData, promoData, rcData, resData, rpData, tsData, naMap, user]);
+
+  // Register saveDraft into parent ref so auto-logout can trigger it
+  useEffect(() => {
+    if (saveDraftRef) saveDraftRef.current = () => saveDraft(false);
+    return () => { if (saveDraftRef) saveDraftRef.current = null; };
+  }, [saveDraftRef, saveDraft]);
+
+  // When Navbar triggers navigation while form has content — show exit modal
+  useEffect(() => {
+    if (!pendingNav) return;
+    if (pageType || banner.page_title) {
+      setShowExitModal(true);
+    } else {
+      onClearPendingNav?.();
+      go(pendingNav);
+    }
+  }, [pendingNav]);
+
+  // Browser close/refresh — show native "Leave site?" dialog when form has content
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (pageType || banner.page_title) {
+        e.preventDefault();
+        e.returnValue = "You have unsaved content. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [pageType, banner.page_title]);
 
   // Save draft without navigating (used from exit modal)
   const saveAndExit = async () => {
     if (!pageType || !banner.page_title) { go("dashboard"); return; }
     setSaving(true);
-    const timeout = setTimeout(() => { setSaving(false); setShowExitModal(false); go("dashboard"); }, 8000);
+    const dest = pendingNav || "dashboard";
+    const timeout = setTimeout(() => { setSaving(false); setShowExitModal(false); onClearPendingNav?.(); go(dest); }, 8000);
     try {
       const payload = buildPayload("draft");
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -411,40 +444,39 @@ export default function NewRequest({ go, user, draftId }) {
   };
 
 
-  // Option C: auto-compute design_flag_* based on image description content.
-  // Called at submission time — flags are set once and Editorial QA can override.
+  // Auto-compute design_flag_* based on image_ref fields set by stakeholder.
+  // A flag is set when a stakeholder has provided ANY image reference (attachment, link, or description)
+  // so Design QA knows that section needs image work.
   const computeDesignFlags = () => {
-    const isUrl = (s) => s && (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("/"));
+    const hasRef = (ref) => !!(ref && ref.type && ref.value);
 
     return {
-      // Banner — always needs image work if no URL is set
-      design_flag_banner: !!banner.banner_image_ref,
+      // Banner — flagged if stakeholder provided any image reference
+      design_flag_banner: hasRef(banner.banner_image_ref),
 
-      // Overview — has a media note or existing media URL that needs replacement
-      design_flag_overview: !!overview.overview_media_ref,
+      // Overview — flagged if stakeholder provided media reference
+      design_flag_overview: hasRef(overview.overview_media_ref),
 
-      // Key Benefits — any card has an icon_description (text, not a URL)
-      design_flag_kb: (kbData.kb_cards || []).some(
-        c => c.icon_description && !isUrl(c.icon_description)
-      ),
+      // Key Benefits — any card has an image_ref
+      design_flag_kb: (kbData.kb_cards || []).some(c => hasRef(c.image_ref)),
 
-      // Features / Apps — any item has an image_note
-      design_flag_fa: (faData.fa_items || []).some(
-        i => !!i.image_note
-      ),
+      // Features / Apps — any item has an image_ref
+      design_flag_fa: (faData.fa_items || []).some(i => hasRef(i.image_ref)),
 
-      // Related Content — any card has an image_note
-      design_flag_rc: (rcData.rc_cards || []).some(
-        c => !!c.image_note
-      ),
+      // Customer Stories — any item has a logo_ref
+      design_flag_cs: (csData.cs_items || []).some(i => hasRef(i.logo_ref)),
 
-      // Promo — has a background image note
-      design_flag_promo: !!promoData.promo_bg_note,
+      // Promo — has a background image reference
+      design_flag_promo: hasRef(promoData.promo_bg_image_ref),
 
-      // Training & Support — any card icon is a text description (not a URL)
-      design_flag_ts: [tsData.ts_card1_icon, tsData.ts_card2_icon, tsData.ts_card3_icon].some(
-        icon => icon && !isUrl(icon)
-      ),
+      // Related Content — any card has an image_ref
+      design_flag_rc: (rcData.rc_cards || []).some(c => hasRef(c.image_ref)),
+
+      // Related Products — any card has an image_ref
+      design_flag_rp: (rpData.rp_cards || []).some(c => hasRef(c.image_ref)),
+
+      // Training & Support — no image refs, no flag needed
+      design_flag_ts: false,
     };
   };
 
@@ -589,10 +621,10 @@ export default function NewRequest({ go, user, draftId }) {
               <button onClick={saveAndExit} disabled={saving} className="btn-primary btn-full">
                 {saving ? "Saving..." : "💾 Save as Draft & Exit"}
               </button>
-              <button onClick={() => go("dashboard")} className="btn-secondary btn-full">
-                Discard & Exit
+              <button onClick={() => { onClearPendingNav?.(); go(pendingNav || "dashboard"); }} className="btn-secondary btn-full">
+                Discard & Leave
               </button>
-              <button onClick={() => setShowExitModal(false)} className="btn-ghost btn-full">
+              <button onClick={() => { setShowExitModal(false); onClearPendingNav?.(); }} className="btn-ghost btn-full">
                 Cancel — Keep Editing
               </button>
             </div>
@@ -973,7 +1005,7 @@ export default function NewRequest({ go, user, draftId }) {
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Resources marked as Not Applicable</div><button onClick={() => toggleNA("resources")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} /></div>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} requestId={draftId || "draft"} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -1041,7 +1073,7 @@ export default function NewRequest({ go, user, draftId }) {
                           </button>
                         </div>
                       </div>
-                      <Field label="Label" value={overview.overview_label} onChange={v => updOverview("overview_label", v)} placeholder='e.g. "OVERVIEW"' hint="Small caps tag above the heading (optional)" />
+                      <Field label="Label" value="OVERVIEW" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
                       <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" />
                       <Field label="Description" required value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline />
 
@@ -1059,8 +1091,7 @@ export default function NewRequest({ go, user, draftId }) {
                           ))}
                         </div>
                       </div>
-                      <ImageField label="Media / Image" value={overview.overview_media_ref} onChange={v => updOverview("overview_media_ref", v)} fieldKey="overview_media" requestId={draftId || "draft"} />
-                      <Field label="Notes for Design QA" value={overview.overview_media_note} onChange={v => updOverview("overview_media_note", v)} placeholder="e.g. Diagram showing the simulation workflow" hint="Describe what image or diagram you need" />
+                      <ImageField label="Media / Image" value={overview.overview_media_ref} onChange={v => updOverview("overview_media_ref", v)} fieldKey="overview_media" requestId={draftId || "draft"} hideDescription />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>

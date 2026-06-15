@@ -1,13 +1,13 @@
 "use client";
 import ImageField from "@/components/ImageField";
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle }) => (
   <div className="field-wrap">
     <label className="field-label">
       {label}{required && <span className="req"> *</span>}
     </label>
     {multiline
-      ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" />
+      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
       : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
     }
     {hint && <div className="field-hint">{hint}</div>}
@@ -70,9 +70,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
             {naButton}
           </div>
         </div>
-        <Field label="Label" value={data.kb_label || ""} onChange={v => upd("kb_label", v)}
-          placeholder='e.g. "KEY BENEFITS"'
-          hint="Small caps tag above the heading (optional)" />
+        <Field label="Label" value="KEY BENEFITS" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required value={data.kb_impact || ""} onChange={v => upd("kb_impact", v)}
           placeholder="e.g. Deliver 10X Design Productivity to Meet Your Time-to-Market Goals"
           multiline hint="Large heading — the main message of this section" />
@@ -135,17 +133,6 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
             {/* Card fields */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div className="field-wrap">
-                <label className="field-label">
-                  Icon Description
-                  <span style={{ color: "#B5B5B5", fontWeight: 400, fontSize: 10, marginLeft: 4, textTransform: "none", letterSpacing: 0 }}>(Design QA will add)</span>
-                </label>
-                <input value={card.icon_description}
-                  onChange={e => updateCard(card.id, "icon_description", e.target.value)}
-                  placeholder='e.g. "gear icon representing performance"'
-                  className="input" />
-                <div className="field-hint">Describe the icon — Design QA will source it from the library</div>
-              </div>
-              <div className="field-wrap">
                 <label className="field-label">Card Title <span className="req">*</span></label>
                 <input value={card.title}
                   onChange={e => updateCard(card.id, "title", e.target.value)}
@@ -162,7 +149,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
                 className="textarea" style={{ minHeight: 70 }} />
             </div>
             <ImageField
-              label="Card Image"
+              label="Card Image / Icon"
               value={card.image_ref || null}
               onChange={v => updateCard(card.id, "image_ref", v)}
               fieldKey={`key-benefits_card-${idx + 1}_image`}

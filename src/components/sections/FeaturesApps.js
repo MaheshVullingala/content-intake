@@ -2,18 +2,24 @@
 import { useState } from "react";
 import ImageField from "@/components/ImageField";
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle }) => (
-  <div className="field-wrap">
-    <label className="field-label">
-      {label}{required && <span className="req"> *</span>}
-    </label>
-    {multiline
-      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
-      : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
-    }
-    {hint && <div className="field-hint">{hint}</div>}
-  </div>
-);
+const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle, charLimit, required }) => {
+  const len  = (value || "").length;
+  const over = charLimit && len > charLimit;
+  return (
+    <div className="field-wrap">
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
+        <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
+        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+      </div>
+      {multiline
+        ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
+        : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
+      }
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {hint && <div className="field-hint">{hint}</div>}
+    </div>
+  );
+};
 
 // ── List View ──────────────────────────────────────────────────
 function ListView({ items = [], onChange, requestId = "draft" }) {
@@ -53,8 +59,9 @@ function ListView({ items = [], onChange, requestId = "draft" }) {
           <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 8, background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.6rem 0.8rem" }}>
             <span style={{ color: "#181313", fontWeight: 600, fontSize: 14, flexShrink: 0 }}>✓</span>
             <input value={item.text} onChange={e => updateItem(item.id, e.target.value)}
-              placeholder="Enter list item text..."
+              placeholder="Enter list item text..." maxLength={200}
               style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#181313", fontFamily: "'Rubik',sans-serif" }} />
+            <span style={{ fontSize: 10, color: (item.text||"").length > 170 ? "#c0392b" : "#B5B5B5", fontFamily: "monospace", flexShrink: 0 }}>{(item.text||"").length}/200</span>
             <div style={{ display: "flex", gap: 4 }}>
               <button type="button" onClick={() => moveItem(idx, -1)} disabled={idx === 0}
                 style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464" }}>↑</button>
@@ -130,8 +137,8 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
               </div>
             </div>
 
-            <Field label="Tab Title" required value={tab.title} onChange={v => updateTab(tab.id, "title", v)} placeholder="e.g. Verisium Manager" />
-            <Field label="Description" required value={tab.description} onChange={v => updateTab(tab.id, "description", v)} placeholder="Description for this tab..." multiline />
+            <Field label="Tab Title" required charLimit={50} value={tab.title} onChange={v => updateTab(tab.id, "title", v)} placeholder="e.g. Verisium Manager" />
+            <Field label="Description" required charLimit={200} value={tab.description} onChange={v => updateTab(tab.id, "description", v)} placeholder="Description for this tab..." multiline />
 
             <div style={{ paddingTop: 12, borderTop: "1px solid #F3F3F3", marginTop: 4 }}>
               <div style={{ fontSize: 11, color: "#646464", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Image</div>
@@ -363,7 +370,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
         <Field label="Impact Statement" required value={data.fa_impact || ""} onChange={v => upd("fa_impact", v)}
           placeholder="e.g. Transforming Semiconductor Design with Cadence Cerebrus AI Studio"
           multiline hint="Large heading for this section" />
-        <Field label="Description" value={data.fa_description || ""} onChange={v => upd("fa_description", v)}
+        <Field label="Description" charLimit={300} value={data.fa_description || ""} onChange={v => upd("fa_description", v)}
           placeholder="Supporting paragraph..." multiline />
       </div>
 

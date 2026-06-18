@@ -1,18 +1,24 @@
 "use client";
 import ImageField from "@/components/ImageField";
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle }) => (
-  <div className="field-wrap">
-    <label className="field-label">
-      {label}{required && <span className="req"> *</span>}
-    </label>
-    {multiline
-      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
-      : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
-    }
-    {hint && <div className="field-hint">{hint}</div>}
-  </div>
-);
+const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle, charLimit }) => {
+  const len  = (value || "").length;
+  const over = charLimit && len > charLimit;
+  return (
+    <div className="field-wrap">
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
+        <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
+        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+      </div>
+      {multiline
+        ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), borderColor: over ? "#c0392b" : undefined }} />
+        : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, borderColor: over ? "#c0392b" : undefined }} />
+      }
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {hint && <div className="field-hint">{hint}</div>}
+    </div>
+  );
+};
 
 export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton, requestId = "draft" }) {
   const cards = data.kb_cards || [];
@@ -71,10 +77,10 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
           </div>
         </div>
         <Field label="Label" value="KEY BENEFITS" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
-        <Field label="Impact Statement" required value={data.kb_impact || ""} onChange={v => upd("kb_impact", v)}
+        <Field label="Impact Statement" required charLimit={100} value={data.kb_impact || ""} onChange={v => upd("kb_impact", v)}
           placeholder="e.g. Deliver 10X Design Productivity to Meet Your Time-to-Market Goals"
           multiline hint="Large heading — the main message of this section" />
-        <Field label="Description" value={data.kb_description || ""} onChange={v => upd("kb_description", v)}
+        <Field label="Description" charLimit={300} value={data.kb_description || ""} onChange={v => upd("kb_description", v)}
           placeholder="Optional supporting paragraph..." multiline />
       </div>
 
@@ -133,7 +139,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
             {/* Card fields */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div className="field-wrap">
-                <label className="field-label">Card Title <span className="req">*</span></label>
+                <div style={{display:"flex",justifyContent:"space-between"}}><label className="field-label">Card Title <span className="req">*</span></label><span style={{fontSize:10,fontFamily:"monospace",color:(card.title||"").length>50?"#c0392b":"#B5B5B5"}}>{(card.title||"").length}/50</span></div>
                 <input value={card.title}
                   onChange={e => updateCard(card.id, "title", e.target.value)}
                   placeholder='e.g. "Unmatched Performance"'
@@ -142,7 +148,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
             </div>
 
             <div className="field-wrap">
-              <label className="field-label">Card Description <span className="req">*</span></label>
+              <div style={{display:"flex",justifyContent:"space-between"}}><label className="field-label">Card Description <span className="req">*</span></label><span style={{fontSize:10,fontFamily:"monospace",color:(card.description||"").length>150?"#c0392b":"#B5B5B5"}}>{(card.description||"").length}/150</span></div>
               <textarea value={card.description}
                 onChange={e => updateCard(card.id, "description", e.target.value)}
                 placeholder="Brief description of this benefit..."

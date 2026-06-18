@@ -3,6 +3,118 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { getStatus, ROLE_META, STATUS_FLOW } from "@/lib/constants";
 
+// ── Character Limits configuration panel ────────────────────────────────────
+const CHAR_LIMIT_FIELDS = [
+  { section: "SEO Meta Data",       key: "seo_page_location",     label: "Page Location (URL)",       default: 300 },
+  { section: "SEO Meta Data",       key: "seo_meta_title",        label: "Meta Title",                default: 70  },
+  { section: "SEO Meta Data",       key: "seo_meta_description",  label: "Meta Description",          default: 160 },
+  { section: "SEO Meta Data",       key: "seo_meta_keywords",     label: "Meta Keywords",             default: 300 },
+  { section: "Banner",              key: "page_title",            label: "Page Title",                default: 70  },
+  { section: "Banner",              key: "sub_title",             label: "Subtitle",                  default: 120 },
+  { section: "Banner",              key: "cta1_label",            label: "CTA 1 Label",               default: 30  },
+  { section: "Banner",              key: "cta2_label",            label: "CTA 2 Label",               default: 30  },
+  { section: "Overview",            key: "overview_impact",       label: "Impact Statement",          default: 100 },
+  { section: "Overview",            key: "overview_description",  label: "Description",               default: 600 },
+  { section: "Key Benefits",        key: "kb_impact",             label: "Impact Statement",          default: 100 },
+  { section: "Key Benefits",        key: "kb_description",        label: "Description",               default: 300 },
+  { section: "Key Benefits",        key: "kb_card_title",         label: "Card Title (per card)",     default: 50  },
+  { section: "Key Benefits",        key: "kb_card_description",   label: "Card Description (per)",    default: 150 },
+  { section: "Features / Apps",     key: "fa_impact",             label: "Impact Statement",          default: 100 },
+  { section: "Features / Apps",     key: "fa_description",        label: "Description",               default: 300 },
+  { section: "Features / Apps",     key: "fa_item_title",         label: "Tab/Item Title",            default: 50  },
+  { section: "Features / Apps",     key: "fa_item_description",   label: "Tab/Item Description",      default: 200 },
+  { section: "Features / Apps",     key: "fa_item_cta_label",     label: "Tab CTA Label",             default: 25  },
+  { section: "Customer Stories",    key: "cs_impact",             label: "Impact Statement",          default: 100 },
+  { section: "Customer Stories",    key: "cs_quote",              label: "Quote (per card)",          default: 300 },
+  { section: "Customer Stories",    key: "cs_customer",           label: "Customer Details",          default: 100 },
+  { section: "Promo Section",       key: "promo_label",           label: "Label",                     default: 25  },
+  { section: "Promo Section",       key: "promo_title",           label: "Title",                     default: 100 },
+  { section: "Promo Section",       key: "promo_description",     label: "Description",               default: 300 },
+  { section: "Promo Section",       key: "promo_btn_label",       label: "Button Label",              default: 25  },
+  { section: "Related Content",     key: "rc_impact",             label: "Impact Statement",          default: 100 },
+  { section: "Related Content",     key: "rc_card_label",         label: "Card Label (per)",          default: 25  },
+  { section: "Related Content",     key: "rc_card_title",         label: "Card Title (per)",          default: 80  },
+  { section: "Related Content",     key: "rc_card_description",   label: "Card Description",          default: 200 },
+  { section: "Related Products",    key: "rp_impact",             label: "Impact Statement",          default: 100 },
+  { section: "Related Products",    key: "rp_description",        label: "Description",               default: 300 },
+  { section: "Related Products",    key: "rp_card_title",         label: "Card Title (per)",          default: 80  },
+  { section: "Related Products",    key: "rp_card_description",   label: "Card Description (per)",    default: 200 },
+  { section: "Related Products",    key: "rp_card_cta_label",     label: "Card CTA Label",            default: 25  },
+  { section: "Training & Support",  key: "ts_impact",             label: "Impact Statement",          default: 100 },
+  { section: "Training & Support",  key: "ts_card_title",         label: "Card Title (all cards)",    default: 80  },
+  { section: "Training & Support",  key: "ts_card_description",   label: "Card Description (all)",    default: 200 },
+  { section: "Training & Support",  key: "ts_card_cta_label",     label: "Card CTA Label (all)",      default: 25  },
+];
+
+function CharLimitsPanel({ user }) {
+  const [limits,  setLimits]  = useState({});
+  const [saving,  setSaving]  = useState(null);
+  const [msg,     setMsg]     = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("settings").select("key, value").like("key", "char_limit_%")
+      .then(({ data }) => {
+        const stored = {};
+        (data || []).forEach(r => { stored[r.key.replace("char_limit_", "")] = Number(r.value); });
+        setLimits(stored);
+        setLoading(false);
+      });
+  }, []);
+
+  const getLimit = (key) => limits[key] ?? CHAR_LIMIT_FIELDS.find(f => f.key === key)?.default ?? 100;
+
+  const saveLimit = async (key, value) => {
+    const num = parseInt(value);
+    if (!num || num < 1) return;
+    setSaving(key);
+    await supabase.from("settings").upsert({ key: `char_limit_${key}`, value: String(num) }, { onConflict: "key" });
+    setLimits(p => ({ ...p, [key]: num }));
+    setSaving(null);
+    setMsg(`✓ ${key} limit saved`);
+    setTimeout(() => setMsg(""), 2000);
+  };
+
+  const sections = [...new Set(CHAR_LIMIT_FIELDS.map(f => f.section))];
+
+  if (loading) return <div style={{ padding: "2rem", color: "#B5B5B5" }}>Loading limits...</div>;
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div>
+          <h3 style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>Character Limits</h3>
+          <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Configure maximum character counts for each field. Changes apply immediately to all new requests.</p>
+        </div>
+        {msg && <span style={{ fontSize: 12, color: "#0e7a3d", background: "#e8f9f0", padding: "4px 12px", borderRadius: 6 }}>{msg}</span>}
+      </div>
+      {sections.map(section => (
+        <div key={section} className="card" style={{ marginBottom: 14 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 600, color: "#1b5793", marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid #F3F3F3" }}>{section}</h4>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {CHAR_LIMIT_FIELDS.filter(f => f.section === section).map(field => (
+              <div key={field.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <label style={{ fontSize: 12, color: "#646464", flex: 1 }}>{field.label}</label>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <input
+                    type="number" min="1" max="2000"
+                    value={getLimit(field.key)}
+                    onChange={e => setLimits(p => ({ ...p, [field.key]: Number(e.target.value) }))}
+                    onBlur={e => saveLimit(field.key, e.target.value)}
+                    style={{ width: 70, padding: "0.35rem 0.5rem", border: "1px solid #E0E0E0", borderRadius: 6, fontSize: 13, fontFamily: "'Rubik',sans-serif", textAlign: "center", color: "#181313", background: "#F9F9F9" }}
+                  />
+                  {saving === field.key && <span style={{ fontSize: 10, color: "#94a3b8" }}>Saving...</span>}
+                  {limits[field.key] !== undefined && saving !== field.key && <span style={{ fontSize: 10, color: "#3ec5cb" }}>✓</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const ROLES = ["stakeholder","editorial_qa","design_qa","web_team","admin"];
 
 export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
@@ -113,8 +225,8 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
 
       {/* Tabs */}
       <div className="tab-bar" style={{ marginBottom: 16 }}>
-        {["requests","users","activity","settings"].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`tab-btn${tab === t ? " active" : ""}`} style={{ textTransform: "capitalize" }}>{t}</button>
+        {["requests","users","activity","settings","char_limits"].map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`tab-btn${tab === t ? " active" : ""}`} style={{ textTransform: "capitalize" }}>{t === "char_limits" ? "Char Limits" : t}</button>
         ))}
       </div>
 
@@ -279,6 +391,9 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           )}
 
           {/* Settings tab */}
+          {tab === "char_limits" && (
+            <CharLimitsPanel user={user} />
+          )}
           {tab === "settings" && (
             <div className="card" style={{ maxWidth: 480 }}>
               <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Session Settings</h3>

@@ -164,7 +164,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
   const isValid = () => {
     if (!banner.page_title) return false;
-    if (!seoData.seo_meta_title || !seoData.seo_meta_description) return false;
+    // SEO fields are optional — no required validation
     const ov = sections.find(s => s.key === "overview");
     if (ov && ov.required && !naMap["overview"]) {
       if (!overview.overview_impact || !overview.overview_description) return false;
@@ -762,7 +762,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
               const isNA     = naMap[s.key];
               const isActive = activeSection === s.key;
               const isDone   = s.key === "seo_meta"
-                ? (!!seoData.seo_meta_title && !!seoData.seo_meta_description)
+                ? true // SEO tab always considered complete — all fields optional
                 : s.key === "banner"
                 ? !!banner.page_title
                 : s.key === "overview"
@@ -835,10 +835,10 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                       <div><h3>🔍 SEO Meta Data</h3><p>Required for all page types · Helps search engines find and rank your page</p></div>
                       <SectionAIAssist sectionKey="seo_meta" currentContent={`${seoData.seo_meta_title} ${seoData.seo_meta_description}`} onAccept={(d) => setSeoData(p => ({ ...p, ...d }))} />
                     </div>
-                    <Field label="Page Location" required value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" hint="The URL path where this page will live on the site" />
-                    <Field label="Meta Title" required value={seoData.seo_meta_title} onChange={v => updSeo("seo_meta_title", v)} placeholder="e.g. Xcelium Logic Simulator | Cadence" hint="Shown in browser tabs and search results — 50–70 characters" />
-                    <Field label="Meta Description" required value={seoData.seo_meta_description} onChange={v => updSeo("seo_meta_description", v)} placeholder="e.g. Accelerate SoC verification with Cadence Xcelium..." multiline hint="Shown in search results — 120–160 characters" />
-                    <Field label="Meta Keywords" value={seoData.seo_meta_keywords} onChange={v => updSeo("seo_meta_keywords", v)} placeholder="e.g. logic simulator, SoC verification, mixed-signal" multiline hint="Comma-separated keywords" />
+                    <Field label="Page Location" charLimit={CHAR_LIMITS.seo_page_location} value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" hint="The URL path where this page will live on the site" />
+                    <Field label="Meta Title" charLimit={CHAR_LIMITS.seo_meta_title} value={seoData.seo_meta_title} onChange={v => updSeo("seo_meta_title", v)} placeholder="e.g. Xcelium Logic Simulator | Cadence" hint="Shown in browser tabs and search results — 50–70 characters" />
+                    <Field label="Meta Description" charLimit={CHAR_LIMITS.seo_meta_description} value={seoData.seo_meta_description} onChange={v => updSeo("seo_meta_description", v)} placeholder="e.g. Accelerate SoC verification with Cadence Xcelium..." multiline hint="Shown in search results — 120–160 characters" />
+                    <Field label="Meta Keywords" charLimit={CHAR_LIMITS.seo_meta_keywords} value={seoData.seo_meta_keywords} onChange={v => updSeo("seo_meta_keywords", v)} placeholder="e.g. logic simulator, SoC verification, mixed-signal" multiline hint="Comma-separated keywords" />
                     <div style={{ marginTop:20, background:"#fff", border:"1px solid #E0E0E0", borderRadius:10, padding:"1rem 1.2rem" }}>
                       <p style={{ fontSize:10, color:"#B5B5B5", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10, fontWeight:600 }}>Google Search Preview</p>
                       <div style={{ fontSize:12, color:"#1a0dab", fontWeight:500, marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{seoData.seo_meta_title || <span style={{ color:"#B5B5B5", fontStyle:"italic" }}>Meta title will appear here</span>}</div>
@@ -872,14 +872,14 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                       <SectionAIAssist sectionKey="banner" currentContent={`${banner.page_title} ${banner.sub_title}`} onAccept={(d) => setBanner(p => ({ ...p, ...d }))} />
                     </div>
                   </div>
-                  <Field label="Page Title" required value={banner.page_title} onChange={v => updBanner("page_title", v)} placeholder="e.g. Xcelium Logic Simulator" />
-                  <Field label="Sub Title"  value={banner.sub_title}  onChange={v => updBanner("sub_title",  v)} placeholder="e.g. Industry-leading simulation platform" />
+                  <Field label="Page Title" required charLimit={CHAR_LIMITS.page_title} value={banner.page_title} onChange={v => updBanner("page_title", v)} placeholder="e.g. Xcelium Logic Simulator" />
+                  <Field label="Sub Title" charLimit={CHAR_LIMITS.sub_title} value={banner.sub_title}  onChange={v => updBanner("sub_title",  v)} placeholder="e.g. Industry-leading simulation platform" />
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <Field label="CTA 1 Label" value={banner.cta1_label} onChange={v => updBanner("cta1_label", v)} placeholder="Read Blog" />
+                    <Field label="CTA 1 Label" charLimit={CHAR_LIMITS.cta1_label} value={banner.cta1_label} onChange={v => updBanner("cta1_label", v)} placeholder="Read Blog" />
                     <Field label="CTA 1 Link"  value={banner.cta1_link}  onChange={v => updBanner("cta1_link",  v)} placeholder="/blog/..." />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <Field label="CTA 2 Label" value={banner.cta2_label} onChange={v => updBanner("cta2_label", v)} placeholder="Watch Video" />
+                    <Field label="CTA 2 Label" charLimit={CHAR_LIMITS.cta2_label} value={banner.cta2_label} onChange={v => updBanner("cta2_label", v)} placeholder="Watch Video" />
                     <Field label="CTA 2 Link"  value={banner.cta2_link}  onChange={v => updBanner("cta2_link",  v)} placeholder="/video/..." />
                   </div>
                   <ImageField label="Banner Image" value={banner.banner_image_ref} onChange={v => updBanner("banner_image_ref", v)} fieldKey="banner_bg-image" requestId={draftId || "draft"} />
@@ -1074,8 +1074,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                         </div>
                       </div>
                       <Field label="Label" value="OVERVIEW" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
-                      <Field label="Impact Statement" required value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" />
-                      <Field label="Description" required value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline />
+                      <Field label="Impact Statement" required charLimit={CHAR_LIMITS.overview_impact} value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" />
+                      <Field label="Description" required charLimit={CHAR_LIMITS.overview_description} value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline />
 
                       <div className="divider" />
                       <p className="field-label">Image / Diagram / Video — Optional</p>

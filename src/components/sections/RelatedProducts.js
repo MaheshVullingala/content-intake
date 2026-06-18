@@ -1,18 +1,24 @@
 "use client";
 import ImageField from "@/components/ImageField";
 
-const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle }) => (
-  <div className="field-wrap">
-    <label className="field-label">
-      {label}{required && <span className="req"> *</span>}
-    </label>
-    {multiline
-      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
-      : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" />
-    }
-    {hint && <div className="field-hint">{hint}</div>}
-  </div>
-);
+const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle, charLimit, required }) => {
+  const len  = (value || "").length;
+  const over = charLimit && len > charLimit;
+  return (
+    <div className="field-wrap">
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
+        <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
+        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+      </div>
+      {multiline
+        ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
+        : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
+      }
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {hint && <div className="field-hint">{hint}</div>}
+    </div>
+  );
+};
 
 export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA, requestId = "draft" }) {
   const cards = data.rp_cards || [];
@@ -46,7 +52,7 @@ export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA,
         <Field label="Label" value="RELATED PRODUCTS" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required value={data.rp_impact || ""} onChange={v => upd("rp_impact", v)}
           placeholder='e.g. "A Collection of Products to Fully Explore"' multiline />
-        <Field label="Description" value={data.rp_description || ""} onChange={v => upd("rp_description", v)}
+        <Field label="Description" charLimit={300} value={data.rp_description || ""} onChange={v => upd("rp_description", v)}
           placeholder="Supporting paragraph..." multiline />
       </div>
 
@@ -107,7 +113,7 @@ export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA,
               placeholder="Brief description of this product..."
               multiline />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <Field label="CTA Label" value={card.cta_label}
+              <Field label="CTA Label" charLimit={25} value={card.cta_label}
                 onChange={v => updateCard(card.id, "cta_label", v)}
                 placeholder="Learn More" />
               <Field label="CTA Link" required value={card.cta_link}

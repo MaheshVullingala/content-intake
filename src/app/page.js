@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase, getUserProfile } from "@/lib/supabase";
-import AuthPage   from "@/components/auth/AuthPage";
+import AuthPage from "@/components/auth/AuthPageAnimated";
 import Navbar     from "@/components/layout/Navbar";
 import Dashboard  from "@/components/Dashboard";
 import NewRequest from "@/components/NewRequest";

@@ -277,7 +277,7 @@ export default function Resources({ data = {}, onChange, isNA, onToggleNA, reque
         </div>
         <Field label="Label" value={data.res_label || ""} onChange={v => upd("res_label", v)}
           placeholder='e.g. "RESOURCES"' hint="Small caps tag (optional)" />
-        <Field label="Impact Statement" required value={data.res_impact || ""} onChange={v => upd("res_impact", v)}
+        <Field label="Impact Statement" required charLimit={100} value={data.res_impact || ""} onChange={v => upd("res_impact", v)}
           placeholder='e.g. "Browse Recommended Resources"' multiline />
       </div>
 

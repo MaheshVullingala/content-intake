@@ -20,16 +20,24 @@ const DEFAULTS = {
   ts_card3_cta_link: "",
 };
 
-const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle }) => (
-  <div className="field-wrap">
-    <label className="field-label">{label}</label>
-    {multiline
-      ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={fieldStyle || { minHeight: 70 }} />
-      : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={fieldStyle} />
-    }
-    {hint && <div className="field-hint">{hint}</div>}
-  </div>
-);
+const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle, charLimit, required }) => {
+  const len  = (value || "").length;
+  const over = charLimit && len > charLimit;
+  return (
+    <div className="field-wrap">
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
+        <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
+        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+      </div>
+      {multiline
+        ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
+        : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
+      }
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {hint && <div className="field-hint">{hint}</div>}
+    </div>
+  );
+};
 
 export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA, aiAssistButton, naButton }) {
   // Merge with defaults so fields are pre-filled

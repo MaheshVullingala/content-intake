@@ -208,9 +208,11 @@ export default function ReqDetail({ reqId, go, user }) {
 
   const status        = getStatus(req.status);
   const actionable    = canAct(user.role, req.status);
-  const isEditorialQA = user.role === "editorial_qa" && req.status === "editorial_qa";
-  const isDesignQA    = user.role === "design_qa"    && req.status === "design_qa";
-  const isStakeholderOwner = user.role === "stakeholder" && req.created_by === user.id;
+  const isEditorialQA      = user.role === "editorial_qa" && req.status === "editorial_qa";
+  const isDesignQA         = user.role === "design_qa"    && req.status === "design_qa";
+  const isStakeholderOwner = user.role === "stakeholder"  && req.created_by === user.id;
+  const isOp               = ["editorial_qa","design_qa","web_team"].includes(user.role);
+  const isLead             = isOp && user.can_assign;
   // Returned to draft by Editorial QA
   const isReturnedByEditorial = req.status === "draft" && comments.some(c => c.is_return && c.user_role === "editorial_qa");
   // Queried by Design QA (also lands in draft)
@@ -348,7 +350,14 @@ export default function ReqDetail({ reqId, go, user }) {
     try {
       if (editData) await withTimeout(saveEdit());
       const next = FLOW[Math.min(stageIdx + 1, FLOW.length - 1)];
-      await withTimeout(supabase.from("requests").update({ status: next, updated_at: new Date().toISOString() }).eq("id", req.id));
+      // Clear assignment when moving to next stage — next stage lead assigns fresh
+      await withTimeout(supabase.from("requests").update({
+        status: next,
+        assigned_to: null,
+        assigned_by: null,
+        assigned_at: null,
+        updated_at: new Date().toISOString()
+      }).eq("id", req.id));
       if (comment.trim()) await withTimeout(supabase.from("comments").insert({ request_id: req.id, user_id: user.id, user_name: user.name, user_role: user.role, text: comment, is_return: false }));
       await withTimeout(supabase.from("status_history").insert({ request_id: req.id, user_id: user.id, user_name: user.name, from_status: req.status, to_status: next }));
       setComment(""); await fetchAll();
@@ -1239,9 +1248,11 @@ export default function ReqDetail({ reqId, go, user }) {
           {/* ── Editorial QA — MIDDLE ZONE: scrollable content ── */}
           {isEditorialQA && (
             <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
-              {user.can_assign && (
-                <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid #F3F3F3" }}>
-                  <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Assign to team member</label>
+              <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid #F3F3F3" }}>
+                <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {user.can_assign ? "Assign to team member" : "Assigned to"}
+                </label>
+                {user.can_assign ? (
                   <div style={{ display: "flex", gap: 8 }}>
                     <select defaultValue={req.assigned_to || ""} onChange={async (e) => { setAssigning(true); await supabase.from("requests").update({ assigned_to: e.target.value || null, assigned_by: user.id, assigned_at: new Date().toISOString() }).eq("id", req.id); await fetchAll(); setAssigning(false); }}
                       style={{ flex: 1, background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.55rem 0.8rem", fontSize: 13, color: "#181313", outline: "none", fontFamily: "'Rubik',sans-serif", cursor: "pointer" }}>
@@ -1251,8 +1262,12 @@ export default function ReqDetail({ reqId, go, user }) {
                     </select>
                     {assigning && <span style={{ fontSize: 12, color: "#B5B5B5", alignSelf: "center" }}>Saving...</span>}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.55rem 0.8rem", fontSize: 13, color: req.assigned?.name ? "#181313" : "#B5B5B5" }}>
+                    {req.assigned?.name || "Unassigned"}
+                  </div>
+                )}
+              </div>
               {/* Comments */}
               <p className="text-xs text-uppercase font-medium mb-8">Comments ({comments.length})</p>
               {comments.length === 0
@@ -1297,9 +1312,11 @@ export default function ReqDetail({ reqId, go, user }) {
                 <span style={{ fontSize: 16 }}>🎨</span>
                 <span className="text-xs text-uppercase font-medium">Design QA Review</span>
               </div>
-              {user.can_assign && (
-                <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid #F3F3F3" }}>
-                  <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Assign to team member</label>
+              <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: "1px solid #F3F3F3" }}>
+                <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {user.can_assign ? "Assign to team member" : "Assigned to"}
+                </label>
+                {user.can_assign ? (
                   <div style={{ display: "flex", gap: 8 }}>
                     <select defaultValue={req.assigned_to || ""} onChange={async (e) => { setAssigning(true); await supabase.from("requests").update({ assigned_to: e.target.value || null, assigned_by: user.id, assigned_at: new Date().toISOString() }).eq("id", req.id); await fetchAll(); setAssigning(false); }}
                       style={{ flex: 1, background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.55rem 0.8rem", fontSize: 13, color: "#181313", outline: "none", fontFamily: "'Rubik',sans-serif", cursor: "pointer" }}>
@@ -1309,8 +1326,12 @@ export default function ReqDetail({ reqId, go, user }) {
                     </select>
                     {assigning && <span style={{ fontSize: 12, color: "#B5B5B5", alignSelf: "center" }}>Saving...</span>}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.55rem 0.8rem", fontSize: 13, color: req.assigned?.name ? "#181313" : "#B5B5B5" }}>
+                    {req.assigned?.name || "Unassigned"}
+                  </div>
+                )}
+              </div>
               {error && <div className="alert alert-error" style={{ marginBottom: 10 }}>{error}</div>}
               <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Add a design review note (optional)..." className="textarea" style={{ minHeight: 80, marginBottom: 10 }} />
               <div className="flex-col gap-8">
@@ -1527,8 +1548,17 @@ export default function ReqDetail({ reqId, go, user }) {
           {/* ── Regular !actionable comment box (non-stakeholder returned draft) ── */}
           {!actionable && !isReturnedDraft && (
             <div className="card" style={{ marginBottom: 14 }}>
-              <p className="text-xs text-uppercase font-medium mb-12">Add Comment</p>
-              <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Ask a question or leave a note..." className="textarea" style={{ minHeight: 75 }} />
+              <p className="text-xs text-uppercase font-medium mb-12">
+                {user.can_assign && isOp ? "Add Note / Comment" : "Add Comment"}
+              </p>
+              {user.can_assign && isOp && (
+                <p style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8, lineHeight: 1.5 }}>
+                  Leave a note for the assignee or use the Assigned To dropdown above to reassign.
+                </p>
+              )}
+              <textarea value={comment} onChange={e => setComment(e.target.value)}
+                placeholder={user.can_assign && isOp ? "Leave a note for the team..." : "Ask a question or leave a note..."}
+                className="textarea" style={{ minHeight: 75 }} />
               <button onClick={doComment} className="btn-secondary btn-full" style={{ marginTop: 8 }}>Post Comment</button>
             </div>
           )}

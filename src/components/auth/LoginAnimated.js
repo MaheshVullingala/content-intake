@@ -102,7 +102,7 @@ export default function LoginAnimated({ onSwitch }) {
           <rect x="20" y="490" width="380" height="60" rx="8" fill="rgba(62,197,203,0.08)" stroke="#3ec5cb" strokeWidth="0.8" strokeDasharray="4 3"/>
           <text x="210" y="513" textAnchor="middle" fill="#3ec5cb" fontSize="11" fontWeight="700" fontFamily="Arial">✦  AI Assist — Available at every stage</text>
           <text x="210" y="530" textAnchor="middle" fill="rgba(62,197,203,0.7)" fontSize="8.5" fontFamily="Arial">Cadence brand voice · Section generation · Product brief → full page</text>
-          <text x="210" y="544" textAnchor="middle" fill="rgba(62,197,203,0.5)" fontSize="8" fontFamily="Arial">claude-haiku-4-5</text>
+          <text x="210" y="544" textAnchor="middle" fill="rgba(62,197,203,0.5)" fontSize="8" fontFamily="Arial"></text>
 
           {/* AI dotted lines */}
           <line x1="85"  y1="490" x2="85"  y2="362" stroke="#3ec5cb" strokeWidth="0.6" strokeDasharray="2 5" opacity="0.3"/>

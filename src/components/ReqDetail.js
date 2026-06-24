@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { sanitizePayload, validateFile, getAuthHeaders } from "@/lib/security";
 import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabase";
 import { getStatus, ROLE_META, canAct, nextActionLabel, FLOW, returnActionLabel } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
 import { PCBLoader, PCBLoaderMini } from "@/components/PCBLoader";
+import TaskBoard from "@/components/TaskBoard";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 import KeyBenefits from "@/components/sections/KeyBenefits";
 import FeaturesApps from "@/components/sections/FeaturesApps";
@@ -206,6 +208,11 @@ export default function ReqDetail({ reqId, go, user }) {
   );
   if (!req)    return <div style={{ padding: "2rem", color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>Request not found.</div>;
 
+  // New parallel workflow — route to TaskBoard
+  if (req.overall_status) {
+    return <TaskBoard req={req} user={user} go={go} onRefresh={fetchAll} />;
+  }
+
   const status        = getStatus(req.status);
   const actionable    = canAct(user.role, req.status);
   const isEditorialQA      = user.role === "editorial_qa" && req.status === "editorial_qa";
@@ -240,7 +247,6 @@ export default function ReqDetail({ reqId, go, user }) {
     setSaving(true);
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
       // Whitelist — only real DB columns, no joined relations like 'users', 'assigned', etc.
       const ALLOWED = new Set([
@@ -272,15 +278,11 @@ export default function ReqDetail({ reqId, go, user }) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
 
+      const authHeaders = await getAuthHeaders(supabase);
       const res = await fetch(`${supabaseUrl}/rest/v1/requests?id=eq.${req.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-          "Authorization": `Bearer ${supabaseKey}`,
-          "Prefer": "return=minimal",
-        },
-        body: JSON.stringify(payload),
+        headers: authHeaders,
+        body: JSON.stringify(sanitizePayload(payload)),
         signal: controller.signal,
       });
 
@@ -402,6 +404,10 @@ export default function ReqDetail({ reqId, go, user }) {
   };
 
   const uploadToStorage = async (file, reqId, slotKey = null) => {
+    // Validate file before upload
+    const validation = validateFile(file, { maxSizeMB: 10 });
+    if (!validation.valid) throw new Error(validation.error);
+
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const path     = `${reqId}/${slotKey ? slotKey + "_" : ""}${Date.now()}_${safeName}`;
 

@@ -3,9 +3,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import { getStatus, ROLE_META, canAct, STATUS_FLOW } from "@/lib/constants";
+import { OVERALL_STATUS_META } from "@/lib/taskUtils";
 
-const OPERATIONAL_ROLES = ["editorial_qa", "design_qa", "web_team"];
+const OPERATIONAL_ROLES = ["editorial_qa", "design_qa", "web_team", "brand_team", "seo_team"];
 const ROLE_STATUS = { editorial_qa: "editorial_qa", design_qa: "design_qa", web_team: "web_team" };
+const TASK_ROLES  = new Set(["brand_team", "seo_team"]);
 
 export default function Dashboard({ go, user }) {
   const [requests,     setRequests]     = useState([]);
@@ -37,6 +39,11 @@ export default function Dashboard({ go, user }) {
       tab1: { label: "⚡ Needs Review",      key: "tab1" },
       tab2: { label: "👥 Assigned to Team",  key: "tab2" },
       tab3: { label: "📋 All Requests",      key: "tab3" },
+    };
+    // Task-based roles (brand_team, seo_team)
+    if (TASK_ROLES.has(user.role)) return {
+      tab1: { label: "⚡ My Active Tasks",   key: "tab1" },
+      tab2: { label: "📋 All Requests",      key: "tab2" },
     };
     // Regular operational member
     return {
@@ -100,10 +107,16 @@ export default function Dashboard({ go, user }) {
   // ── Row filtering per tab ───────────────────────────────────────────────────
   const getTabRows = (tabKey) => {
     if (user.role === "stakeholder") {
-      if (tabKey === "tab1") return requests.filter(r => r.status === "draft");
-      if (tabKey === "tab2") return requests.filter(r => r.status !== "draft");
+      if (tabKey === "tab1") return requests.filter(r => r.status === "draft" && !r.overall_status);
+      if (tabKey === "tab2") return requests.filter(r => r.status !== "draft" || r.overall_status);
     }
     if (user.role === "admin") return requests;
+
+    // Task-based roles see requests in progress
+    if (TASK_ROLES.has(user.role)) {
+      if (tabKey === "tab1") return requests.filter(r => r.overall_status && !["published", "pending_admin"].includes(r.overall_status));
+      return requests;
+    }
 
     if (isLead) {
       if (tabKey === "tab1") return requests.filter(r =>
@@ -115,9 +128,10 @@ export default function Dashboard({ go, user }) {
       if (tabKey === "tab3") return requests; // full visibility
     }
 
-    // Regular member
+    // Regular member — show task-workflow requests they have tasks for, plus legacy assigned requests
     if (tabKey === "tab1") return requests.filter(r =>
-      r.status === myStage && r.assigned_to === user.id
+      (r.overall_status && !["published", "pending_admin"].includes(r.overall_status)) ||
+      (!r.overall_status && r.status === myStage && r.assigned_to === user.id)
     );
     if (tabKey === "tab2") return requests; // full visibility
     return requests;
@@ -132,7 +146,10 @@ export default function Dashboard({ go, user }) {
       const matchName   = user.role !== "stakeholder" && (r.users?.name || "").toLowerCase().includes(q);
       if (!matchTitle && !matchUrl && !matchName) return false;
     }
-    if (filterStatus !== "all" && r.status !== filterStatus) return false;
+    if (filterStatus !== "all") {
+      const effectiveStatus = r.overall_status || r.status;
+      if (effectiveStatus !== filterStatus) return false;
+    }
     if (filterType   !== "all" && r.page_type !== filterType) return false;
     return true;
   });
@@ -300,9 +317,11 @@ export default function Dashboard({ go, user }) {
             </thead>
             <tbody>
               {displayRows.map((req, i) => {
+                const isNewWorkflow = !!req.overall_status;
+                const osMeta = isNewWorkflow ? (OVERALL_STATUS_META[req.overall_status] || OVERALL_STATUS_META.in_progress) : null;
                 const s          = getStatus(req.status);
-                const act        = canAct(user.role, req.status);
-                const isDraft    = req.status === "draft";
+                const act        = !isNewWorkflow && canAct(user.role, req.status);
+                const isDraft    = req.status === "draft" && !isNewWorkflow;
                 const isOwner    = req.created_by === user.id;
                 const returnInfo = returnCounts[req.id] || { count: 0, lastRole: null };
                 const isReturnedDraft = isDraft && returnInfo.count > 0;
@@ -331,7 +350,11 @@ export default function Dashboard({ go, user }) {
                       <span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 11, fontWeight: 500, borderRadius: 4, padding: "3px 9px", border: "1px solid #E0E0E0" }}>{req.page_type}</span>
                     </td>
                     <td style={{ padding: "0.9rem 1rem" }}>
-                      <span style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 500 }}>{s.label}</span>
+                      {isNewWorkflow ? (
+                        <span style={{ background: osMeta.bg, color: osMeta.color, border: `1px solid ${osMeta.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 500 }}>{osMeta.label}</span>
+                      ) : (
+                        <span style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 500 }}>{s.label}</span>
+                      )}
                     </td>
                     {/* Assigned To column */}
                     <td style={{ padding: "0.9rem 1rem" }}>
@@ -371,7 +394,21 @@ export default function Dashboard({ go, user }) {
                             ✎ Edit
                           </button>
                         )}
-                        {!isDraft && (
+                        {!isDraft && isNewWorkflow && (
+                          <button onClick={() => go("detail", req.id)}
+                            style={{
+                              background: req.overall_status === "pending_stakeholder" ? "#faf5ff" : "#1b5793",
+                              color: req.overall_status === "pending_stakeholder" ? "#7e22ce" : "#fff",
+                              border: req.overall_status === "pending_stakeholder" ? "1px solid #9333ea44" : "none",
+                              borderRadius: 6, padding: "0.4rem 0.9rem",
+                              cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500,
+                            }}>
+                            {req.overall_status === "pending_stakeholder" ? "👁️ Review & Approve" :
+                             req.overall_status === "pending_admin" ? "⏳ Pending Admin" :
+                             "View Tasks →"}
+                          </button>
+                        )}
+                        {!isDraft && !isNewWorkflow && (
                           <button onClick={() => go("detail", req.id)}
                             style={{
                               background: act && isAssignedToMe ? "#1b5793" : "#F3F3F3",
@@ -382,7 +419,6 @@ export default function Dashboard({ go, user }) {
                             }}>
                             {act && isAssignedToMe && req.status === "pending_approval" ? "✅ Sign off" :
                              act && isAssignedToMe ? "Review →" : "View"}
-                            {/* Comment indicator for leads viewing team requests */}
                             {isLead && !isAssignedToMe && req.status === myStage && (comments_count => comments_count > 0 ? (
                               <span style={{ background: "#e8f2fb", color: "#1b5793", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 600 }}>
                                 💬

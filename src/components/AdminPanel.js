@@ -115,7 +115,7 @@ function CharLimitsPanel({ user }) {
   );
 }
 
-const ROLES = ["stakeholder","editorial_qa","design_qa","web_team","admin"];
+const ROLES = ["stakeholder","editorial_qa","brand_team","seo_team","design_qa","web_team","admin"];
 
 export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
   const [requests,  setRequests]  = useState([]);

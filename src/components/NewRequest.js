@@ -1,4 +1,5 @@
 "use client";
+import { sanitizePayload, validateFile, getAuthHeaders } from "@/lib/security";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
@@ -81,6 +82,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const [draftDbId,     setDraftDbId]    = useState(draftId || null);
   const [pageType,      setPageType]     = useState("");
   const [activeSection, setActiveSection]= useState("banner");
+  const [needsBrand,    setNeedsBrand]   = useState(false);
   const [seoData,       setSeoData]      = useState(EMPTY_SEO);
   const previewRef = useRef(null);
   const [banner,        setBanner]       = useState(EMPTY_BANNER);
@@ -147,6 +149,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
       if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
       if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
+      if (data.needs_brand) setNeedsBrand(true);
       const { data: rc } = await supabase.from("comments").select("*").eq("request_id", draftId).eq("is_return", true).order("created_at", { ascending: false });
       setReturnComments(rc || []);
       setLoadingDraft(false);
@@ -182,8 +185,10 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     return true;
   };
 
-  const buildPayload = (status) => ({
+  const buildPayload = (status, extra = {}) => ({
     page_type: pageType, status, created_by: user.id,
+    needs_brand: needsBrand,
+    ...extra,
     seo_page_location: seoData.seo_page_location,
     seo_meta_title: seoData.seo_meta_title,
     seo_meta_description: seoData.seo_meta_description,
@@ -302,7 +307,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     try {
       // Small delay to ensure React state has flushed before reading values
       await new Promise(resolve => setTimeout(resolve, 50));
-      const payload = buildPayload("draft");
+      const payload = sanitizePayload(buildPayload("draft"));
       if (draftDbId) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -409,25 +414,24 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     const dest = pendingNav || "dashboard";
     const timeout = setTimeout(() => { setSaving(false); setShowExitModal(false); onClearPendingNav?.(); go(dest); }, 8000);
     try {
-      const payload = buildPayload("draft");
+      const payload = sanitizePayload(buildPayload("draft"));
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      const headers = {
-        "Content-Type": "application/json",
-        "apikey": supabaseKey,
-        "Authorization": `Bearer ${supabaseKey}`,
-        "Prefer": "return=minimal",
-      };
+      // Use JWT token for authenticated requests (Option A security fix)
+      const authHeaders = await getAuthHeaders(supabase);
+      const sanitized   = sanitizePayload({ ...payload, updated_at: new Date().toISOString() });
+
       if (draftDbId) {
         await fetch(`${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`, {
-          method: "PATCH", headers,
-          body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
+          method: "PATCH",
+          headers: authHeaders,
+          body: JSON.stringify(sanitized),
         });
       } else {
         const res = await fetch(`${supabaseUrl}/rest/v1/requests`, {
           method: "POST",
-          headers: { ...headers, "Prefer": "return=representation" },
-          body: JSON.stringify(payload),
+          headers: { ...authHeaders, "Prefer": "return=representation" },
+          body: JSON.stringify(sanitized),
         });
         const data = await res.json();
         if (data && data[0]) setDraftDbId(data[0].id);
@@ -484,16 +488,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     setSaving(true);
     setError("");
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const headers = {
-      "Content-Type": "application/json",
-      "apikey": supabaseKey,
-      "Authorization": `Bearer ${supabaseKey}`,
-    };
+    const authHeaders = await getAuthHeaders(supabase);
 
     try {
       const designFlags = computeDesignFlags();
-      const payload = { ...buildPayload("editorial_qa"), ...designFlags };
+      const payload = sanitizePayload({ ...buildPayload("pending_admin", { overall_status: "pending_admin" }), ...designFlags });
       let requestId = draftDbId;
 
       if (draftDbId) {
@@ -502,7 +501,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           `${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`,
           {
             method: "PATCH",
-            headers: { ...headers, "Prefer": "return=representation" },
+            headers: { ...authHeaders, "Prefer": "return=representation" },
             body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
           }
         );
@@ -515,7 +514,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           `${supabaseUrl}/rest/v1/requests`,
           {
             method: "POST",
-            headers: { ...headers, "Prefer": "return=representation" },
+            headers: { ...authHeaders, "Prefer": "return=representation" },
             body: JSON.stringify(payload),
           }
         );
@@ -530,7 +529,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         user_id: user.id,
         user_name: user.name,
         from_status: "draft",
-        to_status: "editorial_qa"
+        to_status: "pending_admin"
       });
 
       go("detail", requestId, { submitted: true });
@@ -1141,9 +1140,33 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             </div>
           </div>
 
+          {/* Brand Team involvement checkbox */}
+          <div style={{ marginBottom: 16, padding: "1rem", background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 10 }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer", userSelect: "none" }}>
+              <div
+                onClick={() => setNeedsBrand(v => !v)}
+                style={{
+                  width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                  border: `2px solid ${needsBrand ? "#1b5793" : "#D0D0D0"}`,
+                  background: needsBrand ? "#1b5793" : "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "all 0.15s",
+                }}
+              >
+                {needsBrand && <span style={{ color: "#fff", fontSize: 11, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+              </div>
+              <div onClick={() => setNeedsBrand(v => !v)}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#181313" }}>🎨 This page needs Brand Team involvement</div>
+                <div style={{ fontSize: 12, color: "#B5B5B5", marginTop: 2 }}>
+                  The admin will review this suggestion and decide whether to include Brand Team in the task workflow.
+                </div>
+              </div>
+            </label>
+          </div>
+
           {error && <div className="alert alert-error">{error}</div>}
           <div className="alert alert-info" style={{ marginBottom: 22 }}>
-            ℹ️ Submitting will send this to <strong style={{ color: "#181313" }}>Editorial QA</strong> for content review.
+            ℹ️ Submitting will send this to an <strong style={{ color: "#181313" }}>Admin</strong> who will set up the parallel task workflow.
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1151,7 +1174,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
               ← Back to Edit
             </button>
             <button onClick={submit} disabled={saving} className="btn-primary">
-              {saving ? "Submitting..." : "Submit for Editorial QA →"}
+              {saving ? "Submitting..." : "Submit Request →"}
             </button>
           </div>
         </>

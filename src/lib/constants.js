@@ -12,9 +12,11 @@ export const STATUS_FLOW = [
 export const ROLE_META = {
   stakeholder:  { label: "Stakeholder",  color: "#181313", icon: "👤" },
   editorial_qa: { label: "Editorial QA", color: "#646464", icon: "✍️"  },
-  design_qa:    { label: "Design QA",    color: "#3C3C3C", icon: "🎨" },
+  design_qa:    { label: "Design QA",    color: "#3C3C3C", icon: "🖼️" },
   web_team:     { label: "Web Team",     color: "#06b6d4", icon: "🌐" },
   admin:        { label: "Admin",        color: "#181313", icon: "⚙️"  },
+  brand_team:   { label: "Brand Team",   color: "#9333ea", icon: "🎨" },
+  seo_team:     { label: "SEO Team",     color: "#2c90b2", icon: "🔍" },
 };
 
 export const getStatus = (key) =>

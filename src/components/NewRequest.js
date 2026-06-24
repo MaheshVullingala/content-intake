@@ -492,11 +492,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
     try {
       const designFlags = computeDesignFlags();
-      const payload = sanitizePayload({ ...buildPayload("pending_admin", { overall_status: "pending_admin" }), ...designFlags });
+      const payload = sanitizePayload({ ...buildPayload("draft"), overall_status: "pending_admin", needs_brand: needsBrand, ...designFlags });
       let requestId = draftDbId;
 
       if (draftDbId) {
-        // Update existing draft — change status to editorial_qa
+        // Update existing draft — set overall_status to pending_admin
         const res = await fetch(
           `${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`,
           {

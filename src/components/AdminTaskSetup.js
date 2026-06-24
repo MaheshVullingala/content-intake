@@ -13,7 +13,7 @@ const TEAM_HINTS = {
 
 export default function AdminTaskSetup({ req, user, onTasksCreated }) {
   const defaultSelected = TASK_TEAMS
-    .filter(t => t.alwaysRequired)
+    .filter(t => t.alwaysRequired || t.role === "web_team")
     .map(t => t.role);
 
   const [selected, setSelected] = useState(() => {

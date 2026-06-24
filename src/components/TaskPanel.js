@@ -229,7 +229,7 @@ export default function TaskPanel({ task, req, user, attachments = [], onClose, 
                   </button>
                   <button
                     className={`${styles.btn} ${styles.btnWarning}`}
-                    onClick={() => {}}
+                    onClick={requestRevision}
                     disabled={saving}
                   >
                     ↩ Request Revision
@@ -290,7 +290,7 @@ export default function TaskPanel({ task, req, user, attachments = [], onClose, 
                   <input
                     ref={fileRef}
                     type="file"
-                    style={{ display: "none" }}
+                    className={styles.hiddenInput}
                     onChange={e => uploadFile(e.target.files[0])}
                   />
                 </div>

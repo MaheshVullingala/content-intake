@@ -210,7 +210,7 @@ export default function ReqDetail({ reqId, go, user }) {
 
   // New parallel workflow — route to TaskBoard
   if (req.overall_status) {
-    return <TaskBoard req={req} user={user} go={go} onRefresh={fetchAll} />;
+    return <TaskBoard req={req} user={user} go={go} onRefresh={fetchAll} attachments={attachments} />;
   }
 
   const status        = getStatus(req.status);

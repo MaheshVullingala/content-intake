@@ -64,6 +64,9 @@
   --color-info-border:    rgba(27, 87, 147, 0.20);
   --color-info-text:      #1b5793;
   --color-amber:          #ffc107;
+  --color-purple:         #7e22ce;
+  --color-purple-bg:      #faf5ff;
+  --color-purple-border:  #e9d5ff;
 
   /* ── Spacing scale ────────────────────────────────────── */
   --space-1:  4px;

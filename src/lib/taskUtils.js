@@ -73,29 +73,33 @@ export const updateTask = async (taskId, updates) => {
 
 // Recalculate and persist overall_status after any task change
 export const syncOverallStatus = async (requestId) => {
-  const tasks   = await getTasksForRequest(requestId);
+  let tasks = await getTasksForRequest(requestId);
   if (!tasks.length) return;
 
   const webTask = tasks.find(t => t.team_role === "web_team");
   const nonWeb  = tasks.filter(t => t.team_role !== "web_team");
   const allNonWebDone = nonWeb.length > 0 && nonWeb.every(t => t.status === "completed");
 
-  // Unlock web team when all other tasks are done
+  // Unlock web team when all other tasks are done, then re-fetch so
+  // newStatus calculation sees the real DB state instead of stale local values
   if (allNonWebDone && webTask?.status === "locked") {
     await supabase.from("tasks").update({
       status:      "pending",
       unlocked_at: new Date().toISOString(),
       updated_at:  new Date().toISOString(),
     }).eq("id", webTask.id);
-    if (webTask) webTask.status = "pending";
+    tasks = await getTasksForRequest(requestId);
   }
 
+  const freshWeb  = tasks.find(t => t.team_role === "web_team");
+  const freshNonWeb = tasks.filter(t => t.team_role !== "web_team");
+
   let newStatus = "in_progress";
-  if (webTask?.status === "completed") {
+  if (freshWeb?.status === "completed") {
     newStatus = "published";
-  } else if (webTask && ["in_progress", "pending"].includes(webTask.status) && allNonWebDone) {
+  } else if (freshWeb && ["in_progress", "pending"].includes(freshWeb.status) && allNonWebDone) {
     newStatus = "pending_web";
-  } else if (nonWeb.some(t => t.status === "pending_approval")) {
+  } else if (freshNonWeb.some(t => t.status === "pending_approval")) {
     newStatus = "pending_stakeholder";
   } else {
     newStatus = "in_progress";
@@ -103,4 +107,14 @@ export const syncOverallStatus = async (requestId) => {
 
   await supabase.from("requests").update({ overall_status: newStatus }).eq("id", requestId);
   return newStatus;
+};
+
+export const getTasksWithAssignees = async (requestId) => {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*, assignee:users!tasks_assigned_to_fkey(id, name, role)")
+    .eq("request_id", requestId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data || [];
 };

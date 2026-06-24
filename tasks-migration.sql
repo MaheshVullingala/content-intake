@@ -78,6 +78,36 @@ CREATE POLICY "requests_update" ON public.requests
     OR (get_user_role() IN ('brand_team', 'seo_team') AND overall_status IS NOT NULL)
   );
 
+-- ── 6. Update comments SELECT policy to include new roles ──────────
+DROP POLICY IF EXISTS "comments_select" ON public.comments;
+CREATE POLICY "comments_select" ON public.comments
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.requests r
+      WHERE r.id = request_id
+      AND (
+        get_user_role() = 'admin'
+        OR (get_user_role() = 'stakeholder' AND r.created_by = get_user_id())
+        OR get_user_role() IN ('editorial_qa', 'design_qa', 'web_team', 'brand_team', 'seo_team')
+      )
+    )
+  );
+
+-- ── 7. Update attachments SELECT policy to include new roles ────────
+DROP POLICY IF EXISTS "attachments_select" ON public.attachments;
+CREATE POLICY "attachments_select" ON public.attachments
+  FOR SELECT USING (
+    get_user_role() = 'admin'
+    OR EXISTS (
+      SELECT 1 FROM public.requests r
+      WHERE r.id = request_id
+      AND (
+        (get_user_role() = 'stakeholder' AND r.created_by = get_user_id())
+        OR get_user_role() IN ('editorial_qa', 'design_qa', 'web_team', 'brand_team', 'seo_team')
+      )
+    )
+  );
+
 -- ══════════════════════════════════════════════════════════════════
 -- Verify:
 -- SELECT tablename, policyname, cmd FROM pg_policies WHERE schemaname = 'public';

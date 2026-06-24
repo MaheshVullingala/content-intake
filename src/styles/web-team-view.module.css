@@ -57,6 +57,17 @@
   overflow: hidden;
 }
 
+.contentSectionHeading {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-info-bg);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-primary);
+}
+
 .contentCardRow {
   display: flex;
   border-bottom: 1px solid var(--color-border);
@@ -85,6 +96,42 @@
   line-height: 1.5;
   word-break: break-word;
   flex: 1;
+}
+
+/* ── Copy button ────────────────────────────────────────────── */
+.copyBtn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  margin: auto var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-silver);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  transition: all var(--transition-fast);
+}
+.copyBtn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+
+.copyIcon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.copiedLabel {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--color-success);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 /* ── Attachments list ───────────────────────────────────────── */

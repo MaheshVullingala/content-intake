@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { getTasksForRequest, TASK_STATUS_META, OVERALL_STATUS_META, getTaskTeam } from "@/lib/taskUtils";
+import { getTasksWithAssignees, TASK_STATUS_META, OVERALL_STATUS_META, getTaskTeam } from "@/lib/taskUtils";
 import AdminTaskSetup from "@/components/AdminTaskSetup";
 import TaskPanel from "@/components/TaskPanel";
 import PagePreview from "@/components/PagePreview";
@@ -23,7 +23,7 @@ export default function TaskBoard({ req, user, go, onRefresh: parentRefresh }) {
     setLoading(true);
     try {
       const [taskData, { data: atts }] = await Promise.all([
-        getTasksForRequest(req.id),
+        getTasksWithAssignees(req.id),
         supabase.from("attachments").select("*").eq("request_id", req.id).order("created_at"),
       ]);
       setTasks(taskData);
@@ -75,7 +75,7 @@ export default function TaskBoard({ req, user, go, onRefresh: parentRefresh }) {
 
   if (loading) return (
     <div className={styles.wrap}>
-      <div style={{ color: "var(--color-silver)", padding: "2rem", textAlign: "center" }}>Loading tasks…</div>
+      <div className={styles.loading}>Loading tasks…</div>
     </div>
   );
 
@@ -125,7 +125,7 @@ export default function TaskBoard({ req, user, go, onRefresh: parentRefresh }) {
 
       {/* Full page preview (collapsible) */}
       {showPreview && (
-        <div style={{ background: "var(--color-ghost)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-xl)", overflow: "hidden", marginBottom: "var(--space-6)", padding: "var(--space-5)" }}>
+        <div className={styles.previewWrapper}>
           <PagePreview req={req} pageType={req.page_type} />
         </div>
       )}
@@ -172,7 +172,6 @@ export default function TaskBoard({ req, user, go, onRefresh: parentRefresh }) {
                     isApproval ? styles.needsApproval : "",
                     isMyTask  ? styles.mine        : "",
                   ].join(" ")}
-                  onClick={() => openTask(task)}
                 >
                   {isMyTask && <span className={styles.myBadge}>My Task</span>}
 

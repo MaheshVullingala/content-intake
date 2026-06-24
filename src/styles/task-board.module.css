@@ -272,6 +272,24 @@
   font-weight: 500;
 }
 
+/* ── Loading state ──────────────────────────────────────────── */
+.loading {
+  color: var(--color-silver);
+  padding: var(--space-8);
+  text-align: center;
+  font-size: var(--text-sm);
+}
+
+/* ── Preview wrapper ────────────────────────────────────────── */
+.previewWrapper {
+  background: var(--color-ghost);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+}
+
 /* ── Content preview strip ──────────────────────────────────── */
 .previewStrip {
   background: var(--color-white);

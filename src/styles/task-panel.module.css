@@ -404,6 +404,14 @@
   background: #fee2e2;
 }
 
+/* ── Inline panel (no overlay) ─────────────────────────────────── */
+.panelInline {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: var(--color-white);
+}
+
 /* ── Hidden file input ──────────────────────────────────────── */
 .hiddenInput {
   display: none;

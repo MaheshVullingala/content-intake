@@ -280,6 +280,43 @@
   font-size: var(--text-sm);
 }
 
+/* ── Two-column team member layout ─────────────────────────────── */
+.twoColLayout {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  min-height: 600px;
+  max-height: calc(100vh - 180px);
+}
+
+.previewCol {
+  overflow-y: auto;
+  padding: var(--space-5);
+  background: var(--color-ghost);
+  border-right: 1px solid var(--color-border);
+}
+
+.taskCol {
+  overflow-y: auto;
+  background: var(--color-white);
+}
+
+/* ── Not assigned notice ────────────────────────────────────────── */
+.notAssignedBanner {
+  background: var(--color-smoke);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  color: var(--color-dim);
+  font-size: var(--text-sm);
+}
+
 /* ── Preview wrapper ────────────────────────────────────────── */
 .previewWrapper {
   background: var(--color-ghost);

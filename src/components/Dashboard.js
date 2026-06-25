@@ -70,7 +70,33 @@ export default function Dashboard({ go, user }) {
 
       const { data, error } = await query;
       if (error) { console.error("Dashboard fetch:", error); return; }
-      const rows = data || [];
+      let rows = data || [];
+
+      // For operational roles, also fetch their tasks to surface parallel workflow requests
+      if (isOp) {
+        const { data: taskData } = await supabase
+          .from("tasks")
+          .select("*, request:requests!tasks_request_id_fkey(*, users!requests_created_by_fkey(name, role), assignee:users!requests_assigned_to_fkey(name))")
+          .eq("team_role", user.role)
+          .neq("status", "locked")
+          .neq("status", "completed");
+
+        if (taskData?.length) {
+          const taskByReqId = {};
+          taskData.forEach(t => { taskByReqId[t.request_id] = t; });
+
+          // Attach myTask to already-fetched rows
+          rows = rows.map(r => ({ ...r, myTask: taskByReqId[r.id] || null }));
+
+          // Include task-based requests not returned by the main query
+          taskData.forEach(t => {
+            if (t.request && !rows.find(r => r.id === t.request_id)) {
+              rows.push({ ...t.request, myTask: t });
+            }
+          });
+        }
+      }
+
       setRequests(rows);
 
       // Fetch return comments
@@ -105,6 +131,8 @@ export default function Dashboard({ go, user }) {
   useEffect(() => { fetchRequests(); }, [user.id]);
 
   // ── Row filtering per tab ───────────────────────────────────────────────────
+  const ACTIVE_TASK_STATUSES = ["pending", "in_progress", "needs_info", "pending_approval"];
+
   const getTabRows = (tabKey) => {
     if (user.role === "stakeholder") {
       if (tabKey === "tab1") return requests.filter(r => r.status === "draft" && !r.overall_status);
@@ -112,28 +140,32 @@ export default function Dashboard({ go, user }) {
     }
     if (user.role === "admin") return requests;
 
-    // Task-based roles see requests in progress
+    // Task-only roles (brand_team, seo_team) — parallel workflow only
     if (TASK_ROLES.has(user.role)) {
-      if (tabKey === "tab1") return requests.filter(r => r.overall_status && !["published", "pending_admin"].includes(r.overall_status));
+      if (tabKey === "tab1") return requests.filter(r =>
+        r.myTask && ACTIVE_TASK_STATUSES.includes(r.myTask.status)
+      );
       return requests;
     }
 
     if (isLead) {
-      if (tabKey === "tab1") return requests.filter(r =>
-        r.status === myStage && (!r.assigned_to || r.assigned_to === user.id)
-      );
-      if (tabKey === "tab2") return requests.filter(r =>
-        r.status === myStage && !!r.assigned_to
-      );
-      if (tabKey === "tab3") return requests; // full visibility
+      if (tabKey === "tab1") return requests.filter(r => {
+        if (r.myTask) return ACTIVE_TASK_STATUSES.includes(r.myTask.status) &&
+                             (!r.myTask.assigned_to || r.myTask.assigned_to === user.id);
+        return r.status === myStage && (!r.assigned_to || r.assigned_to === user.id);
+      });
+      if (tabKey === "tab2") return requests.filter(r => {
+        if (r.myTask) return !!r.myTask.assigned_to;
+        return r.status === myStage && !!r.assigned_to;
+      });
+      return requests; // tab3 — full visibility
     }
 
-    // Regular member — show task-workflow requests they have tasks for, plus legacy assigned requests
-    if (tabKey === "tab1") return requests.filter(r =>
-      (r.overall_status && !["published", "pending_admin"].includes(r.overall_status)) ||
-      (!r.overall_status && r.status === myStage && r.assigned_to === user.id)
-    );
-    if (tabKey === "tab2") return requests; // full visibility
+    // Regular operational member (editorial_qa, design_qa, web_team without can_assign)
+    if (tabKey === "tab1") return requests.filter(r => {
+      if (r.myTask) return r.myTask.assigned_to === user.id;
+      return myStage && !r.overall_status && r.status === myStage && r.assigned_to === user.id;
+    });
     return requests;
   };
 

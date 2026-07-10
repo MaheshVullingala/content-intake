@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import JSZip from "jszip";
-import styles from "@/styles/web-team-view.module.css";
+
+const FIELD = { fontFamily: "'Rubik', sans-serif" };
 
 function formatBytes(b) {
   if (!b) return "";
@@ -11,263 +12,449 @@ function formatBytes(b) {
 }
 
 function fileIcon(name = "") {
-  const ext = name.split(".").pop()?.toLowerCase();
+  const ext = (name.split(".").pop() || "").toLowerCase();
   if (["png","jpg","jpeg","gif","webp","svg"].includes(ext)) return "🖼️";
-  if (["pdf"].includes(ext)) return "📄";
+  if (ext === "pdf") return "📄";
   if (["psd","ai"].includes(ext)) return "🎨";
   if (["zip","rar","7z"].includes(ext)) return "📦";
   return "📎";
 }
 
-const TEAM_LABEL = {
-  editorial_qa: "Editorial QA",
-  brand_team:   "Brand Team",
-  seo_team:     "SEO Team",
-  design_qa:    "Design QA",
-};
+function isImage(name = "") {
+  return ["png","jpg","jpeg","gif","webp","svg"].includes(
+    (name.split(".").pop() || "").toLowerCase()
+  );
+}
 
-export default function WebTeamView({ req, attachments = [], task }) {
-  const [copiedKey,    setCopiedKey]    = useState(null);
-  const [zipping,      setZipping]      = useState(false);
+function parseJson(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try { return JSON.parse(val); } catch { return []; }
+}
 
-  const isLocked = task?.status === "locked";
+const CHECKS = [
+  { label: "Banner",           ok: r => !!r.page_title },
+  { label: "Overview",         ok: r => !!r.overview_impact },
+  { label: "Key Benefits",     ok: r => parseJson(r.kb_cards).length > 0 || !!r.kb_impact },
+  { label: "Features",         ok: r => !!r.fa_impact },
+  { label: "Customer Stories", ok: r => parseJson(r.cs_items).length > 0 || !!r.cs_impact },
+  { label: "Promo Section",    ok: r => !!r.promo_title },
+  { label: "Related Content",  ok: r => parseJson(r.rc_cards).length > 0 || !!r.rc_impact },
+  { label: "Related Products", ok: r => parseJson(r.rp_cards).length > 0 || !!r.rp_impact },
+  { label: "SEO Meta",         ok: r => !!r.seo_meta_title },
+];
 
-  const downloadAll = async () => {
-    if (zipping) return;
-    setZipping(true);
-    try {
-      const zip = new JSZip();
-      await Promise.all(
-        attachments.map(async (a) => {
-          const res = await fetch(a.file_url);
-          const blob = await res.blob();
-          zip.file(a.file_name || `file-${a.id}`, blob);
-        })
-      );
-      const content = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(content);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${req.page_title || "assets"}-assets.zip`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } finally {
-      setZipping(false);
-    }
-  };
+// ── Copy button ─────────────────────────────────────────────────────────────
+function CopyBtn({ label, value, copied, onCopy }) {
+  return (
+    <button
+      onClick={() => onCopy(label, value)}
+      title="Copy to clipboard"
+      style={{
+        background: "none", border: "none",
+        cursor: "pointer", padding: "2px 6px", borderRadius: 4,
+        fontSize: 12, color: copied ? "#2a7a4b" : "#94a3b8",
+        flexShrink: 0, transition: "color 0.15s",
+        ...FIELD,
+      }}
+    >
+      {copied ? "Copied!" : "📋"}
+    </button>
+  );
+}
 
-  const copyToClipboard = (key, value) => {
-    navigator.clipboard.writeText(value).then(() => {
+// ── Field row ───────────────────────────────────────────────────────────────
+function FieldRow({ label, value, copiedKey, onCopy }) {
+  if (!value) return null;
+  const key = label;
+  return (
+    <div style={{
+      display: "flex", alignItems: "flex-start", gap: 8,
+      padding: "7px 0", borderBottom: "1px solid var(--color-border)",
+    }}>
+      <div style={{
+        width: 140, flexShrink: 0, fontSize: 11,
+        color: "var(--color-silver)", ...FIELD, paddingTop: 1,
+      }}>
+        {label}
+      </div>
+      <div style={{
+        flex: 1, fontSize: 13, color: "var(--color-night)",
+        ...FIELD, lineHeight: 1.5, wordBreak: "break-word",
+      }}>
+        {value}
+      </div>
+      <CopyBtn label={key} value={value} copied={copiedKey === key} onCopy={onCopy} />
+    </div>
+  );
+}
+
+// ── Section heading ──────────────────────────────────────────────────────────
+function SectionHead({ children }) {
+  return (
+    <div style={{
+      fontSize: 11, fontWeight: 700, textTransform: "uppercase",
+      letterSpacing: "0.08em", color: "var(--color-silver)",
+      padding: "14px 0 6px", ...FIELD,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+export default function WebTeamView({ req, user, supabase, attachments = [], onRefresh }) {
+  const [copiedKey,  setCopiedKey]  = useState(null);
+  const [zipping,    setZipping]    = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [pubError,   setPubError]   = useState("");
+
+  const isPublished = req.overall_status === "published";
+
+  const copy = (key, value) => {
+    navigator.clipboard.writeText(String(value)).then(() => {
       setCopiedKey(key);
       setTimeout(() => setCopiedKey(null), 2000);
     });
   };
 
-  const parseJson = (val) => {
-    if (!val) return [];
-    if (Array.isArray(val)) return val;
-    try { return JSON.parse(val); } catch { return []; }
+  // ── Content completeness ────────────────────────────────────────────────
+  const checks   = CHECKS.map(c => ({ ...c, pass: c.ok(req) }));
+  const passCount = checks.filter(c => c.pass).length;
+  const missing   = checks.filter(c => !c.pass).map(c => c.label);
+
+  // ── Download all as ZIP ─────────────────────────────────────────────────
+  const downloadAll = async () => {
+    if (zipping || !attachments.length) return;
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      await Promise.all(
+        attachments.map(async (a) => {
+          const url = a.public_url || a.file_url;
+          if (!url) return;
+          const res  = await fetch(url);
+          const blob = await res.blob();
+          zip.file(a.file_name || `file-${a.id}`, blob);
+        })
+      );
+      const content = await zip.generateAsync({ type: "blob" });
+      const link    = document.createElement("a");
+      link.href     = URL.createObjectURL(content);
+      link.download = `${req.page_title || "assets"}-assets.zip`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } finally { setZipping(false); }
   };
 
-  // Build grouped content sections
-  const kbCards  = parseJson(req.kb_cards);
-  const faItems  = parseJson(req.fa_items);
-  const csItems  = parseJson(req.cs_items);
-  const rcCards  = parseJson(req.rc_cards);
-  const rpCards  = parseJson(req.rp_cards);
+  // ── Mark as Published ───────────────────────────────────────────────────
+  const handlePublish = async () => {
+    if (publishing || isPublished) return;
+    setPublishing(true);
+    setPubError("");
+    try {
+      const now = new Date().toISOString();
+      const { error } = await supabase.from("requests")
+        .update({ overall_status: "published", published_at: now })
+        .eq("id", req.id);
+      if (error) { setPubError(error.message); return; }
+      // Also mark web_team task completed
+      const { data: wt } = await supabase.from("tasks")
+        .select("id").eq("request_id", req.id).eq("team_role", "web_team").single();
+      if (wt) {
+        await supabase.from("tasks")
+          .update({ status: "completed", completed_at: now })
+          .eq("id", wt.id);
+      }
+      onRefresh?.();
+    } catch (e) { setPubError(e.message || "Error."); }
+    finally     { setPublishing(false); }
+  };
 
-  const contentSections = [
-    {
-      heading: "Page",
-      rows: [
-        ["Page Type",  req.page_type],
-        ["Page URL",   req.seo_page_location],
-        ["Page Title", req.page_title],
-        ["Sub Title",  req.sub_title],
-        ["CTA 1",      [req.cta1_label, req.cta1_link].filter(Boolean).join(" → ")],
-        ["CTA 2",      [req.cta2_label, req.cta2_link].filter(Boolean).join(" → ")],
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "SEO",
-      rows: [
-        ["Meta Title", req.seo_meta_title],
-        ["Meta Desc",  req.seo_meta_description],
-        ["Keywords",   req.seo_meta_keywords],
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "Key Benefits",
-      rows: [
-        ["Impact",       req.kb_impact],
-        ["Description",  req.kb_description],
-        ...kbCards.flatMap((c, i) => [
-          [`Card ${i + 1} Title`, c.title],
-          [`Card ${i + 1} Desc`,  c.description],
-        ]),
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "Features",
-      rows: [
-        ["Impact",       req.fa_impact],
-        ["Description",  req.fa_description],
-        ...faItems.flatMap((c, i) => [
-          [`Item ${i + 1} Title`, c.title],
-          [`Item ${i + 1} Desc`,  c.description],
-        ]),
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "Customer Stories",
-      rows: [
-        ["Impact", req.cs_impact],
-        ...csItems.flatMap((c, i) => [
-          [`Story ${i + 1} Quote`,    c.quote],
-          [`Story ${i + 1} Customer`, c.customer],
-        ]),
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "Promo",
-      rows: [
-        ["Title",       req.promo_title],
-        ["Description", req.promo_description],
-        ["Button",      [req.promo_btn_label, req.promo_btn_link].filter(Boolean).join(" → ")],
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "Related Content",
-      rows: [
-        ["Impact", req.rc_impact],
-        ...rcCards.flatMap((c, i) => [
-          [`Card ${i + 1} Title`, c.title],
-          [`Card ${i + 1} Desc`,  c.description],
-          [`Card ${i + 1} Link`,  c.link],
-        ]),
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "Related Products",
-      rows: [
-        ["Impact",      req.rp_impact],
-        ["Description", req.rp_description],
-        ...rpCards.flatMap((c, i) => [
-          [`Product ${i + 1} Title`, c.title],
-          [`Product ${i + 1} Desc`,  c.description],
-        ]),
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "Training & Support",
-      rows: [
-        ["Impact", req.ts_impact],
-      ].filter(([, v]) => v),
-    },
-    {
-      heading: "Overview",
-      rows: [
-        ["Overview", req.overview_impact],
-      ].filter(([, v]) => v),
-    },
-  ].filter(s => s.rows.length > 0);
-
-  if (isLocked) {
-    return (
-      <div className={styles.wrap}>
-        <div className={styles.unlockBanner}>
-          <span className={styles.unlockIcon}>🔒</span>
-          <div>
-            <div className={styles.unlockTitle}>Web Team task is locked</div>
-            <div className={styles.unlockSub}>
-              This task unlocks automatically once Editorial QA, SEO Team, Design QA (and Brand Team if required) are all completed.
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // ── Parse JSONB arrays ──────────────────────────────────────────────────
+  const kbCards = parseJson(req.kb_cards);
+  const faItems = parseJson(req.fa_items);
+  const csItems = parseJson(req.cs_items);
+  const rcCards = parseJson(req.rc_cards);
+  const rpCards = parseJson(req.rp_cards);
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.unlockBanner}>
-        <span className={styles.unlockIcon}>🌐</span>
-        <div>
-          <div className={styles.unlockTitle}>Ready for implementation</div>
-          <div className={styles.unlockSub}>
-            All prerequisite tasks are complete. Download the assets below and implement in AEM.
-          </div>
+    <div style={{ padding: "0 0 2rem" }}>
+
+      {/* ── Content completeness ─────────────────────────────────────── */}
+      <div className="card mb-16" style={{ padding: "14px 16px" }}>
+        <div style={{
+          display: "flex", alignItems: "center",
+          justifyContent: "space-between", marginBottom: 8,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600,
+                         color: "var(--color-night)", ...FIELD }}>
+            Content Completeness
+          </span>
+          <span style={{
+            fontSize: 12, fontWeight: 700, ...FIELD,
+            color: passCount === 9 ? "var(--color-success)" : "var(--color-primary)",
+          }}>
+            {passCount}/9 sections
+          </span>
         </div>
+        {/* Mini progress bar */}
+        <div style={{ height: 5, background: "var(--color-smoke)",
+                      borderRadius: 4, overflow: "hidden", marginBottom: 10 }}>
+          <div style={{
+            height: "100%",
+            width: `${Math.round((passCount / 9) * 100)}%`,
+            background: passCount === 9 ? "var(--color-success)" : "var(--color-primary)",
+            borderRadius: 4, transition: "width 0.4s",
+          }} />
+        </div>
+        {missing.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {missing.map(m => (
+              <span key={m} style={{
+                fontSize: 10, ...FIELD,
+                background: "#fef2f2", color: "#c0392b",
+                border: "1px solid #c0392b33",
+                borderRadius: 10, padding: "2px 8px",
+              }}>
+                {m}
+              </span>
+            ))}
+          </div>
+        )}
+        {missing.length === 0 && (
+          <p className="text-xs text-muted" style={{ margin: 0 }}>
+            All sections complete ✓
+          </p>
+        )}
+        <p className="field-hint" style={{ marginTop: 8, marginBottom: 0 }}>
+          Not a blocker — proceed regardless of completeness.
+        </p>
       </div>
 
-      {/* Content Summary */}
-      <div>
-        <div className={styles.sectionHead}>📋 Content Summary</div>
-        <div className={styles.contentCard}>
-          {contentSections.map(section => (
-            <div key={section.heading}>
-              <div className={styles.contentSectionHeading}>{section.heading}</div>
-              {section.rows.map(([k, v]) => (
-                <div key={k} className={styles.contentCardRow}>
-                  <div className={styles.contentCardKey}>{k}</div>
-                  <div className={styles.contentCardVal}>{v}</div>
-                  <button
-                    className={styles.copyBtn}
-                    onClick={() => copyToClipboard(k, v)}
-                    title="Copy to clipboard"
-                  >
-                    {copiedKey === k ? (
-                      <span className={styles.copiedLabel}>Copied!</span>
-                    ) : (
-                      <span className={styles.copyIcon}>⎘</span>
-                    )}
-                  </button>
-                </div>
-              ))}
+      {/* ── Banner ───────────────────────────────────────────────────── */}
+      <SectionHead>📄 Banner</SectionHead>
+      <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+        <FieldRow label="Page Title"   value={req.page_title}   copiedKey={copiedKey} onCopy={copy} />
+        <FieldRow label="Sub Title"    value={req.sub_title}    copiedKey={copiedKey} onCopy={copy} />
+        <FieldRow label="CTA 1 Label"  value={req.cta1_label}   copiedKey={copiedKey} onCopy={copy} />
+        <FieldRow label="CTA 1 Link"   value={req.cta1_link}    copiedKey={copiedKey} onCopy={copy} />
+        <FieldRow label="CTA 2 Label"  value={req.cta2_label}   copiedKey={copiedKey} onCopy={copy} />
+        <FieldRow label="CTA 2 Link"   value={req.cta2_link}    copiedKey={copiedKey} onCopy={copy} />
+      </div>
+
+      {/* ── Overview ─────────────────────────────────────────────────── */}
+      {(req.overview_impact || req.overview_description) && (<>
+        <SectionHead>📋 Overview</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Impact"      value={req.overview_impact}      copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Description" value={req.overview_description} copiedKey={copiedKey} onCopy={copy} />
+        </div>
+      </>)}
+
+      {/* ── Key Benefits ─────────────────────────────────────────────── */}
+      {(req.kb_impact || kbCards.length > 0) && (<>
+        <SectionHead>⭐ Key Benefits</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Impact"      value={req.kb_impact}      copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Description" value={req.kb_description} copiedKey={copiedKey} onCopy={copy} />
+          {kbCards.map((c, i) => (
+            <div key={i}>
+              <FieldRow label={`Card ${i+1} Title`} value={c.title}       copiedKey={copiedKey} onCopy={copy} />
+              <FieldRow label={`Card ${i+1} Desc`}  value={c.description} copiedKey={copiedKey} onCopy={copy} />
             </div>
           ))}
         </div>
-      </div>
+      </>)}
 
-      {/* Attachments */}
-      <div>
-        <div className={styles.sectionHead}>📁 Team Attachments</div>
-        {attachments.length === 0 ? (
-          <div className={styles.empty}>No files have been uploaded yet.</div>
-        ) : (
-          <>
-            <div className={styles.attachGrid}>
-              {attachments.map(a => (
-                <div key={a.id} className={styles.attachRow}>
-                  <span className={styles.attachIcon}>{fileIcon(a.file_name)}</span>
-                  <span className={styles.attachName}>{a.file_name}</span>
-                  {a.uploaded_by_role && (
-                    <span className={styles.attachTeamBadge}>
-                      {TEAM_LABEL[a.uploaded_by_role] || a.uploaded_by_role}
+      {/* ── Features ─────────────────────────────────────────────────── */}
+      {(req.fa_impact || faItems.length > 0) && (<>
+        <SectionHead>🔧 Features / Applications</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Impact"      value={req.fa_impact}      copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Description" value={req.fa_description} copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="View Type"   value={req.fa_view_type}   copiedKey={copiedKey} onCopy={copy} />
+          {faItems.map((c, i) => (
+            <div key={i}>
+              <FieldRow label={`Item ${i+1} Title`} value={c.title}       copiedKey={copiedKey} onCopy={copy} />
+              <FieldRow label={`Item ${i+1} Desc`}  value={c.description} copiedKey={copiedKey} onCopy={copy} />
+            </div>
+          ))}
+        </div>
+      </>)}
+
+      {/* ── Customer Stories ─────────────────────────────────────────── */}
+      {(req.cs_impact || csItems.length > 0) && (<>
+        <SectionHead>💬 Customer Stories</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Impact" value={req.cs_impact} copiedKey={copiedKey} onCopy={copy} />
+          {csItems.map((c, i) => (
+            <div key={i}>
+              <FieldRow label={`Story ${i+1} Quote`}    value={c.quote}    copiedKey={copiedKey} onCopy={copy} />
+              <FieldRow label={`Story ${i+1} Customer`} value={c.customer} copiedKey={copiedKey} onCopy={copy} />
+            </div>
+          ))}
+        </div>
+      </>)}
+
+      {/* ── Promo ────────────────────────────────────────────────────── */}
+      {req.promo_title && (<>
+        <SectionHead>📣 Promo Section</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Title"       value={req.promo_title}       copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Description" value={req.promo_description} copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Button Label" value={req.promo_btn_label}  copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Button Link"  value={req.promo_btn_link}   copiedKey={copiedKey} onCopy={copy} />
+        </div>
+      </>)}
+
+      {/* ── Related Content ───────────────────────────────────────────── */}
+      {(req.rc_impact || rcCards.length > 0) && (<>
+        <SectionHead>📄 Related Content</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Impact" value={req.rc_impact} copiedKey={copiedKey} onCopy={copy} />
+          {rcCards.map((c, i) => (
+            <div key={i}>
+              <FieldRow label={`Card ${i+1} Title`} value={c.title}       copiedKey={copiedKey} onCopy={copy} />
+              <FieldRow label={`Card ${i+1} Desc`}  value={c.description} copiedKey={copiedKey} onCopy={copy} />
+              <FieldRow label={`Card ${i+1} Link`}  value={c.link}        copiedKey={copiedKey} onCopy={copy} />
+            </div>
+          ))}
+        </div>
+      </>)}
+
+      {/* ── Related Products ─────────────────────────────────────────── */}
+      {(req.rp_impact || rpCards.length > 0) && (<>
+        <SectionHead>📦 Related Products</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Impact"      value={req.rp_impact}      copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Description" value={req.rp_description} copiedKey={copiedKey} onCopy={copy} />
+          {rpCards.map((c, i) => (
+            <div key={i}>
+              <FieldRow label={`Product ${i+1} Title`} value={c.title}       copiedKey={copiedKey} onCopy={copy} />
+              <FieldRow label={`Product ${i+1} Desc`}  value={c.description} copiedKey={copiedKey} onCopy={copy} />
+            </div>
+          ))}
+        </div>
+      </>)}
+
+      {/* ── Training & Support ───────────────────────────────────────── */}
+      {req.ts_impact && (<>
+        <SectionHead>🎓 Training & Support</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Impact"        value={req.ts_impact}             copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Card 1 Title"  value={req.ts_card1_title}        copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Card 1 Desc"   value={req.ts_card1_description}  copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Card 1 CTA"    value={req.ts_card1_cta_label}    copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Card 2 Title"  value={req.ts_card2_title}        copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Card 2 Desc"   value={req.ts_card2_description}  copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Card 3 Title"  value={req.ts_card3_title}        copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Card 3 Desc"   value={req.ts_card3_description}  copiedKey={copiedKey} onCopy={copy} />
+        </div>
+      </>)}
+
+      {/* ── SEO ──────────────────────────────────────────────────────── */}
+      {(req.seo_meta_title || req.seo_meta_description || req.seo_meta_keywords) && (<>
+        <SectionHead>🔍 SEO Meta</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Page URL"    value={req.seo_page_location}   copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Meta Title"  value={req.seo_meta_title}       copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Meta Desc"   value={req.seo_meta_description} copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Keywords"    value={req.seo_meta_keywords}    copiedKey={copiedKey} onCopy={copy} />
+        </div>
+      </>)}
+
+      {/* ── Attachments ───────────────────────────────────────────────── */}
+      <SectionHead>📁 Team Attachments</SectionHead>
+      {attachments.length === 0 ? (
+        <div className="alert alert-info mb-12">No files have been uploaded yet.</div>
+      ) : (
+        <div className="card mb-12" style={{ padding: "10px 14px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {attachments.map(a => {
+              const url = a.public_url || a.file_url;
+              return (
+                <div key={a.id} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "6px 0", borderBottom: "1px solid var(--color-border)",
+                }}>
+                  {isImage(a.file_name) && url ? (
+                    <img
+                      src={url} alt={a.file_name}
+                      style={{
+                        width: 40, height: 40, objectFit: "cover",
+                        borderRadius: 4, flexShrink: 0,
+                        border: "1px solid var(--color-border)",
+                      }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 22, flexShrink: 0 }}>
+                      {fileIcon(a.file_name)}
                     </span>
                   )}
-                  <span className={styles.attachTeamBadge}>{formatBytes(a.file_size)}</span>
-                  <a
-                    href={a.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.attachDownload}
-                  >
-                    ↓ Download
-                  </a>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 12, fontWeight: 500,
+                      color: "var(--color-night)", ...FIELD,
+                      whiteSpace: "nowrap", overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}>
+                      {a.file_name}
+                    </div>
+                    {a.user_name && (
+                      <div style={{
+                        fontSize: 10, color: "var(--color-silver)", ...FIELD,
+                      }}>
+                        {a.user_name} · {formatBytes(a.file_size)}
+                      </div>
+                    )}
+                  </div>
+                  {url && (
+                    <a
+                      href={url}
+                      download={a.file_name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: 11, color: "var(--color-primary)",
+                        textDecoration: "none", flexShrink: 0, ...FIELD,
+                      }}
+                    >
+                      ↓ Download
+                    </a>
+                  )}
                 </div>
-              ))}
-            </div>
-            {attachments.length > 1 && (
-              <button
-                className={styles.downloadAllBtn}
-                onClick={downloadAll}
-                disabled={zipping}
-              >
-                {zipping ? "⏳ Bundling…" : `↓ Download all ${attachments.length} files as ZIP`}
-              </button>
-            )}
-          </>
+              );
+            })}
+          </div>
+
+          {attachments.length > 1 && (
+            <button
+              className="btn-ghost btn-full mt-8"
+              onClick={downloadAll}
+              disabled={zipping}
+            >
+              {zipping ? "⏳ Bundling…" : `📦 Download All as ZIP (${attachments.length} files)`}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Mark as Published ────────────────────────────────────────── */}
+      <div style={{ marginTop: 8 }}>
+        {pubError && <div className="alert alert-error mb-8">{pubError}</div>}
+        {isPublished ? (
+          <div className="alert alert-success">
+            ✅ This request has been published.
+          </div>
+        ) : (
+          <button
+            className="btn-success btn-full"
+            onClick={handlePublish}
+            disabled={publishing}
+            style={{ justifyContent: "center" }}
+          >
+            {publishing ? "Publishing…" : "✅ Mark as Published"}
+          </button>
         )}
       </div>
     </div>

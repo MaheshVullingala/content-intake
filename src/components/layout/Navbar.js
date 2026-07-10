@@ -1,8 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ROLE_OPTIONS } from "@/lib/constants";
+import NotificationBell from "@/components/NotificationBell";
 
-export default function Navbar({ go, view, user, logout, onLogout, onNavigate }) {
-  const [loggingOut, setLoggingOut] = useState(false);
+export default function Navbar({ go, view, user, supabase, logout, onLogout, onNavigate }) {
+  const [loggingOut,          setLoggingOut]          = useState(false);
+  const [dropdownOpen,        setDropdownOpen]        = useState(false);
+  const [currentImpersonated, setCurrentImpersonated] = useState(null);
+
+  useEffect(() => {
+    try { setCurrentImpersonated(localStorage.getItem("cip-impersonated-role")); }
+    catch {}
+  }, []);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -13,7 +22,10 @@ export default function Navbar({ go, view, user, logout, onLogout, onNavigate })
 
   if (!user) return null;
 
-  const isAdmin = user.role === "admin";
+  const isAdmin        = ["admin", "super_admin"].includes(user.role);
+  const isSuperAdmin   = user.role === "super_admin";
+  const activeRole     = currentImpersonated || "super_admin";
+  const activeLabel    = ROLE_OPTIONS.find(r => r.value === activeRole)?.label ?? "Super Admin";
 
   return (
     <nav style={{
@@ -73,6 +85,97 @@ export default function Navbar({ go, view, user, logout, onLogout, onNavigate })
             style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontFamily: "'Rubik', sans-serif", color: view === "admin" ? "#f1f5f9" : "#94a3b8", fontWeight: view === "admin" ? 500 : 400 }}>
             Admin
           </button>
+        )}
+
+        {/* Notification bell */}
+        <NotificationBell user={user} supabase={supabase} go={go} />
+
+        {/* Role switcher — super_admin only */}
+        {isSuperAdmin && (
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setDropdownOpen(v => !v)}
+              style={{
+                background: currentImpersonated ? "rgba(62,197,203,0.12)" : "none",
+                border: `1px solid ${currentImpersonated ? "#3ec5cb55" : "#1e4f8a"}`,
+                borderRadius: 7,
+                padding: "0.3rem 0.75rem",
+                fontSize: 12,
+                color: currentImpersonated ? "#3ec5cb" : "#94a3b8",
+                cursor: "pointer",
+                fontFamily: "'Rubik', sans-serif",
+                display: "flex", alignItems: "center", gap: 6,
+                transition: "all 0.15s",
+              }}
+            >
+              ⚡ View as: <strong style={{ color: currentImpersonated ? "#3ec5cb" : "#f1f5f9" }}>{activeLabel}</strong>
+              <span style={{ fontSize: 9, opacity: 0.6 }}>▼</span>
+            </button>
+
+            {dropdownOpen && (
+              <>
+                <div
+                  onClick={() => setDropdownOpen(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 200 }}
+                />
+                <div style={{
+                  position: "absolute", top: "calc(100% + 8px)", right: 0,
+                  background: "#0a1628",
+                  border: "1px solid #1e4f8a",
+                  borderRadius: 10,
+                  padding: "6px 0",
+                  minWidth: 190,
+                  zIndex: 201,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.55)",
+                }}>
+                  {ROLE_OPTIONS.map(r => {
+                    const isActive = activeRole === r.value;
+                    return (
+                      <button
+                        key={r.value}
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          try {
+                            if (r.value === "super_admin") {
+                              localStorage.removeItem("cip-impersonated-role");
+                            } else {
+                              localStorage.setItem("cip-impersonated-role", r.value);
+                            }
+                          } catch {}
+                          window.location.reload();
+                        }}
+                        style={{
+                          display: "block", width: "100%", textAlign: "left",
+                          background: isActive ? "rgba(62,197,203,0.1)" : "none",
+                          border: "none",
+                          padding: "8px 16px",
+                          fontSize: 13,
+                          fontFamily: "'Rubik', sans-serif",
+                          color: isActive ? "#3ec5cb" : "#94a3b8",
+                          cursor: "pointer",
+                          transition: "background 0.1s, color 0.1s",
+                        }}
+                        onMouseEnter={e => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                            e.currentTarget.style.color = "#f1f5f9";
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = "none";
+                            e.currentTarget.style.color = "#94a3b8";
+                          }
+                        }}
+                      >
+                        {isActive ? "✓ " : "  "}{r.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
         )}
 
         {/* User info */}

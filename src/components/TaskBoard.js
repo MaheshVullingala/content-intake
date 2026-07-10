@@ -4,6 +4,7 @@ import AdminTaskSetup    from "@/components/AdminTaskSetup";
 import TaskBoardOverview from "@/components/TaskBoardOverview";
 import TaskPanel         from "@/components/TaskPanel";
 import PagePreview       from "@/components/PagePreview";
+import WebTeamView       from "@/components/WebTeamView";
 import { OVERALL_STATUS_META, getTasksForRequest } from "@/lib/taskUtils";
 
 const TEAM_ROLES = new Set([
@@ -156,7 +157,17 @@ export default function TaskBoard({
         <Header />
         <div style={TWO_COL}>
           <div style={{ overflowY: "auto" }}>
-            <PagePreview req={req} pageType={req.page_type} />
+            {user.role === "web_team" ? (
+              <WebTeamView
+                req={req}
+                user={user}
+                supabase={supabase}
+                attachments={attachments}
+                onRefresh={handleRefresh}
+              />
+            ) : (
+              <PagePreview req={req} pageType={req.page_type} />
+            )}
           </div>
           <div style={{ overflowY: "auto",
                         borderLeft: "1px solid var(--color-border)",

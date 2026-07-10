@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase, getUserProfile } from "@/lib/supabase";
-import AuthPage   from "@/components/auth/AuthPage";
-import Navbar     from "@/components/layout/Navbar";
+import AuthPage      from "@/components/auth/AuthPage";
+import Navbar        from "@/components/layout/Navbar";
+import { ROLE_OPTIONS } from "@/lib/constants";
 import Dashboard  from "@/components/Dashboard";
 import NewRequest from "@/components/NewRequest";
 import ReqDetail  from "@/components/ReqDetail";
@@ -27,7 +28,8 @@ export default function App() {
   const countTimer   = useRef(null);
   const currentView  = useRef("dashboard");
   const saveDraftRef = useRef(null); // NewRequest will register its save fn here
-  const [pendingNav,  setPendingNav]  = useState(null); // nav destination waiting for confirmation
+  const [pendingNav,       setPendingNav]       = useState(null);
+  const [impersonatedRole, setImpersonatedRole] = useState(null);
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -85,6 +87,14 @@ export default function App() {
 
     const timeout = setTimeout(() => setLoading(false), 8000);
     return () => { subscription.unsubscribe(); clearInterval(sessionCheck); clearTimeout(timeout); };
+  }, []);
+
+  // ── Read impersonated role from localStorage ─────────────────────────────
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("cip-impersonated-role");
+      if (stored) setImpersonatedRole(stored);
+    } catch {}
   }, []);
 
   // ── Fetch timeout setting from DB when user logs in ───────────────────────
@@ -210,9 +220,50 @@ export default function App() {
   );
 
   // ── Main app ──────────────────────────────────────────────────────────────
+  const effectiveUser = user?.role === "super_admin" && impersonatedRole
+    ? { ...user, role: impersonatedRole }
+    : user;
+
+  const impersonatedLabel = impersonatedRole
+    ? (ROLE_OPTIONS.find(r => r.value === impersonatedRole)?.label ?? impersonatedRole)
+    : null;
+
   return (
     <div className="app-shell">
-      <Navbar go={go} view={view} user={user} logout={logout} onNavigate={(dest) => { if ((view === "new" || view === "edit") && dest !== view) setPendingNav(dest); else go(dest); }} />
+      {/* Navbar always gets the real user so the role switcher is always visible */}
+      <Navbar go={go} view={view} user={user} supabase={supabase} logout={logout} onNavigate={(dest) => { if ((view === "new" || view === "edit") && dest !== view) setPendingNav(dest); else go(dest); }} />
+
+      {/* Impersonation banner */}
+      {user?.role === "super_admin" && impersonatedRole && (
+        <div style={{
+          background: "#0f2744",
+          borderBottom: "1px solid #3ec5cb44",
+          padding: "6px 2.5rem",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <span style={{ fontSize: 12, color: "#3ec5cb", fontFamily: "'Rubik', sans-serif" }}>
+            ⚡ Viewing as: <strong>{impersonatedLabel}</strong>
+          </span>
+          <button
+            onClick={() => {
+              try { localStorage.removeItem("cip-impersonated-role"); } catch {}
+              window.location.reload();
+            }}
+            style={{
+              background: "none",
+              border: "1px solid #3ec5cb55",
+              borderRadius: 5,
+              padding: "2px 10px",
+              fontSize: 11,
+              color: "#3ec5cb",
+              cursor: "pointer",
+              fontFamily: "'Rubik', sans-serif",
+            }}
+          >
+            Switch back to Super Admin
+          </button>
+        </div>
+      )}
 
       {/* ── Idle Warning Toast ── */}
       {idleWarning && (
@@ -227,11 +278,11 @@ export default function App() {
       )}
 
       <main className="app-main">
-        {view === "dashboard" && <Dashboard go={go} user={user} />}
-        {view === "new"       && <NewRequest go={go} user={user} saveDraftRef={saveDraftRef} pendingNav={pendingNav} onClearPendingNav={() => setPendingNav(null)} />}
-        {view === "edit"      && <NewRequest go={go} user={user} draftId={reqId} saveDraftRef={saveDraftRef} pendingNav={pendingNav} onClearPendingNav={() => setPendingNav(null)} />}
-        {view === "detail"    && <ReqDetail reqId={reqId} go={go} user={user} navParams={navParams} />}
-        {view === "admin"     && <AdminPanel user={user} timeoutMins={timeoutMins} onTimeoutChange={setTimeoutMins} />}
+        {view === "dashboard" && <Dashboard go={go} user={effectiveUser} />}
+        {view === "new"       && <NewRequest go={go} user={effectiveUser} saveDraftRef={saveDraftRef} pendingNav={pendingNav} onClearPendingNav={() => setPendingNav(null)} />}
+        {view === "edit"      && <NewRequest go={go} user={effectiveUser} draftId={reqId} saveDraftRef={saveDraftRef} pendingNav={pendingNav} onClearPendingNav={() => setPendingNav(null)} />}
+        {view === "detail"    && <ReqDetail reqId={reqId} go={go} user={effectiveUser} navParams={navParams} />}
+        {view === "admin"     && <AdminPanel user={effectiveUser} timeoutMins={timeoutMins} onTimeoutChange={setTimeoutMins} />}
       </main>
     </div>
   );

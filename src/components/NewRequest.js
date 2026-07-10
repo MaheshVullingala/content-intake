@@ -83,6 +83,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const [pageType,      setPageType]     = useState("");
   const [activeSection, setActiveSection]= useState("banner");
   const [needsBrand,    setNeedsBrand]   = useState(false);
+  const [priority,      setPriority]     = useState("normal");
   const [seoData,       setSeoData]      = useState(EMPTY_SEO);
   const previewRef = useRef(null);
   const [banner,        setBanner]       = useState(EMPTY_BANNER);
@@ -150,6 +151,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
       if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
       if (data.needs_brand) setNeedsBrand(true);
+      setPriority(data.priority || "normal");
       const { data: rc } = await supabase.from("comments").select("*").eq("request_id", draftId).eq("is_return", true).order("created_at", { ascending: false });
       setReturnComments(rc || []);
       setLoadingDraft(false);
@@ -188,6 +190,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const buildPayload = (status, extra = {}) => ({
     page_type: pageType, status, created_by: user.id,
     needs_brand: needsBrand,
+    priority:    priority,
     ...extra,
     seo_page_location: seoData.seo_page_location,
     seo_meta_title: seoData.seo_meta_title,
@@ -743,6 +746,65 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
               </button>
             ))}
           </div>
+
+          {/* Priority selector */}
+          <div className="field-wrap" style={{ marginTop: 20 }}>
+            <label className="field-label">Priority</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {[
+                { key: "normal", label: "Normal", color: "#1b5793", bg: "#eff6ff" },
+                { key: "high",   label: "High",   color: "#d97706", bg: "#fffbeb" },
+                { key: "urgent", label: "Urgent", color: "#c0392b", bg: "#fef2f2" },
+              ].map(p => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setPriority(p.key)}
+                  style={{
+                    padding: "0.45rem 1.1rem", borderRadius: 8,
+                    border: `1.5px solid ${priority === p.key ? p.color : "#E0E0E0"}`,
+                    background: priority === p.key ? p.bg : "#fff",
+                    color: priority === p.key ? p.color : "#B5B5B5",
+                    fontWeight: priority === p.key ? 600 : 400,
+                    fontSize: 13, cursor: "pointer",
+                    fontFamily: "'Rubik', sans-serif",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Brand team checkbox */}
+          <div className="field-wrap" style={{ marginTop: 4 }}>
+            <label
+              style={{ display: "flex", alignItems: "flex-start", gap: 12,
+                       cursor: "pointer", userSelect: "none" }}
+              onClick={() => setNeedsBrand(v => !v)}
+            >
+              <div style={{
+                width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                border: `2px solid ${needsBrand ? "#1b5793" : "#D0D0D0"}`,
+                background: needsBrand ? "#1b5793" : "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.15s",
+              }}>
+                {needsBrand && <span style={{ color: "#fff", fontSize: 11, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#181313" }}>
+                  🎨 Needs Brand Team involvement
+                </div>
+                <p className="field-hint">
+                  Select if this page requires new custom images, graphics, or brand assets
+                  to be created. The admin will make the final decision on Brand Team involvement.
+                </p>
+              </div>
+            </label>
+          </div>
+
           <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
             <button disabled={!pageType} onClick={() => setStep(2)} className="btn-primary" style={{ opacity: pageType ? 1 : 0.4 }}>
               Continue →
@@ -1138,30 +1200,6 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 );
               })}
             </div>
-          </div>
-
-          {/* Brand Team involvement checkbox */}
-          <div style={{ marginBottom: 16, padding: "1rem", background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 10 }}>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 12, cursor: "pointer", userSelect: "none" }}>
-              <div
-                onClick={() => setNeedsBrand(v => !v)}
-                style={{
-                  width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 2,
-                  border: `2px solid ${needsBrand ? "#1b5793" : "#D0D0D0"}`,
-                  background: needsBrand ? "#1b5793" : "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "all 0.15s",
-                }}
-              >
-                {needsBrand && <span style={{ color: "#fff", fontSize: 11, fontWeight: 700, lineHeight: 1 }}>✓</span>}
-              </div>
-              <div onClick={() => setNeedsBrand(v => !v)}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#181313" }}>🎨 This page needs Brand Team involvement</div>
-                <div style={{ fontSize: 12, color: "#B5B5B5", marginTop: 2 }}>
-                  The admin will review this suggestion and decide whether to include Brand Team in the task workflow.
-                </div>
-              </div>
-            </label>
           </div>
 
           {error && <div className="alert alert-error">{error}</div>}

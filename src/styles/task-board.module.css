@@ -1,8 +1,8 @@
 /* ============================================================
    task-board.module.css — TaskBoard component
-   Parallel task grid view for a content request
    ============================================================ */
 
+/* ── Admin / Stakeholder overview wrap ──────────────────────── */
 .wrap {
   max-width: 1100px;
   margin: 0 auto;
@@ -10,7 +10,52 @@
   font-family: var(--font-body);
 }
 
-/* ── Back + header ──────────────────────────────────────────── */
+/* ── Team member full-height layout ────────────────────────── */
+.teamView {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px);
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+
+.teamHeader {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-white);
+  flex-wrap: wrap;
+}
+
+/* ── Two-column split ───────────────────────────────────────── */
+.twoColLayout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.previewCol {
+  overflow-y: auto;
+  height: 100%;
+  background: var(--color-ghost);
+  padding: var(--space-5);
+  border-right: 1px solid var(--color-border);
+}
+
+.taskCol {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-white);
+  position: sticky;
+  top: 0;
+}
+
+/* ── Back + header (admin/stakeholder wrap) ─────────────────── */
 .header {
   display: flex;
   align-items: flex-start;
@@ -112,6 +157,20 @@
   color: var(--color-onyx);
 }
 
+/* ── Not assigned notice ────────────────────────────────────── */
+.notAssignedBanner {
+  background: var(--color-smoke);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  color: var(--color-dim);
+  font-size: var(--text-sm);
+}
+
 /* ── Section headings ───────────────────────────────────────── */
 .sectionLabel {
   font-size: var(--text-xs);
@@ -166,8 +225,8 @@
   background: var(--color-success-bg);
 }
 .taskCard.needsApproval {
-  border-color: rgba(147, 51, 234, 0.35);
-  background: #faf5ff;
+  border-color: var(--color-purple-border);
+  background: var(--color-purple-bg);
 }
 
 .taskCardTop {
@@ -280,44 +339,7 @@
   font-size: var(--text-sm);
 }
 
-/* ── Two-column team member layout ─────────────────────────────── */
-.twoColLayout {
-  display: grid;
-  grid-template-columns: 1fr 420px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  min-height: 600px;
-  max-height: calc(100vh - 180px);
-}
-
-.previewCol {
-  overflow-y: auto;
-  padding: var(--space-5);
-  background: var(--color-ghost);
-  border-right: 1px solid var(--color-border);
-}
-
-.taskCol {
-  overflow-y: auto;
-  background: var(--color-white);
-}
-
-/* ── Not assigned notice ────────────────────────────────────────── */
-.notAssignedBanner {
-  background: var(--color-smoke);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-  margin-bottom: var(--space-6);
-  color: var(--color-dim);
-  font-size: var(--text-sm);
-}
-
-/* ── Preview wrapper ────────────────────────────────────────── */
+/* ── Preview wrapper (admin/stakeholder collapsible) ────────── */
 .previewWrapper {
   background: var(--color-ghost);
   border: 1px solid var(--color-border);
@@ -366,4 +388,162 @@
 .previewStripBtn:hover {
   background: var(--color-primary);
   color: var(--color-white);
+}
+
+/* ── Editorial edit modal ───────────────────────────────────── */
+.editModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 39, 68, 0.55);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.editModal {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.editModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-night);
+  flex-shrink: 0;
+}
+
+.editModalClose {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  color: var(--color-dim);
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-family: var(--font-body);
+  transition: all var(--transition-fast);
+}
+.editModalClose:hover {
+  background: var(--color-smoke);
+  color: var(--color-night);
+}
+
+.editModalBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+}
+
+.editModalFooter {
+  flex-shrink: 0;
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.editSaveBtn {
+  flex: 1;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.editSaveBtn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+.editSaveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.editCancelBtn {
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-smoke);
+  color: var(--color-dim);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.editCancelBtn:hover {
+  background: var(--color-ghost);
+  color: var(--color-night);
+}
+
+.editField {
+  margin-bottom: var(--space-4);
+}
+
+.editFieldLabel {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-silver);
+  margin-bottom: var(--space-2);
+}
+
+.editFieldInput {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  color: var(--color-night);
+  background: var(--color-white);
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast);
+}
+.editFieldInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.editFieldTextarea {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  color: var(--color-night);
+  background: var(--color-white);
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast);
+}
+.editFieldTextarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }

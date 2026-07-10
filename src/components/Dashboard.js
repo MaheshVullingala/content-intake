@@ -3,11 +3,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import { getStatus, ROLE_META, canAct, STATUS_FLOW } from "@/lib/constants";
-import { OVERALL_STATUS_META } from "@/lib/taskUtils";
+import { OVERALL_STATUS_META, TASK_TEAMS, TASK_STATUS_META } from "@/lib/taskUtils";
 
-const OPERATIONAL_ROLES = ["editorial_qa", "design_qa", "web_team", "brand_team", "seo_team"];
+const OPERATIONAL_ROLES = ["editorial_qa", "design_qa", "web_team", "brand_team", "seo_team", "editorial_team", "design_team"];
 const ROLE_STATUS = { editorial_qa: "editorial_qa", design_qa: "design_qa", web_team: "web_team" };
-const TASK_ROLES  = new Set(["brand_team", "seo_team"]);
 
 export default function Dashboard({ go, user }) {
   const [requests,     setRequests]     = useState([]);
@@ -33,19 +32,16 @@ export default function Dashboard({ go, user }) {
       tab2: { label: "📋 My Requests",       key: "tab2" },
     };
     if (user.role === "admin") return {
-      tab1: { label: "📋 All Requests",      key: "tab1" },
+      tab1: { label: "⚠️ Pending Review",    key: "tab1" },
+      tab2: { label: "📋 All Requests",      key: "tab2" },
     };
     if (isLead) return {
       tab1: { label: "⚡ Needs Review",      key: "tab1" },
       tab2: { label: "👥 Assigned to Team",  key: "tab2" },
       tab3: { label: "📋 All Requests",      key: "tab3" },
     };
-    // Task-based roles (brand_team, seo_team)
-    if (TASK_ROLES.has(user.role)) return {
-      tab1: { label: "⚡ My Active Tasks",   key: "tab1" },
-      tab2: { label: "📋 All Requests",      key: "tab2" },
-    };
-    // Regular operational member
+    // Regular operational member (brand_team/seo_team/editorial_team/design_team
+    // now fall through to isLead above or the member path below — no special branch)
     return {
       tab1: { label: "⚡ Assigned to Me",   key: "tab1" },
       tab2: { label: "📋 All Requests",      key: "tab2" },
@@ -97,6 +93,24 @@ export default function Dashboard({ go, user }) {
         }
       }
 
+      // Fetch task-progress dots for new-workflow requests (single batch query)
+      const parallelIds = rows.filter(r => r.overall_status).map(r => r.id);
+      if (parallelIds.length > 0) {
+        const { data: progressTasks } = await supabase
+          .from("tasks")
+          .select("request_id, team_role, status")
+          .in("request_id", parallelIds);
+        const byRequest = {};
+        (progressTasks || []).forEach(t => {
+          if (!byRequest[t.request_id]) byRequest[t.request_id] = [];
+          byRequest[t.request_id].push(t);
+        });
+        rows = rows.map(r => ({
+          ...r,
+          taskProgress: r.overall_status ? (byRequest[r.id] || []) : null,
+        }));
+      }
+
       setRequests(rows);
 
       // Fetch return comments
@@ -138,14 +152,9 @@ export default function Dashboard({ go, user }) {
       if (tabKey === "tab1") return requests.filter(r => r.status === "draft" && !r.overall_status);
       if (tabKey === "tab2") return requests.filter(r => r.status !== "draft" || r.overall_status);
     }
-    if (user.role === "admin") return requests;
-
-    // Task-only roles (brand_team, seo_team) — parallel workflow only
-    if (TASK_ROLES.has(user.role)) {
-      if (tabKey === "tab1") return requests.filter(r =>
-        r.myTask && ACTIVE_TASK_STATUSES.includes(r.myTask.status)
-      );
-      return requests;
+    if (user.role === "admin") {
+      if (tabKey === "tab1") return requests.filter(r => r.overall_status === "pending_admin");
+      return requests; // tab2 — all requests (including legacy with overall_status = null)
     }
 
     if (isLead) {
@@ -368,7 +377,7 @@ export default function Dashboard({ go, user }) {
                               isReturnedDraft ? "#fffbf0" : "#fff";
 
                 return (
-                  <tr key={req.id} style={{ borderBottom: i < displayRows.length - 1 ? "1px solid #F9F9F9" : "none", background: rowBg }}>
+                  <tr key={req.id} style={{ borderBottom: i < displayRows.length - 1 ? "1px solid #F9F9F9" : "none", background: rowBg, borderLeft: req.priority === "urgent" ? "3px solid #c0392b" : "none" }}>
                     <td style={{ padding: "0.9rem 1rem", fontSize: 14, color: "#181313" }}>
                       {req.page_title || <span style={{ color: "#B5B5B5", fontStyle: "italic" }}>Untitled</span>}
                       {isDraft && !isReturnedDraft && <span style={{ marginLeft: 8, fontSize: 10, background: "#F3F3F3", color: "#B5B5B5", border: "1px solid #E0E0E0", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>DRAFT</span>}
@@ -376,6 +385,12 @@ export default function Dashboard({ go, user }) {
                         <span style={{ marginLeft: 8, fontSize: 10, background: isDesignQuery ? "#eff6ff" : "#fff3cd", color: isDesignQuery ? "#1b5793" : "#856404", border: `1px solid ${isDesignQuery ? "#3b82f633" : "#ffc10744"}`, borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>
                           {isDesignQuery ? "DESIGN QUERY" : "RETURNED"}
                         </span>
+                      )}
+                      {req.priority === "urgent" && (
+                        <span style={{ marginLeft: 8, fontSize: 10, background: "#fef2f2", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>URGENT</span>
+                      )}
+                      {req.priority === "high" && (
+                        <span style={{ marginLeft: 8, fontSize: 10, background: "#fffbeb", color: "#d97706", border: "1px solid #d9770633", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>HIGH</span>
                       )}
                     </td>
                     <td style={{ padding: "0.9rem 1rem" }}>
@@ -386,6 +401,19 @@ export default function Dashboard({ go, user }) {
                         <span style={{ background: osMeta.bg, color: osMeta.color, border: `1px solid ${osMeta.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 500 }}>{osMeta.label}</span>
                       ) : (
                         <span style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 500 }}>{s.label}</span>
+                      )}
+                      {isNewWorkflow && req.taskProgress && req.taskProgress.length > 0 && (
+                        <div style={{ display: "flex", gap: 3, marginTop: 5 }}>
+                          {TASK_TEAMS.map(team => {
+                            const t = req.taskProgress.find(x => x.team_role === team.role);
+                            const dot = t ? TASK_STATUS_META[t.status] : null;
+                            return (
+                              <div key={team.role}
+                                title={`${team.label}: ${dot?.label || "Not assigned"}`}
+                                style={{ width: 7, height: 7, borderRadius: "50%", background: dot?.color || "#E0E0E0", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }} />
+                            );
+                          })}
+                        </div>
                       )}
                     </td>
                     {/* Assigned To column */}
@@ -410,6 +438,18 @@ export default function Dashboard({ go, user }) {
                     <td style={{ padding: "0.9rem 1rem", fontSize: 13, color: "#646464" }}>{req.users?.name || "—"}</td>
                     <td style={{ padding: "0.9rem 1rem", fontSize: 12, color: "#B5B5B5" }}>
                       {new Date(req.updated_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                      {req.due_date && (() => {
+                        const today = new Date(); today.setHours(0, 0, 0, 0);
+                        const due = new Date(req.due_date);
+                        const isOverdue = due < today;
+                        const isDueSoon = !isOverdue && (due - today) / 86400000 <= 2;
+                        if (!isOverdue && !isDueSoon) return null;
+                        return (
+                          <div style={{ marginTop: 3, fontSize: 11, color: isOverdue ? "#c0392b" : "#d97706", display: "flex", alignItems: "center", gap: 3 }}>
+                            🕐 {isOverdue ? "Overdue" : "Due soon"} · {due.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: "0.9rem 1rem" }}>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

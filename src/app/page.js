@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase, getUserProfile } from "@/lib/supabase";
-import AuthPage from "@/components/auth/AuthPageAnimated";
+import AuthPage   from "@/components/auth/AuthPage";
 import Navbar     from "@/components/layout/Navbar";
 import Dashboard  from "@/components/Dashboard";
 import NewRequest from "@/components/NewRequest";
@@ -35,13 +35,17 @@ export default function App() {
       if (event === "INITIAL_SESSION") {
         if (session) {
           try {
-            // Timeout on getUserProfile prevents hanging on stale sessions
-            const profilePromise = getUserProfile();
-            const timeoutPromise = new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 8000));
-            const p = await Promise.race([profilePromise, timeoutPromise]);
-            setUser(p);
+            const p = await Promise.race([
+              getUserProfile(),
+              new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 8000))
+            ]);
+            if (p) { setUser(p); }
+            else {
+              setUser(null);
+              clearSupabaseStorage();
+              await supabase.auth.signOut().catch(() => {});
+            }
           } catch(e) {
-            // Session was stale — clear and force re-login
             setUser(null);
             clearSupabaseStorage();
             await supabase.auth.signOut().catch(() => {});
@@ -51,9 +55,17 @@ export default function App() {
       }
       if (event === "SIGNED_IN") {
         try {
-          const p = await getUserProfile();
-          setUser(prev => { if (!prev) { setView("dashboard"); setReqId(null); } return p; });
-        } catch(e) {}
+          const p = await Promise.race([
+            getUserProfile(),
+            new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 8000))
+          ]);
+          if (p) setUser(prev => { if (!prev) { setView("dashboard"); setReqId(null); } return p; });
+        } catch(e) {
+          // Timeout on SIGNED_IN — clear and let user retry
+          clearSupabaseStorage();
+          await supabase.auth.signOut().catch(() => {});
+          setUser(null);
+        }
         setLoading(false);
       }
       if (event === "SIGNED_OUT") { setUser(null); setView("dashboard"); setLoading(false); }
@@ -69,7 +81,7 @@ export default function App() {
     const sessionCheck = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) setUser(prev => { if (prev) supabase.auth.signOut(); return prev; });
-    }, 2 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
     const timeout = setTimeout(() => setLoading(false), 8000);
     return () => { subscription.unsubscribe(); clearInterval(sessionCheck); clearTimeout(timeout); };

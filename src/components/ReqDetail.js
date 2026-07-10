@@ -38,5 +38,24 @@ export default function ReqDetail({ reqId, user, go }) {
     </div>
   );
 
-  return <TaskBoard req={req} user={user} go={go} onRefresh={fetchAll} attachments={attachments} />;
+  if (req?.overall_status) {
+    return (
+      <TaskBoard
+        req={req}
+        user={user}
+        supabase={supabase}
+        tasks={[]}
+        attachments={attachments}
+        onRefresh={fetchAll}
+        go={go}
+      />
+    );
+  }
+
+  return (
+    <div style={{ padding: "2rem", textAlign: "center",
+      color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>
+      This request uses the legacy workflow and is no longer supported.
+    </div>
+  );
 }

@@ -1,327 +1,234 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { getTasksWithAssignees, TASK_STATUS_META, OVERALL_STATUS_META, getTaskTeam } from "@/lib/taskUtils";
-import AdminTaskSetup from "@/components/AdminTaskSetup";
-import TaskPanel from "@/components/TaskPanel";
-import PagePreview from "@/components/PagePreview";
-import styles from "@/styles/task-board.module.css";
+import AdminTaskSetup    from "@/components/AdminTaskSetup";
+import TaskBoardOverview from "@/components/TaskBoardOverview";
+import TaskPanel         from "@/components/TaskPanel";
+import PagePreview       from "@/components/PagePreview";
+import { OVERALL_STATUS_META, getTasksForRequest } from "@/lib/taskUtils";
 
-const TEAM_ROLES = ["editorial_qa", "brand_team", "seo_team", "design_qa", "web_team"];
+const TEAM_ROLES = new Set([
+  "editorial_team", "brand_team", "seo_team", "design_team", "web_team",
+]);
 
-function formatDate(ts) {
-  if (!ts) return "";
-  return new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
+// Spec-exact two-column layout
+const TWO_COL = {
+  display: "grid",
+  gridTemplateColumns: "60% 40%",
+  gap: "1.5rem",
+  height: "calc(100vh - 120px)",
+  overflow: "hidden",
+};
 
-export default function TaskBoard({ req, user, go, onRefresh: parentRefresh }) {
-  const [tasks,       setTasks]       = useState([]);
-  const [attachments, setAttachments] = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [activeTask,  setActiveTask]  = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
+export default function TaskBoard({
+  req, user, supabase,
+  tasks = [], attachments = [],
+  onRefresh, go,
+}) {
+  const [localTasks, setLocalTasks] = useState(tasks);
+  const [loading,    setLoading]    = useState(false);
 
-  const fetchAll = async () => {
+  const isAdmin       = ["admin", "super_admin"].includes(user.role);
+  const isTeamMember  = TEAM_ROLES.has(user.role);
+  const isStakeholder = user.role === "stakeholder";
+  const isPendingAdmin = req.overall_status === "pending_admin";
+
+  const overallMeta = OVERALL_STATUS_META[req.overall_status]
+    ?? OVERALL_STATUS_META.in_progress;
+
+  const myTask = isTeamMember
+    ? localTasks.find(t => t.team_role === user.role) ?? null
+    : null;
+
+  const fetchTasks = async () => {
     setLoading(true);
-    try {
-      const [taskData, { data: atts }] = await Promise.all([
-        getTasksWithAssignees(req.id),
-        supabase.from("attachments").select("*").eq("request_id", req.id).order("created_at"),
-      ]);
-      setTasks(taskData);
-      setAttachments(atts || []);
-    } catch(e) {
-      console.error("TaskBoard fetch:", e);
-    } finally {
-      setLoading(false);
-    }
+    const { data, error } = await getTasksForRequest(req.id, supabase);
+    if (!error) setLocalTasks(data || []);
+    setLoading(false);
   };
 
-  useEffect(() => { fetchAll(); }, [req.id]);
+  useEffect(() => { fetchTasks(); }, [req.id]);
 
-  const handleTasksCreated = () => { fetchAll(); parentRefresh?.(); };
-  const handleRefresh      = () => { fetchAll(); parentRefresh?.(); };
+  const handleRefresh = () => { fetchTasks(); onRefresh?.(); };
 
-  const overallMeta  = OVERALL_STATUS_META[req.overall_status] || OVERALL_STATUS_META.in_progress;
-  const isPendingAdmin = req.overall_status === "pending_admin";
-  const isAdmin        = user.role === "admin";
-  const isTeamMember   = TEAM_ROLES.includes(user.role);
-  const isStakeholder  = user.role === "stakeholder";
-
-  const myTask = isTeamMember ? tasks.find(t => t.team_role === user.role) : null;
-
-  // ── Shared header used in all views ───────────────────────────────
-  const header = (
-    <div className={styles.header}>
-      <button className={styles.backBtn} onClick={() => go("dashboard")}>
-        ← Dashboard
-      </button>
-      <div className={styles.headerInfo}>
-        <div className={styles.title}>{req.page_title || "Untitled Request"}</div>
-        <div className={styles.meta}>
-          <span>{req.page_type}</span>
-          <span className={styles.metaDot}>·</span>
-          <span>by {req.users?.name || "Unknown"}</span>
-          {req.created_at && (
-            <>
-              <span className={styles.metaDot}>·</span>
-              <span>{formatDate(req.created_at)}</span>
-            </>
-          )}
-          <span className={styles.metaDot}>·</span>
-          <span
-            className={styles.overallBadge}
-            style={{ background: overallMeta.bg, color: overallMeta.color, borderColor: overallMeta.color + "33" }}
-          >
-            {overallMeta.label}
-          </span>
+  // ── Shared page header ──────────────────────────────────────────────
+  function Header() {
+    return (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12,
+                    marginBottom: "1.25rem" }}>
+        <button
+          className="btn-ghost"
+          onClick={() => go("dashboard")}
+          style={{ flexShrink: 0, marginTop: 2 }}
+        >
+          ← Back
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 18, fontWeight: 500, color: "var(--color-night)",
+                        marginBottom: 5, lineHeight: 1.3 }}>
+            {req.page_title || "Untitled Request"}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span className="badge badge-light">{req.page_type}</span>
+            <span style={{ color: "var(--color-silver)", fontSize: 12 }}>
+              by {req.users?.name || "Unknown"}
+            </span>
+            {req.created_at && (
+              <span style={{ color: "var(--color-silver)", fontSize: 12 }}>
+                · {new Date(req.created_at).toLocaleDateString("en-GB", {
+                    day: "numeric", month: "short", year: "numeric",
+                  })}
+              </span>
+            )}
+            <span style={{
+              background: overallMeta.bg,
+              color: overallMeta.color,
+              border: `1px solid ${overallMeta.color}33`,
+              borderRadius: 20, padding: "2px 10px",
+              fontSize: 11, fontWeight: 500,
+            }}>
+              {overallMeta.label}
+            </span>
+            {req.priority && req.priority !== "normal" && (
+              <span style={{
+                background: req.priority === "urgent" ? "#fef2f2" : "#fffbeb",
+                color:      req.priority === "urgent" ? "#c0392b" : "#d97706",
+                border: `1px solid ${req.priority === "urgent" ? "#c0392b33" : "#d9770633"}`,
+                borderRadius: 20, padding: "2px 10px",
+                fontSize: 11, fontWeight: 600,
+              }}>
+                {req.priority.toUpperCase()}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
-
-  if (loading) return (
-    <div className={styles.wrap}>
-      <div className={styles.loading}>Loading tasks…</div>
-    </div>
-  );
-
-  // ── VIEW 1: Team member — two-column (preview + task panel) ───────
-  if (isTeamMember) {
-    // Still waiting for admin to create tasks
-    if (isPendingAdmin) {
-      return (
-        <div className={styles.wrap}>
-          {header}
-          <div className={styles.pendingAdminBanner}>
-            <span className={styles.pendingAdminIcon}>⏳</span>
-            <div className={styles.pendingAdminText}>
-              <div className={styles.pendingAdminTitle}>Waiting for admin to set up tasks</div>
-              <div className={styles.pendingAdminSub}>
-                An administrator needs to review and create tasks for this request before work can begin.
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Tasks created but this team wasn't included
-    if (!myTask && tasks.length > 0) {
-      return (
-        <div className={styles.wrap}>
-          {header}
-          <div className={styles.notAssignedBanner}>
-            <span style={{ fontSize: 22 }}>ℹ️</span>
-            <div>Your team was not assigned a task for this request.</div>
-          </div>
-        </div>
-      );
-    }
-
-    // Two-column: page preview on left, task panel on right
-    if (myTask) {
-      return (
-        <div className={styles.wrap}>
-          {header}
-          <div className={styles.twoColLayout}>
-            <div className={styles.previewCol}>
-              <PagePreview req={req} pageType={req.page_type} />
-            </div>
-            <div className={styles.taskCol}>
-              <TaskPanel
-                task={myTask}
-                req={req}
-                user={user}
-                attachments={attachments}
-                inline={true}
-                onClose={() => go("dashboard")}
-                onRefresh={handleRefresh}
-              />
-            </div>
-          </div>
-        </div>
-      );
-    }
+    );
   }
 
-  // ── VIEW 2: Admin ─────────────────────────────────────────────────
-  if (isAdmin) {
+  if (loading && localTasks.length === 0) {
     return (
-      <div className={styles.wrap}>
-        {header}
+      <div>
+        <Header />
+        <div className="alert alert-info mt-12">Loading tasks…</div>
+      </div>
+    );
+  }
 
-        {/* Preview toggle */}
-        <div className={styles.previewStrip}>
-          <div className={styles.previewStripInfo}>
-            <span>📄</span>
-            <span>View full content preview</span>
+  // ── View 1: Admin + pending_admin → AdminTaskSetup ──────────────────
+  if (isAdmin && isPendingAdmin) {
+    return (
+      <div>
+        <Header />
+        <AdminTaskSetup
+          req={req}
+          user={user}
+          supabase={supabase}
+          onTasksCreated={handleRefresh}
+        />
+      </div>
+    );
+  }
+
+  // ── View 2: Team member → PagePreview (left) + TaskPanel (right) ────
+  if (isTeamMember) {
+    if (isPendingAdmin) {
+      return (
+        <div>
+          <Header />
+          <div className="alert alert-info mt-12">
+            ⏳ An administrator needs to set up tasks before work can begin.
           </div>
-          <button className={styles.previewStripBtn} onClick={() => setShowPreview(v => !v)}>
-            {showPreview ? "Hide Preview" : "Show Preview →"}
-          </button>
         </div>
-        {showPreview && (
-          <div className={styles.previewWrapper}>
+      );
+    }
+    if (!myTask) {
+      return (
+        <div>
+          <Header />
+          <div className="alert alert-info mt-12">
+            ℹ️ Your team was not assigned a task for this request.
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div>
+        <Header />
+        <div style={TWO_COL}>
+          <div style={{ overflowY: "auto" }}>
             <PagePreview req={req} pageType={req.page_type} />
           </div>
-        )}
+          <div style={{ overflowY: "auto",
+                        borderLeft: "1px solid var(--color-border)",
+                        paddingLeft: "1.5rem" }}>
+            <TaskPanel
+              task={myTask}
+              req={req}
+              user={user}
+              supabase={supabase}
+              attachments={attachments}
+              onRefresh={handleRefresh}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        {isPendingAdmin && tasks.length === 0 && (
-          <AdminTaskSetup req={req} user={user} onTasksCreated={handleTasksCreated} />
-        )}
-
-        {tasks.length > 0 && <TaskGrid tasks={tasks} user={user} onOpen={setActiveTask} />}
-
-        {activeTask && (
-          <TaskPanel
-            task={activeTask}
+  // ── View 3: Stakeholder → TaskBoardOverview ─────────────────────────
+  if (isStakeholder) {
+    return (
+      <div>
+        <Header />
+        {isPendingAdmin ? (
+          <div className="alert alert-info mt-12">
+            ⏳ An administrator is reviewing your request and will set up tasks shortly.
+          </div>
+        ) : (
+          <TaskBoardOverview
+            tasks={localTasks}
             req={req}
             user={user}
-            attachments={attachments}
-            onClose={() => setActiveTask(null)}
-            onRefresh={() => { fetchAll(); setActiveTask(null); }}
+            supabase={supabase}
+            onRefresh={handleRefresh}
           />
         )}
       </div>
     );
   }
 
-  // ── VIEW 3: Stakeholder — overview grid ───────────────────────────
-  return (
-    <div className={styles.wrap}>
-      {header}
-
-      <div className={styles.previewStrip}>
-        <div className={styles.previewStripInfo}>
-          <span>📄</span>
-          <span>View full content preview</span>
-        </div>
-        <button className={styles.previewStripBtn} onClick={() => setShowPreview(v => !v)}>
-          {showPreview ? "Hide Preview" : "Show Preview →"}
-        </button>
-      </div>
-      {showPreview && (
-        <div className={styles.previewWrapper}>
-          <PagePreview req={req} pageType={req.page_type} />
-        </div>
-      )}
-
-      {isPendingAdmin && (
-        <div className={styles.pendingAdminBanner}>
-          <span className={styles.pendingAdminIcon}>⏳</span>
-          <div className={styles.pendingAdminText}>
-            <div className={styles.pendingAdminTitle}>Waiting for admin to set up tasks</div>
-            <div className={styles.pendingAdminSub}>
-              An administrator needs to review and create tasks for this request before work can begin.
-            </div>
+  // ── View 4: Admin (non-pending) → PagePreview (left) + TaskBoardOverview (right)
+  if (isAdmin) {
+    return (
+      <div>
+        <Header />
+        <div style={TWO_COL}>
+          <div style={{ overflowY: "auto" }}>
+            <PagePreview req={req} pageType={req.page_type} />
+          </div>
+          <div style={{ overflowY: "auto",
+                        borderLeft: "1px solid var(--color-border)",
+                        paddingLeft: "1.5rem" }}>
+            <TaskBoardOverview
+              tasks={localTasks}
+              req={req}
+              user={user}
+              supabase={supabase}
+              onRefresh={handleRefresh}
+            />
           </div>
         </div>
-      )}
-
-      {tasks.length > 0 && <TaskGrid tasks={tasks} user={user} onOpen={setActiveTask} />}
-
-      {activeTask && (
-        <TaskPanel
-          task={activeTask}
-          req={req}
-          user={user}
-          attachments={attachments}
-          onClose={() => setActiveTask(null)}
-          onRefresh={() => { fetchAll(); setActiveTask(null); }}
-        />
-      )}
-    </div>
-  );
-}
-
-// ── Shared task cards grid (admin + stakeholder) ───────────────────
-function TaskGrid({ tasks, user, onOpen }) {
-  const getCardAction = (task) => {
-    const isMyTask    = user.role === task.team_role;
-    const isStakeholder = user.role === "stakeholder";
-
-    if (task.status === "locked")    return { label: "🔒 Locked",          variant: "disabled" };
-    if (task.status === "completed") return { label: "✅ Completed",        variant: "disabled" };
-
-    if (isStakeholder && task.status === "pending_approval") {
-      return { label: "👁️ Review & Approve", variant: "approve" };
-    }
-    if (isMyTask && task.status === "pending")          return { label: "⚡ Start",             variant: "primary" };
-    if (isMyTask && task.status === "in_progress")      return { label: "📋 View Task",         variant: "primary" };
-    if (isMyTask && task.status === "pending_approval") return { label: "⏳ Awaiting approval", variant: "secondary" };
-    if (isMyTask && task.status === "needs_info")       return { label: "❓ Needs info",        variant: "secondary" };
-
-    return { label: "👁️ View", variant: "secondary" };
-  };
-
-  const openTask = (task) => {
-    if (task.status === "locked" && user.role !== "admin") return;
-    onOpen(task);
-  };
-
-  return (
-    <>
-      <div className={styles.sectionLabel}>Parallel Tasks</div>
-      <div className={styles.taskGrid}>
-        {tasks.map(task => {
-          const team      = getTaskTeam(task.team_role);
-          const stMeta    = TASK_STATUS_META[task.status] || TASK_STATUS_META.pending;
-          const action    = getCardAction(task);
-          const isLocked  = task.status === "locked";
-          const isDone    = task.status === "completed";
-          const isApproval = task.status === "pending_approval";
-          const isMyTask  = user.role === task.team_role;
-
-          return (
-            <div
-              key={task.id}
-              className={[
-                styles.taskCard,
-                isLocked   ? styles.locked       : "",
-                isDone     ? styles.completed    : "",
-                isApproval ? styles.needsApproval : "",
-                isMyTask   ? styles.mine         : "",
-              ].join(" ")}
-            >
-              {isMyTask && <span className={styles.myBadge}>My Task</span>}
-
-              <div className={styles.taskCardTop}>
-                <span className={styles.taskIcon}>{team?.icon || "📋"}</span>
-                <span
-                  className={styles.statusChip}
-                  style={{ background: stMeta.bg, color: stMeta.color }}
-                >
-                  {stMeta.icon} {stMeta.label}
-                </span>
-              </div>
-
-              <div className={styles.taskLabel}>{team?.label || task.team_role}</div>
-
-              {task.status === "needs_info" && (
-                <div className={styles.qaIndicator}>❓ Has a question</div>
-              )}
-
-              <div className={styles.taskHint}>
-                {isLocked   && "Unlocks when all other tasks complete"}
-                {task.status === "pending"          && !isLocked && "Ready to start"}
-                {task.status === "in_progress"      && "Currently in progress"}
-                {task.status === "pending_approval" && "Waiting for stakeholder review"}
-                {task.status === "needs_info"       && "Waiting for answer from stakeholder"}
-                {isDone     && `Completed ${task.completed_at ? formatDate(task.completed_at) : ""}`}
-              </div>
-
-              <button
-                className={`${styles.taskAction} ${styles[action.variant]}`}
-                onClick={e => { e.stopPropagation(); openTask(task); }}
-                disabled={action.variant === "disabled"}
-              >
-                {action.label}
-              </button>
-            </div>
-          );
-        })}
       </div>
-    </>
+    );
+  }
+
+  // ── Fallback ─────────────────────────────────────────────────────────
+  return (
+    <div>
+      <Header />
+      <div className="alert alert-info mt-12">
+        You don't have access to this view.
+      </div>
+    </div>
   );
 }

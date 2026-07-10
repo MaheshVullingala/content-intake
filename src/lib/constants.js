@@ -15,8 +15,12 @@ export const ROLE_META = {
   design_qa:    { label: "Design QA",    color: "#3C3C3C", icon: "🖼️" },
   web_team:     { label: "Web Team",     color: "#06b6d4", icon: "🌐" },
   admin:        { label: "Admin",        color: "#181313", icon: "⚙️"  },
-  brand_team:   { label: "Brand Team",   color: "#9333ea", icon: "🎨" },
-  seo_team:     { label: "SEO Team",     color: "#2c90b2", icon: "🔍" },
+  brand_team:   { label: "Brand Team",   color: '#d97706', bg: '#fffbeb', icon: "🎨" },
+  seo_team:     { label: "SEO Team",     color: '#1b5793', bg: '#eff6ff', icon: "🔍" },
+  // v2 parallel-workflow roles
+  editorial_team: { label: 'Editorial Team', icon: '✍️',  color: '#2a7a4b', bg: '#ecfdf5' },
+  design_team:    { label: 'Design Team',    icon: '🖼️', color: '#ea580c', bg: '#fff7ed' },
+  super_admin:    { label: 'Super Admin',    icon: '⚡',  color: '#7e22ce', bg: '#faf5ff' },
 };
 
 export const getStatus = (key) =>
@@ -191,6 +195,83 @@ export const SECTIONS = {
     },
   },
 };
+
+// ─── v2 Parallel Workflow Constants ──────────────────────────────────────────
+// Everything below is additive. Nothing above this line was changed.
+
+export const TASK_STATUS_META = {
+  locked:            { label: 'Locked',           color: '#B5B5B5', bg: '#F9F9F9', icon: '🔒' },
+  pending:           { label: 'Pending',           color: '#646464', bg: '#F3F3F3', icon: '⏳' },
+  in_progress:       { label: 'In Progress',       color: '#1b5793', bg: '#eff6ff', icon: '⚡' },
+  waiting_for_brand: { label: 'Waiting for Brand', color: '#d97706', bg: '#fffbeb', icon: '🎨' },
+  needs_info:        { label: 'Needs Info',        color: '#d97706', bg: '#fffbeb', icon: '❓' },
+  pending_approval:  { label: 'Needs Approval',    color: '#9333ea', bg: '#faf5ff', icon: '👁️' },
+  pending_action:    { label: 'Pending Action',    color: '#dc2626', bg: '#fef2f2', icon: '🔴' },
+  completed:         { label: 'Completed',         color: '#2a7a4b', bg: '#ecfdf5', icon: '✅' },
+};
+
+export const OVERALL_STATUS_META = {
+  pending_admin:       { label: 'Pending Admin Review', color: '#d97706', bg: '#fffbeb' },
+  in_progress:         { label: 'In Progress',          color: '#1b5793', bg: '#eff6ff' },
+  pending_stakeholder: { label: 'Needs Approval',       color: '#9333ea', bg: '#faf5ff' },
+  pending_web:         { label: 'Web Team Active',      color: '#2c90b2', bg: '#e8f4fb' },
+  published:           { label: 'Published',            color: '#2a7a4b', bg: '#ecfdf5' },
+};
+
+// Ordered list of all task teams
+export const TASK_TEAMS = [
+  'editorial_team', 'brand_team', 'seo_team', 'design_team', 'web_team',
+];
+
+// Teams that run in parallel (all must complete before web_team unlocks)
+export const PARALLEL_TEAMS = [
+  'editorial_team', 'brand_team', 'seo_team', 'design_team',
+];
+
+// Which teams must complete before a given team can start
+export const TASK_DEPENDENCY_MAP = {
+  editorial_team: [],
+  brand_team:     [],
+  seo_team:       [],
+  design_team:    [],
+  web_team:       ['editorial_team', 'brand_team', 'seo_team', 'design_team'],
+};
+
+export const PRIORITY_META = {
+  low:    { label: 'Low',    color: '#64748b', bg: '#f8fafc' },
+  normal: { label: 'Normal', color: '#1b5793', bg: '#eff6ff' },
+  high:   { label: 'High',   color: '#d97706', bg: '#fffbeb' },
+  urgent: { label: 'Urgent', color: '#c0392b', bg: '#fef2f2' },
+};
+
+export const NOTIFICATION_TYPES = {
+  TASK_ASSIGNED:     'task_assigned',
+  TASK_COMPLETED:    'task_completed',
+  APPROVAL_NEEDED:   'approval_needed',
+  APPROVAL_GRANTED:  'approval_granted',
+  APPROVAL_REJECTED: 'approval_rejected',
+  QUESTION_ASKED:    'question_asked',
+  ANSWER_RECEIVED:   'answer_received',
+  PRIORITY_CHANGED:  'priority_changed',
+  CHANGES_REQUESTED: 'changes_requested',
+  WEB_TEAM_UNLOCKED: 'web_team_unlocked',
+  PUBLISHED:         'published',
+};
+
+export const AUDIT_ACTIONS = {
+  TASK_CREATED:           'task.created',
+  TASK_STATUS_CHANGED:    'task.status_changed',
+  TASK_ASSIGNED:          'task.assigned',
+  TASK_COMPLETED:         'task.completed',
+  REQUEST_SUBMITTED:      'request.submitted',
+  REQUEST_STATUS_CHANGED: 'request.status_changed',
+  APPROVAL_GIVEN:         'approval.given',
+  APPROVAL_REJECTED:      'approval.rejected',
+  ATTACHMENT_UPLOADED:    'attachment.uploaded',
+  USER_ROLE_SWITCHED:     'user.role_switched',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const getSectionsForPageType = (pageType) => {
   const all = Object.entries(SECTIONS)

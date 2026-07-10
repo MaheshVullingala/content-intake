@@ -1,4 +1,5 @@
 "use client";
+import { validateFile } from "@/lib/security";
 import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 

@@ -1,120 +1,200 @@
-import { supabase } from "@/lib/supabase";
+// No direct supabase import — caller passes the authenticated client instance.
+// This keeps taskUtils compatible with v1's auth pattern (supabase is already
+// initialised in the component tree before any of these functions are called).
 
+import { PARALLEL_TEAMS } from './constants';
+
+// ─── Team config ─────────────────────────────────────────────────────────────
+// Rich metadata used by AdminTaskSetup and TaskBoard to render team cards.
 export const TASK_TEAMS = [
-  { role: "editorial_qa", label: "Editorial QA", icon: "✍️",  alwaysRequired: true,  webLocked: false, selfCompletes: true  },
-  { role: "brand_team",   label: "Brand Team",   icon: "🎨",  alwaysRequired: false, webLocked: false, selfCompletes: false },
-  { role: "seo_team",     label: "SEO Team",     icon: "🔍",  alwaysRequired: true,  webLocked: false, selfCompletes: true  },
-  { role: "design_qa",    label: "Design QA",    icon: "🖼️",  alwaysRequired: true,  webLocked: false, selfCompletes: false },
-  { role: "web_team",     label: "Web Team",     icon: "🌐",  alwaysRequired: true,  webLocked: true,  selfCompletes: true  },
+  { role: 'editorial_team', label: 'Editorial Team', icon: '✍️',  color: '#2a7a4b', bg: '#ecfdf5', alwaysRequired: true,  webLocked: false, selfCompletes: false },
+  { role: 'brand_team',     label: 'Brand Team',     icon: '🎨',  color: '#d97706', bg: '#fffbeb', alwaysRequired: false, webLocked: false, selfCompletes: false },
+  { role: 'seo_team',       label: 'SEO Team',       icon: '🔍',  color: '#1b5793', bg: '#eff6ff', alwaysRequired: true,  webLocked: false, selfCompletes: true  },
+  { role: 'design_team',    label: 'Design Team',    icon: '🖼️', color: '#ea580c', bg: '#fff7ed', alwaysRequired: true,  webLocked: false, selfCompletes: false },
+  { role: 'web_team',       label: 'Web Team',       icon: '🌐',  color: '#0f2744', bg: '#F5F5F5', alwaysRequired: true,  webLocked: true,  selfCompletes: true  },
 ];
 
+// ─── Status / overall-status metadata ────────────────────────────────────────
+// Kept here for components that import from taskUtils rather than constants.
 export const TASK_STATUS_META = {
-  locked:           { label: "Locked",         color: "#B5B5B5", bg: "#F9F9F9", icon: "🔒" },
-  pending:          { label: "Pending",         color: "#646464", bg: "#F3F3F3", icon: "⏳" },
-  in_progress:      { label: "In Progress",     color: "#1b5793", bg: "#eff6ff", icon: "⚡" },
-  needs_info:       { label: "Needs Info",      color: "#d97706", bg: "#fffbeb", icon: "❓" },
-  pending_approval: { label: "Needs Approval",  color: "#9333ea", bg: "#faf5ff", icon: "👁️" },
-  completed:        { label: "Completed",       color: "#2a7a4b", bg: "#ecfdf5", icon: "✅" },
+  locked:            { label: 'Locked',           color: '#B5B5B5', bg: '#F9F9F9', icon: '🔒' },
+  pending:           { label: 'Pending',           color: '#646464', bg: '#F3F3F3', icon: '⏳' },
+  in_progress:       { label: 'In Progress',       color: '#1b5793', bg: '#eff6ff', icon: '⚡' },
+  waiting_for_brand: { label: 'Waiting for Brand', color: '#d97706', bg: '#fffbeb', icon: '🎨' },
+  needs_info:        { label: 'Needs Info',        color: '#d97706', bg: '#fffbeb', icon: '❓' },
+  pending_approval:  { label: 'Needs Approval',    color: '#9333ea', bg: '#faf5ff', icon: '👁️' },
+  pending_action:    { label: 'Pending Action',    color: '#dc2626', bg: '#fef2f2', icon: '🔴' },
+  completed:         { label: 'Completed',         color: '#2a7a4b', bg: '#ecfdf5', icon: '✅' },
 };
 
 export const OVERALL_STATUS_META = {
-  pending_admin:       { label: "Pending Admin",   color: "#d97706", bg: "#fffbeb" },
-  in_progress:         { label: "In Progress",     color: "#1b5793", bg: "#eff6ff" },
-  pending_stakeholder: { label: "Needs Approval",  color: "#9333ea", bg: "#faf5ff" },
-  pending_web:         { label: "Web Team Active", color: "#2c90b2", bg: "#e8f4fb" },
-  published:           { label: "Published",       color: "#2a7a4b", bg: "#ecfdf5" },
+  pending_admin:       { label: 'Pending Admin Review', color: '#d97706', bg: '#fffbeb' },
+  in_progress:         { label: 'In Progress',          color: '#1b5793', bg: '#eff6ff' },
+  pending_stakeholder: { label: 'Needs Approval',       color: '#9333ea', bg: '#faf5ff' },
+  pending_web:         { label: 'Web Team Active',      color: '#2c90b2', bg: '#e8f4fb' },
+  published:           { label: 'Published',            color: '#2a7a4b', bg: '#ecfdf5' },
 };
 
-export const getTaskTeam  = (role) => TASK_TEAMS.find(t => t.role === role);
-export const getTaskStatus = (key) => TASK_STATUS_META[key] || TASK_STATUS_META.pending;
+export const getTaskTeam   = (role) => TASK_TEAMS.find(t => t.role === role);
+export const getTaskStatus = (key)  => TASK_STATUS_META[key] || TASK_STATUS_META.pending;
 
-// Create task rows and set request to in_progress
-export const createTasksForRequest = async (requestId, selectedRoles, adminId) => {
-  const tasks = TASK_TEAMS
-    .filter(t => selectedRoles.includes(t.role))
-    .map(t => ({
-      request_id:  requestId,
-      team_role:   t.role,
-      status:      t.role === "web_team" ? "locked" : "pending",
-      is_required: true,
-    }));
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-  const { data, error } = await supabase.from("tasks").insert(tasks).select();
-  if (error) throw error;
+const now = () => new Date().toISOString();
 
-  const { error: reqErr } = await supabase.from("requests").update({
-    overall_status:    "in_progress",
-    admin_reviewed_by: adminId,
-    admin_reviewed_at: new Date().toISOString(),
-  }).eq("id", requestId);
-  if (reqErr) throw reqErr;
+// ─── Core async functions ─────────────────────────────────────────────────────
+// All return { data, error } to match Supabase conventions.
+// supabase is always the last parameter — never imported at module scope.
 
-  return data;
-};
+/**
+ * Insert one task row per role and flip overall_status → in_progress.
+ * web_team always starts locked; every other role starts pending.
+ *
+ * @param {string}   requestId     UUID of the parent request
+ * @param {string[]} selectedRoles e.g. ['editorial_team','seo_team','web_team']
+ * @param {string}   adminId       public.users.id of the creating admin
+ * @param {object}   supabase      authenticated Supabase client
+ */
+export async function createTasksForRequest(requestId, selectedRoles, adminId, supabase) {
+  const rows = selectedRoles.map(role => ({
+    request_id:  requestId,
+    team_role:   role,
+    status:      role === 'web_team' ? 'locked' : 'pending',
+    is_required: true,
+    assigned_by: adminId,
+  }));
 
-export const getTasksForRequest = async (requestId) => {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("request_id", requestId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return data || [];
-};
+  const { data: tasks, error: insertError } = await supabase
+    .from('tasks')
+    .insert(rows)
+    .select();
 
-export const updateTask = async (taskId, updates) => {
-  const payload = { ...updates, updated_at: new Date().toISOString() };
-  if (updates.status === "completed") payload.completed_at = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("tasks").update(payload).eq("id", taskId).select().single();
-  if (error) throw error;
-  return data;
-};
+  if (insertError) return { data: null, error: insertError };
 
-// Recalculate and persist overall_status after any task change
-export const syncOverallStatus = async (requestId) => {
-  let tasks = await getTasksForRequest(requestId);
-  if (!tasks.length) return;
+  const { error: reqError } = await supabase
+    .from('requests')
+    .update({
+      overall_status:    'in_progress',
+      admin_reviewed_by: adminId,
+      admin_reviewed_at: now(),
+      updated_at:        now(),
+    })
+    .eq('id', requestId);
 
-  const webTask = tasks.find(t => t.team_role === "web_team");
-  const nonWeb  = tasks.filter(t => t.team_role !== "web_team");
-  const allNonWebDone = nonWeb.length > 0 && nonWeb.every(t => t.status === "completed");
+  return { data: tasks, error: reqError || null };
+}
 
-  // Unlock web team when all other tasks are done, then re-fetch so
-  // newStatus calculation sees the real DB state instead of stale local values
-  if (allNonWebDone && webTask?.status === "locked") {
-    await supabase.from("tasks").update({
-      status:      "pending",
-      unlocked_at: new Date().toISOString(),
-      updated_at:  new Date().toISOString(),
-    }).eq("id", webTask.id);
-    tasks = await getTasksForRequest(requestId);
+/**
+ * Call the DB-side check_web_team_unlock() RPC. If all required parallel
+ * tasks are completed, unlock the web_team task and set overall_status →
+ * pending_web.
+ *
+ * @returns {{ unlocked: boolean, error: Error|null }}
+ */
+export async function tryUnlockWebTeam(requestId, supabase) {
+  const { data: canUnlock, error: rpcError } = await supabase
+    .rpc('check_web_team_unlock', { p_request_id: requestId });
+
+  if (rpcError)    return { unlocked: false, error: rpcError };
+  if (!canUnlock)  return { unlocked: false, error: null };
+
+  const { error: taskError } = await supabase
+    .from('tasks')
+    .update({ status: 'pending', unlocked_at: now(), updated_at: now() })
+    .eq('request_id', requestId)
+    .eq('team_role', 'web_team');
+
+  if (taskError) return { unlocked: false, error: taskError };
+
+  const { error: reqError } = await supabase
+    .from('requests')
+    .update({ overall_status: 'pending_web', updated_at: now() })
+    .eq('id', requestId);
+
+  return { unlocked: true, error: reqError || null };
+}
+
+/**
+ * Recalculate and write overall_status on the request after any task change.
+ *
+ * Priority:
+ *   published          ← web_team task completed
+ *   pending_web        ← web_team task is unlocked (pending / in_progress)
+ *   pending_stakeholder← any parallel task needs stakeholder approval
+ *   in_progress        ← default while work is active
+ *
+ * Note: this function does NOT auto-unlock web_team. Call tryUnlockWebTeam
+ * separately when a parallel task reaches 'completed'.
+ */
+export async function syncOverallStatus(requestId, supabase) {
+  const { data: tasks, error: fetchError } = await supabase
+    .from('tasks')
+    .select('team_role, status, is_required')
+    .eq('request_id', requestId);
+
+  if (fetchError)                      return { data: null, error: fetchError };
+  if (!tasks || tasks.length === 0)   return { data: null, error: null };
+
+  const webTask      = tasks.find(t => t.team_role === 'web_team');
+  const parallelTasks = tasks.filter(t => PARALLEL_TEAMS.includes(t.team_role));
+
+  let overall_status = 'in_progress';
+
+  if (webTask?.status === 'completed') {
+    overall_status = 'published';
+  } else if (webTask && ['pending', 'in_progress'].includes(webTask.status)) {
+    overall_status = 'pending_web';
+  } else if (parallelTasks.some(t => t.status === 'pending_approval')) {
+    overall_status = 'pending_stakeholder';
   }
 
-  const freshWeb  = tasks.find(t => t.team_role === "web_team");
-  const freshNonWeb = tasks.filter(t => t.team_role !== "web_team");
+  const { error: updateError } = await supabase
+    .from('requests')
+    .update({ overall_status, updated_at: now() })
+    .eq('id', requestId);
 
-  let newStatus = "in_progress";
-  if (freshWeb?.status === "completed") {
-    newStatus = "published";
-  } else if (freshWeb && ["in_progress", "pending"].includes(freshWeb.status) && allNonWebDone) {
-    newStatus = "pending_web";
-  } else if (freshNonWeb.some(t => t.status === "pending_approval")) {
-    newStatus = "pending_stakeholder";
-  } else {
-    newStatus = "in_progress";
-  }
+  return { data: overall_status, error: updateError || null };
+}
 
-  await supabase.from("requests").update({ overall_status: newStatus }).eq("id", requestId);
-  return newStatus;
-};
-
-export const getTasksWithAssignees = async (requestId) => {
+/**
+ * Fetch all tasks for a request with assignee and assigner names joined.
+ * Ordered by creation time so the board renders in a stable sequence.
+ */
+export async function getTasksForRequest(requestId, supabase) {
   const { data, error } = await supabase
-    .from("tasks")
-    .select("*, assignee:users!tasks_assigned_to_fkey(id, name, role)")
-    .eq("request_id", requestId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return data || [];
-};
+    .from('tasks')
+    .select(`
+      *,
+      assignee:users!tasks_assigned_to_fkey(id, name, email, role),
+      assigner:users!tasks_assigned_by_fkey(id, name, role)
+    `)
+    .eq('request_id', requestId)
+    .order('created_at', { ascending: true });
+
+  return { data: data || [], error };
+}
+
+// Alias kept so TaskBoard.js can migrate to getTasksForRequest incrementally.
+export const getTasksWithAssignees = getTasksForRequest;
+
+/**
+ * Update a task; always stamps updated_at. Automatically sets completed_at
+ * when status is flipped to 'completed'.
+ *
+ * @param {string} taskId   UUID of the task row
+ * @param {object} updates  Fields to change (partial)
+ * @param {object} supabase authenticated Supabase client
+ */
+export async function updateTask(taskId, updates, supabase) {
+  const payload = { ...updates, updated_at: now() };
+  if (updates.status === 'completed') payload.completed_at = now();
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .update(payload)
+    .eq('id', taskId)
+    .select()
+    .single();
+
+  return { data, error };
+}

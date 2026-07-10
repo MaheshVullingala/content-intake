@@ -1,5 +1,5 @@
 # Content Intake Portal — Project Context
-Last updated: 2026-07-10
+Last updated: 2026-07-11
 
 ## Project
 Internal web app for Cadence Design Systems.
@@ -90,7 +90,7 @@ seo_team, design_team, web_team
 ## Components Completed (v2)
 - src/lib/constants.js — v2 roles, TASK_STATUS_META, OVERALL_STATUS_META,
   TASK_TEAMS (string array), PARALLEL_TEAMS, TASK_DEPENDENCY_MAP,
-  PRIORITY_META, NOTIFICATION_TYPES, AUDIT_ACTIONS (all additive)
+  PRIORITY_META, NOTIFICATION_TYPES, AUDIT_ACTIONS, ROLE_OPTIONS (all additive)
 - src/lib/taskUtils.js — TASK_TEAMS (rich array), supabase-as-param,
   createTasksForRequest, tryUnlockWebTeam, syncOverallStatus,
   getTasksForRequest, updateTask (all return { data, error })
@@ -99,7 +99,7 @@ seo_team, design_team, web_team
 - src/components/AdminTaskSetup.js — admin sets teams/priority/due_date,
   creates tasks, flips overall_status to in_progress
 - src/components/TaskBoard.js — role-based routing to AdminTaskSetup /
-  TaskPanel / TaskBoardOverview
+  TaskPanel / TaskBoardOverview; web_team left column → WebTeamView
 - src/components/TaskBoardOverview.js — stakeholder + admin view of all
   tasks; progress bar; needs_info Q&A; pending_approval with file preview
   + approve/reject; brand approval notifies design_team
@@ -111,6 +111,23 @@ seo_team, design_team, web_team
   + publish); AssigneeDropdown; CompletenessIndicator
 - src/components/ReqDetail.js — overall_status gate routes to TaskBoard;
   null overall_status shows legacy message
+- src/components/NotificationBell.js — bell icon in navbar; fetches
+  notifications table for current user; red badge (99+ cap); dropdown
+  with last 10; click-to-navigate (go("detail", request_id)); mark all
+  read; polls every 60s; dark Ocean Deep styling
+- src/components/WebTeamView.js — web_team left column; 9-section
+  completeness check with progress bar + missing-section chips; all text
+  fields with 📋 copy buttons; image thumbnails vs file icons; ZIP download
+  via JSZip; Mark as Published (sets overall_status=published + completes
+  web_team task row); no CSS module; correct column names (public_url)
+- src/components/layout/Navbar.js — role switcher dropdown (super_admin
+  only); NotificationBell wired in; accepts supabase prop
+- src/app/page.js — impersonation banner (⚡ Viewing as: [Role]);
+  effectiveUser derived from localStorage cip-impersonated-role;
+  all view components receive effectiveUser; Navbar receives real user
+- src/components/NewRequest.js — priority selector (Normal/High/Urgent)
+  and brand team checkbox added to Step 1; priority in buildPayload and
+  loadDraft; Step 3 duplicate brand checkbox removed
 
 ## RLS Known Issue
 TaskPanel Web Team "Request Changes" sets another team's task to
@@ -127,15 +144,20 @@ yet" placeholder shows. This table must be created when task-level file
 tracking is needed (separate from the request-level "attachments" table).
 
 ## What's Next (build in order)
-1. NotificationBell.js — navbar component, queries notifications table,
-   shows unread count badge, dropdown list, mark-as-read on click
-2. AdminPanel updates — add Audit Log tab (reads audit_log table, shows
-   timestamp, user, action, entity, old→new value in a table)
-3. NewRequest.js — add "needs brand team?" checkbox at step 1 (sets
-   req.needs_brand = true on submit, pre-selects brand_team in AdminTaskSetup)
-4. WebTeamView.js — already exists but may need update for v2 (content
-   completeness is now in TaskPanel CompletenessIndicator; check for
-   duplication)
+1. AdminPanel audit log tab — reads audit_log table; shows timestamp,
+   user email, role, action, entity_type, old→new value in a table;
+   filterable by action type and date range
+2. Audit log writes — insert to audit_log on every tracked action:
+   task status changes, request submissions, approvals, role assignments.
+   Best done via a shared writeAuditLog(entry, supabase) util in taskUtils.js
+   or a new src/lib/auditLog.js. Include impersonating_role when
+   cip-impersonated-role is set in localStorage.
+3. Email notification service — disabled by default; Supabase Edge Function
+   or Next.js API route that reads undelivered notifications (email_sent=false)
+   and sends via Resend/SendGrid; guarded by a feature flag in settings table
+4. End-to-end browser testing — login as each role, submit a request,
+   advance through full workflow, verify TaskBoard routing, confirm
+   notifications arrive, test impersonation switcher
 
 ## Session Log
 ### 2026-07-10
@@ -151,3 +173,17 @@ tracking is needed (separate from the request-level "attachments" table).
 - ReqDetail.js — overall_status gate added
 - Dev server confirmed clean start (port 3003, Ready in 4.1s)
 - Build confirmed zero errors throughout
+- NewRequest.js — priority selector + brand checkbox added to Step 1
+  (priority state, buildPayload, loadDraft; Step 3 duplicate removed)
+- Committed as v138 (Note: git log shows v137 label was used; next is v139)
+
+### 2026-07-11
+- Role switcher (super_admin only) added to Navbar — ROLE_OPTIONS in
+  constants.js, cip-impersonated-role in localStorage, page reload on switch
+- Impersonation banner added to page.js — effectiveUser passed to all views
+- NotificationBell.js created and wired into Navbar
+- WebTeamView.js fully rewritten — completeness check, copy buttons,
+  image thumbnails, ZIP download, Mark as Published; wired into TaskBoard
+  as left column for web_team
+- Build confirmed zero errors (154 kB bundle)
+- Committed as v137 (git commit 0308097)

@@ -82,6 +82,20 @@ export const ROLE_FOR_STATUS = {
   web_team:         "web_team",
 };
 
+export const CHAR_LIMITS = {
+  page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300,
+  seo_page_location:300, seo_meta_title:70, seo_meta_description:160, seo_meta_keywords:300,
+  overview_label:30, overview_impact:100, overview_description:600,
+  kb_label:30, kb_impact:100, kb_description:300,
+  fa_label:30, fa_impact:100, fa_description:300,
+  cs_label:30, cs_impact:100,
+  promo_label:30, promo_title:120, promo_description:300, promo_btn_label:30, promo_btn_link:300,
+  rc_label:30, rc_impact:100,
+  res_label:30, res_impact:100,
+  rp_label:30, rp_impact:100, rp_description:300,
+  ts_label:40, ts_impact:80,
+};
+
 // Section definitions per page type
 export const SECTIONS = {
   seo_meta: {

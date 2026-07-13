@@ -5,6 +5,7 @@ import TaskBoardOverview from "@/components/TaskBoardOverview";
 import TaskPanel         from "@/components/TaskPanel";
 import PagePreview       from "@/components/PagePreview";
 import WebTeamView       from "@/components/WebTeamView";
+import EditSectionModal  from "@/components/EditSectionModal";
 import { OVERALL_STATUS_META, getTasksForRequest } from "@/lib/taskUtils";
 
 const TEAM_ROLES = new Set([
@@ -27,6 +28,8 @@ export default function TaskBoard({
 }) {
   const [localTasks, setLocalTasks] = useState(tasks);
   const [loading,    setLoading]    = useState(false);
+  // null = closed, { section: 'overview', data: req } = open
+  const [editModal,  setEditModal]  = useState(null);
 
   const isAdmin       = ["admin", "super_admin"].includes(user.role);
   const isTeamMember  = TEAM_ROLES.has(user.role);
@@ -166,14 +169,20 @@ export default function TaskBoard({
                 onRefresh={handleRefresh}
               />
             ) : (
-              <PagePreview req={req} pageType={req.page_type} />
+              <PagePreview
+                req={req}
+                pageType={req.page_type}
+                editorialMode={user.role === "editorial_team"}
+                activeEditSection={editModal?.section}
+                onEditSection={(section) => setEditModal({ section, data: req })}
+              />
             )}
           </div>
           <div style={{ overflowY: "auto",
                         borderLeft: "1px solid var(--color-border)",
                         paddingLeft: "1.5rem" }}>
             <TaskPanel
-              task={myTask}
+              tasks={localTasks}
               req={req}
               user={user}
               supabase={supabase}
@@ -182,6 +191,16 @@ export default function TaskBoard({
             />
           </div>
         </div>
+        {editModal && (
+          <EditSectionModal
+            section={editModal.section}
+            data={editModal.data}
+            requestId={req.id}
+            supabase={supabase}
+            onClose={() => setEditModal(null)}
+            onSaved={() => { setEditModal(null); handleRefresh(); }}
+          />
+        )}
       </div>
     );
   }

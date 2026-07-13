@@ -3,7 +3,7 @@ import { sanitizePayload, validateFile, getAuthHeaders } from "@/lib/security";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
-import { PAGE_TYPES, getSectionsForPageType } from "@/lib/constants";
+import { PAGE_TYPES, getSectionsForPageType, CHAR_LIMITS } from "@/lib/constants";
 import PagePreview from "@/components/PagePreview";
 import AIAssistant from "@/components/AIAssistant";
 import SectionAIAssist from "@/components/SectionAIAssist";
@@ -29,19 +29,6 @@ const EMPTY_SEO = { seo_page_location:"", seo_meta_title:"", seo_meta_descriptio
 
 const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image_ref:null };
 const EMPTY_OVERVIEW = { overview_label:"OVERVIEW", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_ref:null };
-
-const CHAR_LIMITS = {
-  page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300,
-  seo_page_location:300, seo_meta_title:70, seo_meta_description:160, seo_meta_keywords:300,
-  overview_label:30, overview_impact:100, overview_description:600,
-  kb_label:30, kb_impact:100, kb_description:300,
-  fa_label:30, fa_impact:100, fa_description:300,
-  cs_label:30, cs_impact:100,
-  promo_label:30, promo_title:120, promo_description:300, promo_btn_label:30, promo_btn_link:300,
-  rc_label:30, rc_impact:100,
-  rp_label:30, rp_impact:100, rp_description:300,
-  ts_label:40, ts_impact:80,
-};
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint, charLimit, disabled, readOnly, style: fieldStyle }) => {
   const limit = charLimit || null;

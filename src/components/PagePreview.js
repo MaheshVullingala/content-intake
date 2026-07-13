@@ -77,7 +77,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   // Editorial mode: hoverable edit button per section
   const [hoverSection, setHoverSection] = useState(null);
   const EditBtn = ({ sectionKey }) => {
-    if (!editorialMode) return null;
+    if (!editorialMode || !onEditSection) return null;
     const isActive = activeEditSection === sectionKey;
     return (
       <button

@@ -397,14 +397,13 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
       {/* ── EDITORIAL TEAM ───────────────────────────────────────────── */}
       {user.role === "editorial_team" && (isActive || myTask.status === "needs_info") && (
         <div className="card">
+          <h3 style={{ margin: "0 0 6px", fontSize: "var(--text-base)", fontWeight: 600 }}>
+            ✏️ Content Editing
+          </h3>
           <p className="field-hint" style={{ marginBottom: 12 }}>
-            Review and edit content in the left panel. Mark complete when all sections are approved.
+            Click "✎ Edit" on any section in the preview to update its content.
           </p>
-          <button
-            className="btn-primary btn-full"
-            onClick={handleComplete}
-            disabled={saving}
-          >
+          <button className="btn-primary btn-full" onClick={handleComplete} disabled={saving}>
             {saving ? "Saving…" : "✅ Mark Content Approved"}
           </button>
         </div>

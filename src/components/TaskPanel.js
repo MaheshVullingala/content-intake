@@ -1,6 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus } from "@/lib/taskUtils";
+import { AUDIT_ACTIONS } from "@/lib/constants";
+import { logAudit } from "@/lib/auditLogger";
+import BrandFilesPanel from "@/components/BrandFilesPanel";
 
 const SECTION_TAGS  = ["Banner", "Overview", "Other"];
 const MAX_BRAND_MB  = 10 * 1024 * 1024;
@@ -34,14 +37,13 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
 
   const fileRef = useRef();
 
-  // Fetch files this role uploaded for this request (filtered by storage path prefix)
+  // Fetch files this team uploaded for this request's task
   const fetchMyFiles = async () => {
-    const prefix = `tasks/${req.id}/${user.role}/`;
+    if (!myTask) return;
     const { data } = await supabase
-      .from("attachments")
+      .from("task_attachments")
       .select("*")
-      .eq("request_id", req.id)
-      .like("storage_path", `${prefix}%`)
+      .eq("task_id", myTask.id)
       .order("created_at");
     setMyFiles(data || []);
   };
@@ -76,14 +78,18 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
     setSaving(true); setError("");
     try {
       const { error: err } = await updateTask(myTask.id, updates, supabase);
-      if (err) { setError(err.message); return; }
+      if (err) { setError(err.message); return false; }
       await syncOverallStatus(req.id, supabase);
       onRefresh?.();
-    } catch (e) { setError(e.message || "Update failed."); }
+      return true;
+    } catch (e) { setError(e.message || "Update failed."); return false; }
     finally     { setSaving(false); }
   };
 
-  const handleComplete        = () => doUpdate({ status: "completed" });
+  const handleComplete = async () => {
+    const ok = await doUpdate({ status: "completed" });
+    if (ok) logAudit(supabase, user, AUDIT_ACTIONS.TASK_COMPLETED, "task", myTask.id);
+  };
   const handleSubmitApproval  = () => doUpdate({ status: "pending_approval" });
   const handleWaitForBrand    = () => doUpdate({ status: "waiting_for_brand" });
   const handleResumeFromBrand = () => doUpdate({ status: "in_progress" });
@@ -121,26 +127,43 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
     setUploading(true); setError("");
     try {
       const ext  = file.name.split(".").pop();
-      const path = `tasks/${req.id}/${user.role}/${sectionTag.toLowerCase()}/${Date.now()}.${ext}`;
+      const tag  = isBrand ? "brand" : sectionTag.toLowerCase();
+      const path = `tasks/${req.id}/${user.role}/${tag}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("attachments").upload(path, file);
       if (upErr) throw upErr;
       const { data: { publicUrl } } = supabase.storage
         .from("attachments").getPublicUrl(path);
-      const { error: dbErr } = await supabase.from("attachments").insert({
+      const { error: dbErr } = await supabase.from("task_attachments").insert({
+        task_id:      myTask.id,
         request_id:   req.id,
-        user_id:      user.id,
-        user_name:    user.name,
+        uploaded_by:  user.id,
         file_name:    file.name,
         file_type:    file.type,
         file_size:    file.size,
         storage_path: path,
         public_url:   publicUrl,
+        section_tag:  isBrand ? null : sectionTag,
       });
       if (dbErr) throw dbErr;
       await fetchMyFiles();
-    } catch (e) { setError(e.message || "Upload failed."); }
+    } catch (e) { console.error("Upload error full:", e); setError(e.message || "Upload failed."); }
     finally     { setUploading(false); }
+  };
+
+  // Brand/design team: delete one of their own uploaded files
+  const handleDeleteFile = async (file) => {
+    if (!window.confirm(`Delete "${file.file_name}"? This cannot be undone.`)) return;
+    setError("");
+    try {
+      const { error: storageErr } = await supabase.storage
+        .from("attachments").remove([file.storage_path]);
+      if (storageErr) throw storageErr;
+      const { error: delErr } = await supabase
+        .from("task_attachments").delete().eq("id", file.id);
+      if (delErr) throw delErr;
+      await fetchMyFiles();
+    } catch (e) { setError(e.message || "Failed to delete file."); }
   };
 
   // ── Web team: request changes from another team ─────────────────────────────
@@ -197,6 +220,7 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   };
 
   // ── Shared file list renderer (brand + design) ─────────────────────────────
+  const canDelete = myTask.status !== "pending_approval";
   const FileList = () => myFiles.length === 0 ? null : (
     <div style={{ marginBottom: 14 }}>
       <div className="text-xs text-uppercase text-muted" style={{ marginBottom: 6 }}>
@@ -220,13 +244,25 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
                         textDecoration: "none" }}>
               View
             </a>
+            {f.uploaded_by === user.id && canDelete && (
+              <button
+                onClick={() => handleDeleteFile(f)}
+                title="Delete file"
+                style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "#c0392b", fontSize: 13, padding: "0 2px", flexShrink: 0,
+                }}
+              >
+                🗑️
+              </button>
+            )}
           </div>
         ))}
       </div>
     </div>
   );
 
-  // ── Upload zone ─────────────────────────────────────────────────────────────
+  // ── Upload zone: Design Team (section-tagged) ───────────────────────────────
   const UploadZone = () => (
     <>
       <div className="field-wrap">
@@ -247,11 +283,9 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
       >
         <div style={{ fontSize: 22, marginBottom: 4 }}>{uploading ? "⏳" : "📤"}</div>
         <div style={{ fontSize: "var(--text-sm)", color: "var(--color-dim)" }}>
-          {uploading ? "Uploading…"
-            : isBrand ? "Click to upload JPEG / PNG"
-            : "Click to upload JPEG / PNG / WebP"}
+          {uploading ? "Uploading…" : "Click to upload JPEG / PNG / WebP"}
         </div>
-        <div className="field-hint">Max {isBrand ? "10" : "20"} MB per file</div>
+        <div className="field-hint">Max 20 MB per file</div>
         <input
           ref={fileRef} type="file" accept={accept}
           style={{ display: "none" }}
@@ -259,6 +293,30 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
         />
       </div>
     </>
+  );
+
+  // ── Upload zone: Brand Team (no section mapping) ────────────────────────────
+  const BrandUploadZone = () => (
+    <div
+      style={{
+        border: "2px dashed var(--color-border)", borderRadius: "var(--radius-lg)",
+        padding: "1.5rem", textAlign: "center", cursor: "pointer",
+        background: "var(--color-ghost)", marginBottom: 12,
+        transition: "border-color 0.15s",
+      }}
+      onClick={() => fileRef.current?.click()}
+    >
+      <div style={{ fontSize: 22, marginBottom: 4 }}>{uploading ? "⏳" : "📤"}</div>
+      <div style={{ fontSize: "var(--text-sm)", color: "var(--color-dim)" }}>
+        {uploading ? "Uploading…" : "Click to upload JPEG / PNG"}
+      </div>
+      <div className="field-hint">Max 10 MB per file</div>
+      <input
+        ref={fileRef} type="file" accept={accept}
+        style={{ display: "none" }}
+        onChange={e => { uploadFile(e.target.files[0]); e.target.value = ""; }}
+      />
+    </div>
   );
 
   return (
@@ -311,6 +369,9 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
               await supabase.from("tasks")
                 .update({ status: "in_progress", updated_at: new Date().toISOString() })
                 .eq("id", myTask.id);
+              logAudit(supabase, user, AUDIT_ACTIONS.TASK_STATUS_CHANGED, "task", myTask.id, {
+                old_value: "pending", new_value: "in_progress",
+              });
               onRefresh?.();
             }}
           >
@@ -434,7 +495,7 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
           <FileList />
           {(isActive || isPendingApproval) && (
             <>
-              {!isPendingApproval && <UploadZone />}
+              {!isPendingApproval && <BrandUploadZone />}
               <button
                 className="btn-primary btn-full"
                 onClick={handleSubmitApproval}
@@ -471,6 +532,7 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
               )}
             </div>
           )}
+          <BrandFilesPanel requestId={req.id} supabase={supabase} />
           <FileList />
           {(isActive || isPendingApproval) && !isWaitingBrand && (
             <>

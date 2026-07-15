@@ -294,6 +294,7 @@ export const AUDIT_ACTIONS = {
   APPROVAL_REJECTED:      'approval.rejected',
   ATTACHMENT_UPLOADED:    'attachment.uploaded',
   USER_ROLE_SWITCHED:     'user.role_switched',
+  CONTENT_EDITED:         'content.edited',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

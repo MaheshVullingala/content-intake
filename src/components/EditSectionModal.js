@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { CHAR_LIMITS } from "@/lib/constants";
+import { CHAR_LIMITS, AUDIT_ACTIONS } from "@/lib/constants";
+import { logAudit } from "@/lib/auditLogger";
 
 // Sub-field char limits for JSONB card/item arrays — not covered by the
 // top-level CHAR_LIMITS map in constants.js, so kept local to this modal.
@@ -150,7 +151,7 @@ function EditField({ label, value, onChange, multiline, limit }) {
   );
 }
 
-export default function EditSectionModal({ section, data = {}, requestId, supabase, onClose, onSaved }) {
+export default function EditSectionModal({ section, data = {}, requestId, supabase, user, onClose, onSaved }) {
   const config = SECTION_CONFIG[section];
 
   const [values,    setValues]    = useState({});
@@ -216,6 +217,9 @@ export default function EditSectionModal({ section, data = {}, requestId, supaba
     const { error: err } = await supabase.from("requests").update(payload).eq("id", requestId);
     setSaving(false);
     if (err) { setError(err.message || "Failed to save."); return; }
+    logAudit(supabase, user, AUDIT_ACTIONS.CONTENT_EDITED, "request", requestId, {
+      field_name: section,
+    });
     onSaved?.();
   };
 

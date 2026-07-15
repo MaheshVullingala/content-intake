@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { TASK_TEAMS } from "@/lib/taskUtils";
-import { PRIORITY_META } from "@/lib/constants";
+import { PRIORITY_META, AUDIT_ACTIONS } from "@/lib/constants";
 import { createTasksForRequest } from "@/lib/taskUtils";
+import { logAudit } from "@/lib/auditLogger";
 
 const TEAM_HINTS = {
   editorial_team: "Reviews all text content for accuracy and tone",
@@ -64,6 +65,10 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
         req.id, teamsToCreate, user.id, supabase
       );
       if (taskErr) { setError(taskErr.message); setSaving(false); return; }
+
+      logAudit(supabase, user, AUDIT_ACTIONS.TASK_CREATED, "request", req.id, {
+        new_value: teamsToCreate.join(","),
+      });
 
       // Fix 3 — explicit overall_status flip (createTasksForRequest does this too,
       // but belt-and-suspenders in case the request update in fix 1 raced ahead)

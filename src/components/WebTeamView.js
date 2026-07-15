@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import JSZip from "jszip";
+import BrandFilesPanel from "@/components/BrandFilesPanel";
 
 const FIELD = { fontFamily: "'Rubik', sans-serif" };
 
@@ -362,6 +363,9 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
           <FieldRow label="Keywords"    value={req.seo_meta_keywords}    copiedKey={copiedKey} onCopy={copy} />
         </div>
       </>)}
+
+      {/* ── Brand Team Files (reference only) ───────────────────────────── */}
+      <BrandFilesPanel requestId={req.id} supabase={supabase} />
 
       {/* ── Attachments ───────────────────────────────────────────────── */}
       <SectionHead>📁 Team Attachments</SectionHead>

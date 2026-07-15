@@ -1,13 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 import { TASK_TEAMS, TASK_STATUS_META, updateTask } from "@/lib/taskUtils";
+import { AUDIT_ACTIONS } from "@/lib/constants";
+import { logAudit } from "@/lib/auditLogger";
 
-async function fetchTaskFiles(taskId, supabase) {
+async function fetchTaskFiles(req, supabase) {
   const { data } = await supabase
     .from("task_attachments")
-    .select("id, file_name, url")
-    .eq("task_id", taskId)
-    .order("created_at");
+    .select("*")
+    .eq("request_id", req.id)
+    .order("created_at", { ascending: false });
   return data || [];
 }
 
@@ -26,10 +28,12 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
       .filter(t => t.status === "pending_approval")
       .map(t => t.id);
     if (!pendingIds.length) return;
-    Promise.all(
-      pendingIds.map(id => fetchTaskFiles(id, supabase).then(files => [id, files]))
-    ).then(entries => setFileMap(Object.fromEntries(entries)));
-  }, [tasks]);
+    fetchTaskFiles(req, supabase).then(allFiles => {
+      const map = {};
+      pendingIds.forEach(id => { map[id] = allFiles.filter(f => f.task_id === id); });
+      setFileMap(map);
+    });
+  }, [tasks, req.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Render cards in canonical TASK_TEAMS order; skip teams with no task assigned
   const orderedTasks = TASK_TEAMS
@@ -68,6 +72,10 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
         .update({ [approveField]: true })
         .eq("id", req.id);
       if (reqErr) { setError(reqErr.message); return; }
+
+      logAudit(supabase, user, AUDIT_ACTIONS.APPROVAL_GIVEN, "task", task.id, {
+        field_name: task.team_role,
+      });
 
       // Notify design_team that brand assets are ready (they depend on them)
       if (approveField === "stakeholder_approved_brand") {
@@ -264,7 +272,7 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                         {files.map(f => (
                           <a
                             key={f.id}
-                            href={f.url}
+                            href={f.public_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{

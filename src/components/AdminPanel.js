@@ -1,7 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { getStatus, ROLE_META, STATUS_FLOW } from "@/lib/constants";
+import { getStatus, ROLE_META, STATUS_FLOW, AUDIT_ACTIONS } from "@/lib/constants";
+
+const csvEscape = (val) => {
+  const s = String(val ?? "");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
 
 // ── Character Limits configuration panel ────────────────────────────────────
 const CHAR_LIMIT_FIELDS = [
@@ -128,6 +133,56 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
   const [savingTimeout, setSavingTimeout] = useState(false);
   const [localTimeout,  setLocalTimeout]  = useState(timeoutMins);
 
+  // ── Audit log tab ──────────────────────────────────────────────────────
+  const [auditLog,       setAuditLog]       = useState([]);
+  const [auditLoading,   setAuditLoading]   = useState(false);
+  const [auditDateFrom,  setAuditDateFrom]  = useState("");
+  const [auditDateTo,    setAuditDateTo]    = useState("");
+  const [auditAction,    setAuditAction]    = useState("");
+  const [auditEmail,     setAuditEmail]     = useState("");
+
+  const fetchAuditLog = async () => {
+    setAuditLoading(true);
+    let query = supabase
+      .from("audit_log")
+      .select("*, users(name)")
+      .order("timestamp", { ascending: false })
+      .limit(200);
+    if (auditDateFrom) query = query.gte("timestamp", `${auditDateFrom}T00:00:00`);
+    if (auditDateTo)   query = query.lte("timestamp", `${auditDateTo}T23:59:59`);
+    if (auditAction)   query = query.eq("action", auditAction);
+    if (auditEmail.trim()) query = query.ilike("user_email", `%${auditEmail.trim()}%`);
+    const { data } = await query;
+    setAuditLog(data || []);
+    setAuditLoading(false);
+  };
+
+  useEffect(() => {
+    if (tab === "audit_log") fetchAuditLog();
+  }, [tab, auditDateFrom, auditDateTo, auditAction, auditEmail]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const exportAuditCSV = () => {
+    const headers = ["Timestamp","User","Role","Action","Entity","Old Value","New Value","IP Address"];
+    const rows = auditLog.map(a => [
+      new Date(a.timestamp).toISOString(),
+      a.users?.name || a.user_email || "—",
+      a.user_role || "—",
+      a.action || "—",
+      a.entity_type ? `${a.entity_type}${a.entity_id ? " #" + a.entity_id : ""}` : "—",
+      a.old_value || "",
+      a.new_value || "",
+      a.ip_address || "",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(csvEscape).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "audit_log_export.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
@@ -225,8 +280,8 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
 
       {/* Tabs */}
       <div className="tab-bar" style={{ marginBottom: 16 }}>
-        {["requests","users","activity","settings","char_limits"].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`tab-btn${tab === t ? " active" : ""}`} style={{ textTransform: "capitalize" }}>{t === "char_limits" ? "Char Limits" : t}</button>
+        {["requests","users","activity","audit_log","settings","char_limits"].map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`tab-btn${tab === t ? " active" : ""}`} style={{ textTransform: "capitalize" }}>{t === "char_limits" ? "Char Limits" : t === "audit_log" ? "Audit Log" : t}</button>
         ))}
       </div>
 
@@ -387,6 +442,86 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                   );
                 })
               }
+            </div>
+          )}
+
+          {/* Audit Log tab */}
+          {tab === "audit_log" && (
+            <div>
+              <div style={{ background: "#eff6ff", border: "1px solid rgba(27,87,147,0.15)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: 16, fontSize: 12, color: "#1b5793", lineHeight: 1.6 }}>
+                🔒 Audit log is read-only. Records cannot be modified or deleted.
+              </div>
+
+              {/* Filters */}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+                <div>
+                  <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>From</label>
+                  <input type="date" value={auditDateFrom} onChange={e => setAuditDateFrom(e.target.value)}
+                    style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>To</label>
+                  <input type="date" value={auditDateTo} onChange={e => setAuditDateTo(e.target.value)}
+                    style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Action Type</label>
+                  <select value={auditAction} onChange={e => setAuditAction(e.target.value)}
+                    style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313", cursor: "pointer", minWidth: 180 }}>
+                    <option value="">All Actions</option>
+                    {Object.values(AUDIT_ACTIONS).map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>User Email</label>
+                  <input type="text" placeholder="Search by user email…" value={auditEmail} onChange={e => setAuditEmail(e.target.value)}
+                    style={{ width: "100%", background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313", boxSizing: "border-box" }} />
+                </div>
+                <button
+                  onClick={exportAuditCSV}
+                  disabled={auditLog.length === 0}
+                  style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 6, padding: "0.5rem 1rem", fontSize: 12, fontWeight: 500, cursor: auditLog.length === 0 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: auditLog.length === 0 ? 0.5 : 1 }}>
+                  ⤓ Export to CSV
+                </button>
+              </div>
+
+              <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E0E0E0", overflow: "hidden" }}>
+                <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #F3F3F3", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h2 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Audit Log</h2>
+                  <span style={{ fontSize: 12, color: "#B5B5B5" }}>{auditLog.length} shown (last 200)</span>
+                </div>
+                {auditLoading ? (
+                  <div style={{ padding: "2rem", textAlign: "center", color: "#B5B5B5" }}>Loading...</div>
+                ) : auditLog.length === 0 ? (
+                  <div style={{ padding: "2rem", textAlign: "center", color: "#B5B5B5", fontSize: 13 }}>No audit log entries match these filters.</div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "#F9F9F9" }}>
+                          {["Timestamp","User","Role","Action","Entity","Old Value","New Value","IP Address"].map(h => (
+                            <th key={h} style={{ padding: "0.65rem 1rem", textAlign: "left", fontSize: 10, color: "#B5B5B5", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3", whiteSpace: "nowrap" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {auditLog.map((a, i) => (
+                          <tr key={a.id} style={{ borderBottom: i < auditLog.length - 1 ? "1px solid #F9F9F9" : "none" }}>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 11, color: "#B5B5B5", whiteSpace: "nowrap" }}>{new Date(a.timestamp).toLocaleString()}</td>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 13, color: "#181313", fontWeight: 500, whiteSpace: "nowrap" }}>{a.users?.name || a.user_email || "—"}</td>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", whiteSpace: "nowrap" }}>{a.user_role || "—"}</td>
+                            <td style={{ padding: "0.75rem 1rem" }}><span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 11, borderRadius: 4, padding: "2px 8px", border: "1px solid #E0E0E0", fontWeight: 500, whiteSpace: "nowrap" }}>{a.action}</span></td>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", whiteSpace: "nowrap" }}>{a.entity_type ? `${a.entity_type}${a.entity_id ? " #" + String(a.entity_id).slice(0, 8) : ""}` : "—"}</td>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", fontFamily: "monospace", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.old_value || ""}>{a.old_value || "—"}</td>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", fontFamily: "monospace", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.new_value || ""}>{a.new_value || "—"}</td>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 11, color: "#B5B5B5", fontFamily: "monospace", whiteSpace: "nowrap" }}>{a.ip_address || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

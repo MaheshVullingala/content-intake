@@ -197,6 +197,7 @@ export default function TaskBoard({
             data={editModal.data}
             requestId={req.id}
             supabase={supabase}
+            user={user}
             onClose={() => setEditModal(null)}
             onSaved={() => { setEditModal(null); handleRefresh(); }}
           />

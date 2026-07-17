@@ -74,11 +74,13 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
       if (reqErr) { setError(reqErr.message); return; }
 
       // Fire-and-forget — stakeholder approving may unlock web_team;
-      // never block the UI on this secondary sync.
+      // never block the UI on this secondary sync. onRefresh must fire
+      // AFTER these DB writes land, not before, or the refetch reads
+      // stale overall_status/task rows.
       Promise.all([
         syncOverallStatus(req.id, supabase),
         tryUnlockWebTeam(req.id, supabase),
-      ]).then(() => onRefresh?.()).catch(() => {});
+      ]).then(() => onRefresh?.()).catch(() => onRefresh?.());
 
       logAudit(supabase, user, AUDIT_ACTIONS.APPROVAL_GIVEN, "task", task.id, {
         field_name: task.team_role,
@@ -105,8 +107,6 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
           }
         } catch { /* notification failure must not block approval */ }
       }
-
-      onRefresh?.();
     } catch (e) { console.error("Approve error:", e); setError(e.message || "Error."); }
     finally     { setSaving(null); }
   };

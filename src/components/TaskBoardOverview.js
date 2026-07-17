@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { TASK_TEAMS, TASK_STATUS_META, updateTask } from "@/lib/taskUtils";
+import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 
@@ -73,6 +73,13 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
         .eq("id", req.id);
       if (reqErr) { setError(reqErr.message); return; }
 
+      // Fire-and-forget — stakeholder approving may unlock web_team;
+      // never block the UI on this secondary sync.
+      Promise.all([
+        syncOverallStatus(req.id, supabase),
+        tryUnlockWebTeam(req.id, supabase),
+      ]).then(() => onRefresh?.()).catch(() => {});
+
       logAudit(supabase, user, AUDIT_ACTIONS.APPROVAL_GIVEN, "task", task.id, {
         field_name: task.team_role,
       });
@@ -83,8 +90,9 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
           const { data: designUsers } = await supabase
             .from("users").select("id").eq("role", "design_team");
           if (designUsers?.length) {
-            // TODO: move to API route if anon RLS blocks client-side notification inserts
-            await supabase.from("notifications").insert(
+            // Fire and forget — never let a notification failure (e.g. RLS 403)
+            // block or delay the approval flow.
+            supabase.from("notifications").insert(
               designUsers.map(u => ({
                 user_id:    u.id,
                 type:       "approval_granted",
@@ -93,13 +101,13 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                 request_id: req.id,
                 action_url: `/requests/${req.id}`,
               }))
-            );
+            ).then(() => {}).catch(() => {});
           }
         } catch { /* notification failure must not block approval */ }
       }
 
       onRefresh?.();
-    } catch (e) { setError(e.message || "Error."); }
+    } catch (e) { console.error("Approve error:", e); setError(e.message || "Error."); }
     finally     { setSaving(null); }
   };
 
@@ -115,6 +123,7 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
         .from("tasks")
         .update({ pending_action_note: note || null })
         .eq("id", task.id);
+      await syncOverallStatus(req.id, supabase);
       setRejectNotes(p => ({ ...p, [task.id]: "" }));
       onRefresh?.();
     } catch (e) { setError(e.message || "Error."); }

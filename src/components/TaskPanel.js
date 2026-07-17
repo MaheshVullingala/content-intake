@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus } from "@/lib/taskUtils";
+import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 import BrandFilesPanel from "@/components/BrandFilesPanel";
@@ -88,9 +88,32 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
 
   const handleComplete = async () => {
     const ok = await doUpdate({ status: "completed" });
-    if (ok) logAudit(supabase, user, AUDIT_ACTIONS.TASK_COMPLETED, "task", myTask.id);
+    if (ok) {
+      logAudit(supabase, user, AUDIT_ACTIONS.TASK_COMPLETED, "task", myTask.id);
+      // Fire-and-forget — a parallel task completing may unlock web_team;
+      // never block the UI on this secondary sync.
+      Promise.all([
+        syncOverallStatus(req.id, supabase),
+        tryUnlockWebTeam(req.id, supabase),
+      ]).then(() => onRefresh?.()).catch(() => {});
+    }
   };
-  const handleSubmitApproval  = () => doUpdate({ status: "pending_approval" });
+  const handleSubmitApproval = async () => {
+    const ok = await doUpdate({ status: "pending_approval" });
+    if (!ok) return;
+    const isDesign = user.role === "design_team";
+    // Fire and forget — never let a notification failure block submission.
+    supabase.from("notifications").insert({
+      user_id:    req.created_by,
+      type:       "approval_needed",
+      title:      isDesign ? "Design Team images ready for review" : "Brand Team files ready for review",
+      message:    isDesign
+        ? `Design Team has uploaded resized images for "${req.page_title}" and is requesting your approval.`
+        : `Brand Team has uploaded files for "${req.page_title}" and is requesting your approval.`,
+      request_id: req.id,
+      action_url: `/requests/${req.id}`,
+    }).then(() => {}).catch(() => {});
+  };
   const handleWaitForBrand    = () => doUpdate({ status: "waiting_for_brand" });
   const handleResumeFromBrand = () => doUpdate({ status: "in_progress" });
 

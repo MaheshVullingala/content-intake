@@ -98,13 +98,18 @@ export async function tryUnlockWebTeam(requestId, supabase) {
   if (rpcError)    return { unlocked: false, error: rpcError };
   if (!canUnlock)  return { unlocked: false, error: null };
 
-  const { error: taskError } = await supabase
+  const { data: updatedTasks, error: taskError } = await supabase
     .from('tasks')
     .update({ status: 'pending', unlocked_at: now(), updated_at: now() })
     .eq('request_id', requestId)
-    .eq('team_role', 'web_team');
+    .eq('team_role', 'web_team')
+    .eq('status', 'locked')
+    .select();
 
   if (taskError) return { unlocked: false, error: taskError };
+  // web_team task was already unlocked (pending/in_progress/completed) — no-op,
+  // and critically: don't clobber overall_status if it's since moved past pending_web.
+  if (!updatedTasks?.length) return { unlocked: false, error: null };
 
   const { error: reqError } = await supabase
     .from('requests')

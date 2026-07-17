@@ -98,9 +98,12 @@ CREATE POLICY "notifications_update" ON public.notifications
     user_id = get_user_id()
   );
 
--- INSERT: blocked for authenticated clients — notifications are created
--- server-side via service_role key only (Next.js API routes).
--- No INSERT policy = all client inserts are denied.
+-- INSERT: any authenticated user may create a notification for anyone
+-- (team members notify stakeholders and vice versa). The SELECT policy
+-- above already restricts read access to the notification's own user_id,
+-- so this is safe to leave broad.
+CREATE POLICY "notifications_insert" ON public.notifications
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- No DELETE policy for notifications (service_role handles cleanup if needed)
 

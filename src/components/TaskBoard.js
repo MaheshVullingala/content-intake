@@ -259,6 +259,7 @@ export default function TaskBoard({
                 user={user}
                 supabase={supabase}
                 onRefresh={handleRefresh}
+                singleColumn
               />
             </div>
           </div>

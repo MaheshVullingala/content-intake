@@ -13,7 +13,18 @@ async function fetchTaskFiles(req, supabase) {
   return data || [];
 }
 
-export default function TaskBoardOverview({ req, user, tasks, supabase, onRefresh }) {
+const STATUS_PRIORITY = {
+  pending_approval:  0, // needs attention — top
+  needs_info:        1, // has question — top
+  pending_action:    2, // needs rework
+  in_progress:       3, // active
+  waiting_for_brand: 4, // waiting
+  pending:           5, // not started
+  completed:         6, // done
+  locked:            7, // locked — bottom
+};
+
+export default function TaskBoardOverview({ req, user, tasks, supabase, onRefresh, singleColumn = false }) {
   const isStakeholder = user.role === "stakeholder";
 
   const [fileMap,     setFileMap]     = useState({});
@@ -39,6 +50,10 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
   const orderedTasks = TASK_TEAMS
     .map(team => tasks.find(t => t.team_role === team.role))
     .filter(Boolean);
+
+  // Cards needing attention (approval/question) float to the top
+  const sortedTasks = [...orderedTasks].sort((a, b) =>
+    (STATUS_PRIORITY[a.status] ?? 9) - (STATUS_PRIORITY[b.status] ?? 9));
 
   const completed = orderedTasks.filter(t => t.status === "completed").length;
   const total     = orderedTasks.length;
@@ -156,10 +171,10 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
       {/* ── Task cards grid ────────────────────────────────────────────── */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+        gridTemplateColumns: singleColumn ? "1fr" : "repeat(auto-fill, minmax(260px, 1fr))",
         gap: "1rem",
       }}>
-        {orderedTasks.map(task => {
+        {sortedTasks.map(task => {
           const teamMeta      = TASK_TEAMS.find(t => t.role === task.team_role);
           const statusMeta    = TASK_STATUS_META[task.status] || TASK_STATUS_META.pending;
           const isLocked      = task.status === "locked";

@@ -509,3 +509,16 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
     state so Design Team's mapped images render in the stakeholder's
     approval view too.
   - Build confirmed zero errors; committed as v147 and pushed to origin/main
+- v148: TaskBoardOverview.js task card layout, scoped to the new
+  stakeholder pending-approval right column only:
+  - New singleColumn prop (default false) — grid becomes "1fr" instead
+    of repeat(auto-fill, minmax(260px, 1fr)) when true. Only passed at
+    the stakeholder pending-approval TaskBoardOverview call site in
+    TaskBoard.js; admin's own right-column instance and the stakeholder
+    no-pending-approval standalone instance both stay auto-fill,
+    unchanged, per explicit instruction
+  - STATUS_PRIORITY-based sortedTasks (pending_approval/needs_info float
+    to top, locked sinks to bottom) — card grid now maps sortedTasks
+    instead of orderedTasks; orderedTasks itself (TASK_TEAMS canonical
+    order, used for the progress-bar count) is untouched
+  - Build confirmed zero errors; committed as v148 and pushed to origin/main

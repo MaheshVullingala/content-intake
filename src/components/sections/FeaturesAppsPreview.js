@@ -1,14 +1,15 @@
 "use client";
 import { useState } from "react";
-import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
+import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
 
-export default function FeaturesAppsPreview({ data = {} }) {
+export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
   const {
     fa_label = "", fa_impact = "", fa_description = "",
     fa_view_type = "", fa_items = [], fa_columns = [], fa_rows = [],
   } = data;
 
   const [activeTab, setActiveTab] = useState(0);
+  const activeTabImage = getDesignImage(`fa_item_${activeTab + 1}_image`, attachments);
 
   const hasContent = fa_impact || fa_items.length > 0 || fa_columns.length > 0;
   if (!hasContent) return null;
@@ -71,12 +72,12 @@ export default function FeaturesAppsPreview({ data = {} }) {
             {fa_items[activeTab] && (
               <div>
                 <h3 style={{ fontSize: 20, fontWeight: 500, color: "#181313", marginBottom: 16 }}>{fa_items[activeTab].title}</h3>
-                {getImageUrl(fa_items[activeTab].image_ref) && (
-                  <img src={getImageUrl(fa_items[activeTab].image_ref)} alt={fa_items[activeTab].title}
+                {activeTabImage && (
+                  <img src={activeTabImage} alt={fa_items[activeTab].title}
                     style={{ width: "100%", maxHeight: 340, objectFit: "cover", borderRadius: 8, marginBottom: 20, border: "1px solid #E0E0E0" }}
                     onError={e => { e.target.style.display = "none"; }} />
                 )}
-                {!getImageUrl(fa_items[activeTab].image_ref) && getImagePlaceholder(fa_items[activeTab].image_ref) && (
+                {!activeTabImage && getImagePlaceholder(fa_items[activeTab].image_ref) && (
                   <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.5rem", marginBottom: 20, textAlign: "center" }}>
                     <div style={{ fontSize: 11, color: "#B5B5B5" }}>🎨 {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
                   </div>
@@ -106,12 +107,12 @@ export default function FeaturesAppsPreview({ data = {} }) {
             {fa_items[activeTab] && (
               <div>
                 <h3 style={{ fontSize: 20, fontWeight: 500, color: "#181313", marginBottom: 16 }}>{fa_items[activeTab].title}</h3>
-                {getImageUrl(fa_items[activeTab].image_ref) && (
-                  <img src={getImageUrl(fa_items[activeTab].image_ref)} alt={fa_items[activeTab].title}
+                {activeTabImage && (
+                  <img src={activeTabImage} alt={fa_items[activeTab].title}
                     style={{ width: "100%", maxHeight: 340, objectFit: "cover", borderRadius: 8, marginBottom: 20, border: "1px solid #E0E0E0" }}
                     onError={e => { e.target.style.display = "none"; }} />
                 )}
-                {!getImageUrl(fa_items[activeTab].image_ref) && getImagePlaceholder(fa_items[activeTab].image_ref) && (
+                {!activeTabImage && getImagePlaceholder(fa_items[activeTab].image_ref) && (
                   <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.5rem", marginBottom: 20, textAlign: "center" }}>
                     <div style={{ fontSize: 11, color: "#B5B5B5" }}>🎨 {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
                   </div>

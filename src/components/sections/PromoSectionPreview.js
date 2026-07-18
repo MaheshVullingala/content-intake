@@ -1,9 +1,9 @@
 "use client";
-import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
+import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
 
-export default function PromoSectionPreview({ data = {} }) {
+export default function PromoSectionPreview({ data = {}, attachments = [] }) {
   const { promo_bg_image_ref = null, promo_label = "", promo_title = "", promo_description = "", promo_btn_label = "", promo_btn_link = "" } = data;
-  const promo_bg_image       = getImageUrl(promo_bg_image_ref) || "";
+  const promo_bg_image       = getDesignImage("promo_bg_image", attachments) || "";
   const promo_bg_placeholder = getImagePlaceholder(promo_bg_image_ref);
 
   if (!promo_title && !promo_btn_label) return null;

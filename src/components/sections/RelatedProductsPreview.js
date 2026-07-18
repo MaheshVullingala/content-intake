@@ -1,7 +1,7 @@
 "use client";
-import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
+import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
 
-export default function RelatedProductsPreview({ data = {} }) {
+export default function RelatedProductsPreview({ data = {}, attachments = [] }) {
   const { rp_label = "", rp_impact = "", rp_description = "", rp_cards = [] } = data;
 
   if (!rp_impact && rp_cards.length === 0) return null;
@@ -33,7 +33,7 @@ export default function RelatedProductsPreview({ data = {} }) {
         {rp_cards.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: rp_cards.length === 1 ? "1fr" : rp_cards.length === 2 ? "1fr 1fr" : rp_cards.length === 3 ? "1fr 1fr 1fr" : "1fr 1fr", gap: 20 }}>
             {rp_cards.map((card, i) => {
-              const imageUrl         = getImageUrl(card.image_ref);
+              const imageUrl         = getDesignImage(`rp_card_${i + 1}_image`, attachments);
               const imagePlaceholder = getImagePlaceholder(card.image_ref);
               return (
               <div key={card.id || i} style={{ border: "1px solid #E0E0E0", borderRadius: 8, padding: "1.5rem", background: "#fff" }}>

@@ -1,16 +1,16 @@
 "use client";
 import { useState } from "react";
-import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
+import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
 
-export default function CustomerStoriesPreview({ data = {} }) {
+export default function CustomerStoriesPreview({ data = {}, attachments = [] }) {
   const { cs_label = "", cs_impact = "", cs_items = [] } = data;
   const [active, setActive] = useState(0);
 
   if (!cs_impact && cs_items.length === 0) return null;
 
-  const current         = cs_items[active] || {};
-  const logoUrl          = getImageUrl(current.logo_ref);
-  const logoPlaceholder  = getImagePlaceholder(current.logo_ref);
+  const current          = cs_items[active] || {};
+  const logoUrl           = getDesignImage(`cs_item_${active + 1}_logo`, attachments);
+  const logoPlaceholder   = getImagePlaceholder(current.logo_ref);
 
   return (
     <div style={{ padding: "3.5rem 3.5rem",  background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif", textAlign: "center" }}>

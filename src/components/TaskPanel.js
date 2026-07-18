@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
+import { getFlaggedImageFields } from "@/lib/imageFields";
 import BrandFilesPanel from "@/components/BrandFilesPanel";
 
 const SECTION_TAGS  = ["Banner", "Overview", "Other"];
@@ -34,8 +35,11 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   const [showChanges, setShowChanges] = useState(false);
   const [changeTeam,  setChangeTeam]  = useState("editorial_team");
   const [changeNote,  setChangeNote]  = useState("");
+  // Design team: which flagged field a mapped-image upload targets
+  const [mappingField, setMappingField] = useState(null);
 
-  const fileRef = useRef();
+  const fileRef       = useRef();
+  const mappedFileRef = useRef();
 
   // Fetch files this team uploaded for this request's task
   const fetchMyFiles = async () => {
@@ -172,6 +176,62 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
       await fetchMyFiles();
     } catch (e) { console.error("Upload error full:", e); setError(e.message || "Upload failed."); }
     finally     { setUploading(false); }
+  };
+
+  // ── Design team: per-field image mapping ("Images to Map") ─────────────────
+  const flaggedFields = user.role === "design_team" ? getFlaggedImageFields(req) : [];
+  const getMappedFile = (fieldId) =>
+    myFiles.find(f => f.section_tag === `design_team:${fieldId}`);
+
+  const uploadMappedImage = async (field, file) => {
+    if (!file) return;
+    if (file.size > MAX_DESIGN_MB) { setError("File too large — max 20 MB."); return; }
+    setUploading(true); setError("");
+    try {
+      // Only one image per field — remove the previous mapping first
+      const existing = getMappedFile(field.fieldId);
+      if (existing) {
+        await supabase.storage.from("attachments").remove([existing.storage_path]);
+        await supabase.from("task_attachments").delete().eq("id", existing.id);
+      }
+      const ext  = file.name.split(".").pop();
+      const path = `tasks/${req.id}/design_team/mapped/${field.fieldId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("attachments").upload(path, file);
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage
+        .from("attachments").getPublicUrl(path);
+      const { error: dbErr } = await supabase.from("task_attachments").insert({
+        task_id:      myTask.id,
+        request_id:   req.id,
+        uploaded_by:  user.id,
+        file_name:    file.name,
+        file_type:    file.type,
+        file_size:    file.size,
+        storage_path: path,
+        public_url:   publicUrl,
+        section_tag:  `design_team:${field.fieldId}`,
+      });
+      if (dbErr) throw dbErr;
+      await fetchMyFiles();
+      onRefresh?.(); // so PagePreview's designAttachments (fetched by TaskBoard) picks this up
+    } catch (e) { console.error("Mapped upload error:", e); setError(e.message || "Upload failed."); }
+    finally     { setUploading(false); setMappingField(null); }
+  };
+
+  const deleteMappedImage = async (mappedFile) => {
+    if (!window.confirm("Remove this mapped image? This cannot be undone.")) return;
+    setError("");
+    try {
+      const { error: storageErr } = await supabase.storage
+        .from("attachments").remove([mappedFile.storage_path]);
+      if (storageErr) throw storageErr;
+      const { error: delErr } = await supabase
+        .from("task_attachments").delete().eq("id", mappedFile.id);
+      if (delErr) throw delErr;
+      await fetchMyFiles();
+      onRefresh?.();
+    } catch (e) { setError(e.message || "Failed to remove image."); }
   };
 
   // Brand/design team: delete one of their own uploaded files
@@ -571,6 +631,86 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* ── DESIGN TEAM: Images to Map ──────────────────────────────────
+          One row per stakeholder-flagged image field. Upload target for
+          each row is section_tag = `design_team:{fieldId}`, independent
+          of the generic Banner/Overview/Other bucket above. ────────────── */}
+      {user.role === "design_team" && flaggedFields.length > 0 && (
+        <div className="card">
+          <h3 style={{ margin: "0 0 4px", fontSize: "var(--text-base)", fontWeight: 600 }}>
+            🗺️ Images to Map
+          </h3>
+          <p className="field-hint" style={{ marginBottom: 12 }}>
+            Upload your resized image for each field the stakeholder flagged.
+          </p>
+          <div className="flex-col gap-8">
+            {flaggedFields.map(field => {
+              const mapped = getMappedFile(field.fieldId);
+              return (
+                <div key={field.fieldId} style={{
+                  border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)",
+                  padding: "0.75rem 0.9rem",
+                }}>
+                  <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, marginBottom: 4 }}>
+                    {field.section} — {field.label}
+                  </div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-silver)", marginBottom: 8 }}>
+                    {field.ref.type === "description" && <>📝 {field.ref.value}</>}
+                    {field.ref.type === "link" && (
+                      <>🔗 <a href={field.ref.url} target="_blank" rel="noopener noreferrer"
+                              style={{ color: "var(--color-primary)" }}>{field.ref.value}</a></>
+                    )}
+                    {field.ref.type === "attachment" && (
+                      <>📎 Reference image uploaded{field.ref.url && (
+                        <> — <a href={field.ref.url} target="_blank" rel="noopener noreferrer"
+                                style={{ color: "var(--color-primary)" }}>View ↗</a></>
+                      )}</>
+                    )}
+                  </div>
+                  {mapped ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <img src={mapped.public_url} alt=""
+                        style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6,
+                                 border: "1px solid var(--color-border)", flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: "var(--text-xs)", color: "var(--color-success)" }}>
+                        ✓ Mapped
+                      </span>
+                      <button
+                        onClick={() => deleteMappedImage(mapped)}
+                        title="Remove mapped image"
+                        style={{ background: "none", border: "none", cursor: "pointer",
+                                 color: "#c0392b", fontSize: 13, flexShrink: 0 }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="btn-ghost"
+                      style={{ width: "100%", justifyContent: "center", fontSize: "var(--text-xs)" }}
+                      onClick={() => { setMappingField(field.fieldId); mappedFileRef.current?.click(); }}
+                      disabled={uploading}
+                    >
+                      {uploading && mappingField === field.fieldId ? "Uploading…" : "📤 Upload Image"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <input
+            ref={mappedFileRef} type="file" accept=".jpg,.jpeg,.png,.webp"
+            style={{ display: "none" }}
+            onChange={e => {
+              const file  = e.target.files[0];
+              const field = flaggedFields.find(f => f.fieldId === mappingField);
+              if (field) uploadMappedImage(field, file);
+              e.target.value = "";
+            }}
+          />
         </div>
       )}
 

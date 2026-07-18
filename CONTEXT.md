@@ -1,5 +1,5 @@
 # Content Intake Portal — Project Context
-Last updated: 2026-07-17
+Last updated: 2026-07-18
 
 ## Project
 Internal web app for Cadence Design Systems.
@@ -56,6 +56,11 @@ seo_team, design_team, web_team
 - sql/02-rls.sql — RLS for tasks (role-based), notifications, audit_log
 - sql/03-functions.sql — check_web_team_unlock(), get_user_role(),
   get_user_id()
+- sql/04-stakeholder-priority-reason.sql — adds requests.stakeholder_priority_reason,
+  split out from priority_override_reason (the admin's own reason for
+  changing priority) which the stakeholder-side field used to collide with
+  — AdminTaskSetup's task-creation write was silently nulling the
+  stakeholder's original reason even when the admin never touched priority
 
 ## Key tasks table columns (tasks-migration.sql)
 - id, request_id, team_role, status, is_required
@@ -132,7 +137,12 @@ seo_team, design_team, web_team
   + publish); AssigneeDropdown; CompletenessIndicator; handleComplete
   fires syncOverallStatus + tryUnlockWebTeam fire-and-forget after a
   parallel task is marked completed, so web_team unlocks as soon as the
-  last required task finishes instead of never (see below)
+  last required task finishes instead of never (see below); design_team
+  additionally gets an "Images to Map" card (getFlaggedImageFields) with
+  per-field upload/replace/delete — see "Design Team image mapping" below
+- src/lib/imageFields.js + src/lib/imageRef.js — see "Design Team image
+  mapping" session log entry (2026-07-18) for the full field/fieldId map
+  and getDesignImage/getImagePlaceholder contract
 - src/components/ReqDetail.js — overall_status gate routes to TaskBoard;
   null overall_status shows legacy message
 - src/components/NotificationBell.js — bell icon in navbar; fetches
@@ -207,6 +217,39 @@ and silently reset an in_progress/completed web_team task back to
 'pending' (and overall_status back to 'pending_web' even post-publish).
 Fixed by adding .eq('status','locked') + only flipping overall_status
 when a row was actually updated.
+
+## Image ref fields on requests (2026-07-18)
+Every image-capable field stores an ImageField value, not a plain URL:
+`{ type: "description"|"link"|"attachment", value, url, path? }`.
+Column/path map:
+  - banner_image_ref, overview_media_ref, promo_bg_image_ref — single object
+  - kb_cards[].image_ref, fa_items[].image_ref (tabs only — list/table have
+    no image), cs_items[].logo_ref, rc_cards[].image_ref, rp_cards[].image_ref
+    — one object per array item
+ImageField.js uploads go to the "attachments" bucket at
+`requests/{Date.now()}_{sanitized filename}` (flat, no per-request folder —
+changed 2026-07-18, was previously `{fieldKey}_{timestamp}.{ext}` under
+`{requestId}/`, which produced 400s). Upload auth was also fixed: it now
+sends the caller's real session access_token (via supabase.auth.getSession()),
+not the anon key — the anon key alone fails Storage RLS ("new row violates
+row-level security policy"), which was the actual root cause of the
+reported 400s, not the path format.
+
+src/lib/imageRef.js — getImageUrl(ref) always returns null for a raw
+stakeholder ref (stakeholder-provided images/links are intentionally never
+rendered as real images in PagePreview) and getImagePlaceholder(ref) returns
+display text: the description itself for type='description', or "Image
+pending Design Team" for type='link'/'attachment', or null if the field is
+empty. All 7 preview surfaces (PagePreview.js banner+overview inline,
+KeyBenefitsPreview, FeaturesAppsPreview, CustomerStoriesPreview,
+PromoSectionPreview, RelatedContentPreview, RelatedProductsPreview) resolve
+through these two functions rather than reading _ref objects directly.
+getImageUrl is intentionally still called (not deleted) — it's the
+integration point for showing a real Design Team-uploaded image once that
+overlay is wired in (task_attachments lookup keyed by section_tag).
+RelatedContent.js previously had a completely separate, disconnected
+image_url/image_note plain-text pair that was superseded by ImageField/
+image_ref — removed in favor of the same pattern every other section uses.
 
 ## task_attachments Table
 Created in Supabase (2026-07-16). Columns: id, task_id, request_id,
@@ -324,3 +367,69 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
   real unlock can no longer reset an in_progress/completed web_team task
   back to pending or revert overall_status past pending_web
 - Build confirmed zero errors; committed as v141
+
+### 2026-07-18
+- v142: fixed a race in TaskBoardOverview.js handleApprove — a stray
+  synchronous onRefresh?.() at the end of the function ran before the
+  fire-and-forget syncOverallStatus/tryUnlockWebTeam writes landed,
+  sometimes clobbering the refetch with stale data; removed it so
+  onRefresh only fires from the Promise.all .then()/.catch()
+- Diagnosed ImageField.js upload 400s: root cause was NOT the storage
+  path format (key-benefits_card-1_image_1784... etc. was actually
+  valid) but that handleFile sent the anon key as the Authorization
+  bearer instead of the real session token, so Storage RLS always
+  rejected it as unauthenticated. Confirmed via direct REST calls:
+  anon key → 403 RLS violation; service-role key, same path → 200.
+  Fixed both: path simplified to requests/{Date.now()}_{sanitized
+  filename}, and Authorization now uses supabase.auth.getSession()'s
+  access_token (matches the pattern already used by TaskPanel.js's
+  SDK-based upload and NewRequest.js's getAuthHeaders())
+- Fixed Dashboard.js stakeholder "My Requests" tab (tab2) excluding
+  drafts (status='draft' && !overall_status) — a stakeholder's first
+  saved draft was invisible there until submitted; tab now returns all
+  of the stakeholder's own requests unfiltered (My Drafts tab1 unchanged)
+- v144: three more bugs found while auditing image fields for the
+  Design Team flagging work (see "Image ref fields" above) — Promo's
+  image ref was saved to the wrong buildPayload key and silently lost;
+  every preview component read a stale/legacy field name instead of the
+  real _ref field, so no stakeholder image ever rendered anywhere; and
+  RelatedContent.js had a dead, disconnected image_url/image_note pair
+  with no relation to its own image_ref data field. All three fixed,
+  then reverted one layer on user instruction: stakeholder _ref values
+  now render as a placeholder box (description text, or "Image pending
+  Design Team" for link/attachment) rather than an actual image — actual
+  images are reserved for Design Team's own uploads (not yet wired)
+- Committed as v144 (598e7b6) and pushed to origin/main
+- Design Team image mapping built (ISSUE 3 + 4), on top of the v144 fixes:
+  - src/lib/imageFields.js (new) — getImageFields(req)/getFlaggedImageFields(req)
+    enumerate every stakeholder image field into a flat list with a stable
+    fieldId (banner_image, overview_media, promo_bg_image, kb_card_N_image,
+    fa_item_N_image [tabs view types only], cs_item_N_logo, rc_card_N_image,
+    rp_card_N_image); flagged = ref?.value truthy
+  - TaskPanel.js — new "Images to Map" card (design_team only, shown when
+    any field is flagged): one row per flagged field showing what the
+    stakeholder provided (description text / clickable link / "Reference
+    image uploaded" + view link for attachment) and either an upload
+    button or a thumbnail+delete once mapped. Upload replaces any existing
+    mapping for that field (one image per field) via
+    uploadMappedImage/deleteMappedImage, storage path
+    tasks/{req.id}/design_team/mapped/{fieldId}/{timestamp}.{ext},
+    task_attachments.section_tag = `design_team:{fieldId}`. Both call
+    onRefresh() (not just fetchMyFiles()) so TaskBoard's designAttachments
+    refetches and the adjacent PagePreview updates live.
+  - src/lib/imageRef.js — getImageUrl removed (was always null, dead once
+    getDesignImage existed); added getDesignImage(fieldId, attachments)
+    which matches attachments against `design_team:{fieldId}` and returns
+    public_url or null. getImagePlaceholder unchanged.
+  - PagePreview.js + all 6 section preview components now accept an
+    `attachments` prop (task_attachments rows) and resolve each image as
+    designImg (getDesignImage) → real <img>, else placeholder
+    (getImagePlaceholder) → grey box, else nothing.
+  - TaskBoard.js — new designAttachments state, fetched via
+    `task_attachments.eq(request_id).like(section_tag, 'design_team:%')`,
+    refetched in handleRefresh; passed as `attachments` prop into both
+    PagePreview call sites. Deliberately named differently from TaskBoard's
+    own `attachments` prop (the unrelated legacy v1 attachments table,
+    still passed through to WebTeamView/TaskPanel) to avoid confusion —
+    they are not the same data.
+  - Build confirmed zero errors.

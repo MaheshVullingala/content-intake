@@ -1,7 +1,7 @@
 "use client";
-import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
+import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
 
-export default function RelatedContentPreview({ data = {} }) {
+export default function RelatedContentPreview({ data = {}, attachments = [] }) {
   const { rc_label = "", rc_impact = "", rc_cards = [] } = data;
   if (!rc_impact && rc_cards.length === 0) return null;
 
@@ -22,7 +22,7 @@ export default function RelatedContentPreview({ data = {} }) {
         {rc_cards.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
             {rc_cards.map((card, i) => {
-              const imageUrl         = getImageUrl(card.image_ref);
+              const imageUrl         = getDesignImage(`rc_card_${i + 1}_image`, attachments);
               const imagePlaceholder = getImagePlaceholder(card.image_ref);
               return (
               <div key={card.id || i} style={{ border: "1px solid #E0E0E0", borderRadius: 8, overflow: "hidden", background: "#fff" }}>

@@ -30,6 +30,11 @@ export default function TaskBoard({
   const [loading,    setLoading]    = useState(false);
   // null = closed, { section: 'overview', data: req } = open
   const [editModal,  setEditModal]  = useState(null);
+  // Design Team's per-field mapped images (task_attachments, section_tag
+  // prefixed "design_team:") — distinct from the `attachments` prop above,
+  // which is the legacy v1 attachments table. Passed to PagePreview so it
+  // can show Design Team's uploaded image in place of the placeholder box.
+  const [designAttachments, setDesignAttachments] = useState([]);
 
   const isAdmin       = ["admin", "super_admin"].includes(user.role);
   const isTeamMember  = TEAM_ROLES.has(user.role);
@@ -50,9 +55,18 @@ export default function TaskBoard({
     setLoading(false);
   };
 
-  useEffect(() => { fetchTasks(); }, [req.id]);
+  const fetchDesignAttachments = async () => {
+    const { data, error } = await supabase
+      .from("task_attachments")
+      .select("*")
+      .eq("request_id", req.id)
+      .like("section_tag", "design_team:%");
+    if (!error) setDesignAttachments(data || []);
+  };
 
-  const handleRefresh = () => { fetchTasks(); onRefresh?.(); };
+  useEffect(() => { fetchTasks(); fetchDesignAttachments(); }, [req.id]);
+
+  const handleRefresh = () => { fetchTasks(); fetchDesignAttachments(); onRefresh?.(); };
 
   // ── Shared page header ──────────────────────────────────────────────
   function Header() {
@@ -182,6 +196,7 @@ export default function TaskBoard({
                 editorialMode={user.role === "editorial_team"}
                 activeEditSection={editModal?.section}
                 onEditSection={(section) => setEditModal({ section, data: req })}
+                attachments={designAttachments}
               />
             )}
           </div>
@@ -242,7 +257,7 @@ export default function TaskBoard({
         <Header />
         <div style={TWO_COL}>
           <div style={{ overflowY: "auto" }}>
-            <PagePreview req={req} pageType={req.page_type} />
+            <PagePreview req={req} pageType={req.page_type} attachments={designAttachments} />
           </div>
           <div style={{ overflowY: "auto",
                         borderLeft: "1px solid var(--color-border)",

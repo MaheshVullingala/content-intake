@@ -1,5 +1,5 @@
 "use client";
-import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
+import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
 
 function getGridCols(count) {
   if (count <= 1) return "1fr";
@@ -8,7 +8,7 @@ function getGridCols(count) {
   return "1fr 1fr";
 }
 
-export default function KeyBenefitsPreview({ data = {} }) {
+export default function KeyBenefitsPreview({ data = {}, attachments = [] }) {
   const { kb_label = "", kb_impact = "", kb_description = "", kb_cards = [] } = data;
 
   const hasContent = kb_impact || kb_cards.length > 0;
@@ -41,7 +41,7 @@ export default function KeyBenefitsPreview({ data = {} }) {
         {kb_cards.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: getGridCols(kb_cards.length), gap: "2rem 3rem", marginTop: kb_impact ? 40 : 0 }}>
             {kb_cards.map((card, idx) => {
-              const iconUrl         = getImageUrl(card.image_ref);
+              const iconUrl         = getDesignImage(`kb_card_${idx + 1}_image`, attachments);
               const iconPlaceholder = getImagePlaceholder(card.image_ref);
               return (
               <div key={card.id || idx}>

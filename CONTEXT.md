@@ -433,3 +433,50 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
     still passed through to WebTeamView/TaskPanel) to avoid confusion —
     they are not the same data.
   - Build confirmed zero errors.
+  - Committed as v145 (d39f423) and pushed to origin/main
+- White-screen crash on design_team opening a request, root-caused and
+  fixed (v146):
+  - Live DB inspection (via PostgREST + service-role key — no SQL Editor
+    access available to Claude, only read-only REST calls) showed the
+    request actually used for the image-field test had overall_status =
+    NULL (no tasks ever created for it — submission likely failed before
+    tasks existed), so it wasn't reachable through design_team's
+    TaskBoard view at all. The requests that DO have tasks ("tewtwew",
+    "Test page 1", "New Test sgrsggsgss") all have clean, well-formed
+    JSONB image fields — ruling out imageFields.js's null/array-shape
+    handling as the actual cause, despite it looking like the obvious
+    suspect
+  - Real cause: PagePreview.js:70 — `overview_media_note` was still
+    referenced in the parsedReq shorthand object literal, but the
+    variable was renamed to `overview_media_placeholder` during the v144
+    Bug B revert and this one reference was missed. Shorthand `{ foo }`
+    throws ReferenceError if `foo` isn't in scope — this fires
+    unconditionally on every PagePreview render (parsedReq is built at
+    the top of the function, before any section-specific branching), so
+    it broke PagePreview everywhere, not just for design_team — likely
+    also broke NewRequest.js's live preview panel the whole time,
+    unnoticed because saveDraft/submit don't depend on the preview
+    rendering successfully. `npm run build` did not (and structurally
+    cannot, without stricter lint/type config) catch this — it's a
+    plain-JS ReferenceError, not a build-time error, on a project with
+    no TypeScript and no no-undef-style lint gate
+  - Fixed: removed the dangling `overview_media_note` reference.
+    Cross-checked every other identifier in parsedReq (lines 69-78)
+    against its own const declaration above — no other undefined refs
+  - Also hardened imageFields.js per user request: each parse(...)
+    result now goes through an explicit Array.isArray() check before
+    .forEach(), and each callback does `if (!item) return;` to skip null
+    elements without re-indexing (an earlier proposed .filter(Boolean)
+    approach was rejected — it would have shifted indices and silently
+    mismapped a Design Team upload to the wrong card/tab/item)
+  - promo_bg_image_ref column existence re-confirmed live (was a 42703
+    "does not exist" on an earlier check — resolved by the time of a
+    follow-up check, either applied manually or a stale PostgREST
+    schema-cache read; sql/05-promo-bg-image-ref.sql documents it,
+    idempotent ADD COLUMN IF NOT EXISTS). Cross-checked all _ref fields
+    NewRequest.js's buildPayload() actually writes (banner_image_ref,
+    overview_media_ref, promo_bg_image_ref) against the live DB schema
+    (pulled via PostgREST's swagger/OpenAPI endpoint, since
+    information_schema isn't exposed through the REST API) — all three
+    present, no other gaps
+  - Build confirmed zero errors; committed as v146 and pushed to origin/main

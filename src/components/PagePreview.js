@@ -67,7 +67,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   // Build parsedReq with all correctly typed fields
   const parsedReq = { ...req,
     page_title, sub_title, cta1_label, cta2_label, banner_image,
-    overview_label, overview_impact, overview_description, overview_media_url, overview_media_note, overview_media_type,
+    overview_label, overview_impact, overview_description, overview_media_url, overview_media_type,
     kb_label, kb_impact, kb_description, kb_cards,
     fa_label, fa_impact, fa_description, fa_view_type, fa_items, fa_columns, fa_rows,
     cs_label, cs_impact, cs_items,

@@ -17,27 +17,47 @@ export function getImageFields(req = {}) {
   fields.push({ fieldId: "overview_media", section: "Overview", label: "Overview Media",     ref: req.overview_media_ref || null });
   fields.push({ fieldId: "promo_bg_image", section: "Promo",    label: "Background Image",   ref: req.promo_bg_image_ref || null });
 
-  parse(req.kb_cards, []).forEach((card, i) => {
-    fields.push({ fieldId: `kb_card_${i + 1}_image`, section: "Key Benefits", label: `Card ${i + 1} Image`, ref: card.image_ref || null });
-  });
-
-  if (["tabs_horizontal", "tabs_vertical"].includes(req.fa_view_type)) {
-    parse(req.fa_items, []).forEach((item, i) => {
-      fields.push({ fieldId: `fa_item_${i + 1}_image`, section: "Features / Applications", label: `Tab ${i + 1} Image`, ref: item.image_ref || null });
+  const kbCards = parse(req.kb_cards, []);
+  if (Array.isArray(kbCards)) {
+    kbCards.forEach((card, i) => {
+      if (!card) return;
+      fields.push({ fieldId: `kb_card_${i + 1}_image`, section: "Key Benefits", label: `Card ${i + 1} Image`, ref: card?.image_ref || null });
     });
   }
 
-  parse(req.cs_items, []).forEach((item, i) => {
-    fields.push({ fieldId: `cs_item_${i + 1}_logo`, section: "Customer Stories", label: `Item ${i + 1} Logo`, ref: item.logo_ref || null });
-  });
+  if (["tabs_horizontal", "tabs_vertical"].includes(req.fa_view_type)) {
+    const faItems = parse(req.fa_items, []);
+    if (Array.isArray(faItems)) {
+      faItems.forEach((item, i) => {
+        if (!item) return;
+        fields.push({ fieldId: `fa_item_${i + 1}_image`, section: "Features / Applications", label: `Tab ${i + 1} Image`, ref: item?.image_ref || null });
+      });
+    }
+  }
 
-  parse(req.rc_cards, []).forEach((card, i) => {
-    fields.push({ fieldId: `rc_card_${i + 1}_image`, section: "Related Content", label: `Card ${i + 1} Image`, ref: card.image_ref || null });
-  });
+  const csItems = parse(req.cs_items, []);
+  if (Array.isArray(csItems)) {
+    csItems.forEach((item, i) => {
+      if (!item) return;
+      fields.push({ fieldId: `cs_item_${i + 1}_logo`, section: "Customer Stories", label: `Item ${i + 1} Logo`, ref: item?.logo_ref || null });
+    });
+  }
 
-  parse(req.rp_cards, []).forEach((card, i) => {
-    fields.push({ fieldId: `rp_card_${i + 1}_image`, section: "Related Products", label: `Card ${i + 1} Image`, ref: card.image_ref || null });
-  });
+  const rcCards = parse(req.rc_cards, []);
+  if (Array.isArray(rcCards)) {
+    rcCards.forEach((card, i) => {
+      if (!card) return;
+      fields.push({ fieldId: `rc_card_${i + 1}_image`, section: "Related Content", label: `Card ${i + 1} Image`, ref: card?.image_ref || null });
+    });
+  }
+
+  const rpCards = parse(req.rp_cards, []);
+  if (Array.isArray(rpCards)) {
+    rpCards.forEach((card, i) => {
+      if (!card) return;
+      fields.push({ fieldId: `rp_card_${i + 1}_image`, section: "Related Products", label: `Card ${i + 1} Image`, ref: card?.image_ref || null });
+    });
+  }
 
   return fields;
 }

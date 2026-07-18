@@ -1,7 +1,10 @@
 "use client";
+import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
 
 export default function PromoSectionPreview({ data = {} }) {
-  const { promo_bg_image = "", promo_bg_note = "", promo_label = "", promo_title = "", promo_description = "", promo_btn_label = "", promo_btn_link = "" } = data;
+  const { promo_bg_image_ref = null, promo_label = "", promo_title = "", promo_description = "", promo_btn_label = "", promo_btn_link = "" } = data;
+  const promo_bg_image       = getImageUrl(promo_bg_image_ref) || "";
+  const promo_bg_placeholder = getImagePlaceholder(promo_bg_image_ref);
 
   if (!promo_title && !promo_btn_label) return null;
 
@@ -34,9 +37,9 @@ export default function PromoSectionPreview({ data = {} }) {
           {promo_description && (
             <p style={{ fontSize: 13, color: "#B5B5B5", marginTop: 10, lineHeight: 1.6 }}>{promo_description}</p>
           )}
-          {!promo_bg_image && promo_bg_note && (
-            <div style={{ marginTop: 10, fontSize: 11, color: "#646464", fontStyle: "italic" }}>
-              🎨 Background: {promo_bg_note}
+          {!promo_bg_image && promo_bg_placeholder && (
+            <div style={{ marginTop: 10, display: "inline-block", background: "rgba(255,255,255,0.08)", border: "1px dashed rgba(255,255,255,0.3)", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5" }}>
+              🎨 {promo_bg_placeholder}
             </div>
           )}
         </div>

@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { TASK_TEAMS } from "@/lib/taskUtils";
 import { PRIORITY_META, AUDIT_ACTIONS } from "@/lib/constants";
 import { createTasksForRequest } from "@/lib/taskUtils";
 import { logAudit } from "@/lib/auditLogger";
+import PagePreview from "@/components/PagePreview";
 
 const TEAM_HINTS = {
   editorial_team: "Reviews all text content for accuracy and tone",
@@ -16,24 +18,32 @@ const TEAM_HINTS = {
 export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) {
   const origPriority = req.priority || "normal";
 
+  // Admin has full control over all teams — no team is locked out of
+  // selection. Defaults mirror the standard workflow; brand_team only
+  // defaults on when the stakeholder flagged needs_brand.
   const [selected, setSelected] = useState(() => {
-    const base = new Set(
-      TASK_TEAMS.filter(t => t.alwaysRequired).map(t => t.role)
-    );
-    if (req.needs_brand) base.add("brand_team");
-    return base;
+    const defaults = new Set(["editorial_team", "seo_team", "design_team", "web_team"]);
+    if (req.needs_brand) defaults.add("brand_team");
+    return defaults;
   });
   const [dueDate,        setDueDate]        = useState(req.due_date || "");
   const [priority,       setPriority]       = useState(origPriority);
   const [priorityReason, setPriorityReason] = useState("");
   const [saving,         setSaving]         = useState(false);
   const [error,          setError]          = useState("");
+  const [showPreview,    setShowPreview]    = useState(false);
 
   const priorityChanged = priority !== origPriority;
 
+  // Close preview modal on Escape
+  useEffect(() => {
+    if (!showPreview) return;
+    const onKey = (e) => { if (e.key === "Escape") setShowPreview(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showPreview]);
+
   const toggle = (role) => {
-    const team = TASK_TEAMS.find(t => t.role === role);
-    if (team?.alwaysRequired) return;
     setSelected(prev => {
       const next = new Set(prev);
       next.has(role) ? next.delete(role) : next.add(role);
@@ -46,6 +56,11 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
     setError("");
     try {
       // Fix 1 — persist priority, due date and admin review stamp before tasks exist
+      // priority_override_reason is the admin's OWN reason for changing priority —
+      // null when the admin leaves the stakeholder's priority untouched. This is
+      // intentionally a separate column from stakeholder_priority_reason (set only
+      // by NewRequest.js) so admin task creation never clobbers the stakeholder's
+      // original justification.
       const { error: reqErr } = await supabase
         .from("requests")
         .update({
@@ -95,7 +110,17 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
           <h3>⚙️ Admin Task Setup</h3>
           <p>Select teams, set a deadline, then create parallel tasks.</p>
         </div>
-        <span className="badge badge-light">{req.page_type}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span className="badge badge-light">{req.page_type}</span>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => setShowPreview(true)}
+            style={{ fontSize: 13, whiteSpace: "nowrap" }}
+          >
+            Preview Page →
+          </button>
+        </div>
       </div>
 
       {/* Request identity */}
@@ -123,8 +148,13 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
         </label>
         <div className="flex-col gap-8">
           {TASK_TEAMS.map(team => {
-            const isChecked  = selected.has(team.role);
-            const isDisabled = !!team.alwaysRequired;
+            const isChecked = selected.has(team.role);
+            const isBrand   = team.role === "brand_team";
+            const hint = team.webLocked
+              ? "Web Team will be locked until all other tasks complete"
+              : (isBrand && req.needs_brand)
+              ? "Stakeholder suggested Brand Team involvement"
+              : TEAM_HINTS[team.role];
             return (
               <label
                 key={team.role}
@@ -134,7 +164,7 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
                   borderRadius: "var(--radius-lg)",
                   border: `1px solid ${isChecked ? team.color + "44" : "var(--color-border)"}`,
                   background: isChecked ? team.bg : "var(--color-ghost)",
-                  cursor: isDisabled ? "default" : "pointer",
+                  cursor: "pointer",
                   userSelect: "none",
                   transition: "all 0.15s",
                 }}
@@ -143,11 +173,10 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => toggle(team.role)}
-                  disabled={isDisabled}
                   style={{
                     width: 15, height: 15,
                     accentColor: team.color,
-                    cursor: isDisabled ? "default" : "pointer",
+                    cursor: "pointer",
                     flexShrink: 0,
                   }}
                 />
@@ -158,28 +187,14 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
                     {team.label}
                   </div>
                   <div className="field-hint" style={{ marginTop: 1 }}>
-                    {team.webLocked
-                      ? "Unlocks automatically once all parallel teams complete"
-                      : TEAM_HINTS[team.role]}
+                    {hint}
                   </div>
                 </div>
-                {team.alwaysRequired && !team.webLocked && (
-                  <span className="badge badge-light"
-                    style={{ fontSize: 10, whiteSpace: "nowrap" }}>
-                    Required
-                  </span>
-                )}
-                {!team.alwaysRequired && (
+                {isBrand && (
                   <span className="badge badge-light"
                     style={{ fontSize: 10, whiteSpace: "nowrap",
                              opacity: isChecked ? 1 : 0.5 }}>
                     Optional
-                  </span>
-                )}
-                {team.webLocked && (
-                  <span className="badge badge-light"
-                    style={{ fontSize: 10, whiteSpace: "nowrap" }}>
-                    🔒 Auto
                   </span>
                 )}
               </label>
@@ -251,6 +266,42 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
           ? "Creating tasks…"
           : `⚡ Create Tasks for ${teamCount} Team${teamCount !== 1 ? "s" : ""}`}
       </button>
+
+      {showPreview && typeof document !== "undefined" && createPortal(
+        <div
+          onClick={() => setShowPreview(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(24,19,19,0.65)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "2rem",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#fff", borderRadius: 12,
+              width: "100%", maxWidth: 1000, maxHeight: "90vh",
+              overflowY: "auto", position: "relative", padding: "1.5rem",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowPreview(false)}
+              aria-label="Close preview"
+              style={{
+                position: "absolute", top: 12, right: 12,
+                background: "none", border: "none", fontSize: 22,
+                cursor: "pointer", color: "#646464", lineHeight: 1,
+              }}
+            >
+              ✕
+            </button>
+            <PagePreview req={req} pageType={req.page_type} fullPage={true} />
+          </div>
+        </div>,
+        document.body
+      )}
 
     </div>
   );

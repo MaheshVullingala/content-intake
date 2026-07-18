@@ -1,4 +1,5 @@
 "use client";
+import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
 
 export default function RelatedProductsPreview({ data = {} }) {
   const { rp_label = "", rp_impact = "", rp_description = "", rp_cards = [] } = data;
@@ -31,8 +32,22 @@ export default function RelatedProductsPreview({ data = {} }) {
 
         {rp_cards.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: rp_cards.length === 1 ? "1fr" : rp_cards.length === 2 ? "1fr 1fr" : rp_cards.length === 3 ? "1fr 1fr 1fr" : "1fr 1fr", gap: 20 }}>
-            {rp_cards.map((card, i) => (
+            {rp_cards.map((card, i) => {
+              const imageUrl         = getImageUrl(card.image_ref);
+              const imagePlaceholder = getImagePlaceholder(card.image_ref);
+              return (
               <div key={card.id || i} style={{ border: "1px solid #E0E0E0", borderRadius: 8, padding: "1.5rem", background: "#fff" }}>
+                {(imageUrl || imagePlaceholder) && (
+                  <div style={{ height: 140, background: "#F3F3F3", borderRadius: 6, overflow: "hidden", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={card.title}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={e => { e.target.style.display = "none"; }} />
+                    ) : (
+                      <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 8px" }}>🎨 {imagePlaceholder}</span>
+                    )}
+                  </div>
+                )}
                 <div style={{ width: 32, height: 3, background: "#c0392b", borderRadius: 2, marginBottom: 20 }} />
                 <h3 style={{ fontSize: 16, fontWeight: 600, color: "#181313", marginBottom: 12, lineHeight: 1.3, wordBreak: "break-word" }}>
                   {card.title || <span style={{ color: "#E0E0E0", fontStyle: "italic" }}>Product title...</span>}
@@ -46,7 +61,8 @@ export default function RelatedProductsPreview({ data = {} }) {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

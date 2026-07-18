@@ -93,13 +93,20 @@ export default function TaskBoard({
               {overallMeta.label}
             </span>
             {req.priority && req.priority !== "normal" && (
-              <span style={{
-                background: req.priority === "urgent" ? "#fef2f2" : "#fffbeb",
-                color:      req.priority === "urgent" ? "#c0392b" : "#d97706",
-                border: `1px solid ${req.priority === "urgent" ? "#c0392b33" : "#d9770633"}`,
-                borderRadius: 20, padding: "2px 10px",
-                fontSize: 11, fontWeight: 600,
-              }}>
+              <span
+                title={req.priority_override_reason
+                  ? `Admin override: ${req.priority_override_reason}`
+                  : req.stakeholder_priority_reason
+                  ? `Stakeholder reason: ${req.stakeholder_priority_reason}`
+                  : undefined}
+                style={{
+                  background: req.priority === "urgent" ? "#fef2f2" : "#fffbeb",
+                  color:      req.priority === "urgent" ? "#c0392b" : "#d97706",
+                  border: `1px solid ${req.priority === "urgent" ? "#c0392b33" : "#d9770633"}`,
+                  borderRadius: 20, padding: "2px 10px",
+                  fontSize: 11, fontWeight: 600,
+                  cursor: (req.priority_override_reason || req.stakeholder_priority_reason) ? "help" : "default",
+                }}>
                 {req.priority.toUpperCase()}
               </span>
             )}

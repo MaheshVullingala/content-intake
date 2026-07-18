@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
 
 export default function CustomerStoriesPreview({ data = {} }) {
   const { cs_label = "", cs_impact = "", cs_items = [] } = data;
@@ -7,7 +8,9 @@ export default function CustomerStoriesPreview({ data = {} }) {
 
   if (!cs_impact && cs_items.length === 0) return null;
 
-  const current = cs_items[active] || {};
+  const current         = cs_items[active] || {};
+  const logoUrl          = getImageUrl(current.logo_ref);
+  const logoPlaceholder  = getImagePlaceholder(current.logo_ref);
 
   return (
     <div style={{ padding: "3.5rem 3.5rem",  background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif", textAlign: "center" }}>
@@ -35,6 +38,15 @@ export default function CustomerStoriesPreview({ data = {} }) {
 
           {/* Quote */}
           <div style={{ padding: "0 2rem" }}>
+            {logoUrl ? (
+              <img src={logoUrl} alt={current.customer || "Customer logo"}
+                style={{ height: 32, maxWidth: 160, objectFit: "contain", margin: "0 auto 16px" }}
+                onError={e => { e.target.style.display = "none"; }} />
+            ) : logoPlaceholder ? (
+              <div style={{ display: "inline-block", background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5", marginBottom: 16 }}>
+                🎨 {logoPlaceholder}
+              </div>
+            ) : null}
             <p style={{ fontSize: 17, color: "#3C3C3C", lineHeight: 1.8, fontStyle: "italic", marginBottom: 20, wordBreak: "break-word" }}>
               "{current.quote || "Customer quote will appear here..."}"
             </p>

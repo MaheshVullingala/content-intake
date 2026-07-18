@@ -84,16 +84,6 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
                 style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.6rem", fontSize: 11, cursor: "pointer" }}>✕</button>
             </div>
 
-            {/* Image */}
-            <div style={{ paddingBottom: 12, marginBottom: 12, borderBottom: "1px solid #F3F3F3" }}>
-              <div style={{ fontSize: 11, color: "#646464", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Card Image</div>
-              <Field label="Image URL" value={card.image_url} onChange={v => updateCard(card.id, "image_url", v)}
-                placeholder="https://... or leave for Design QA" />
-              <Field label="Image Description / Note for Design QA" value={card.image_note} onChange={v => updateCard(card.id, "image_note", v)}
-                placeholder='e.g. "Circuit board close-up photograph"'
-                hint="Describe the image — Design QA will source from library" />
-            </div>
-
             {/* Category label */}
             <div className="field-wrap">
               <label className="field-label">Category Tag <span className="req">*</span></label>
@@ -121,6 +111,13 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
               placeholder='e.g. "Qorvo and Cadence - GaN Discrete Power Amplifier Design"' />
             <Field label="Description" required value={card.description} onChange={v => updateCard(card.id, "description", v)}
               placeholder="Brief description of this content piece..." multiline />
+            <ImageField
+              label="Card Image"
+              value={card.image_ref || null}
+              onChange={v => updateCard(card.id, "image_ref", v)}
+              fieldKey={`related-content_card-${idx + 1}_image`}
+              requestId={requestId}
+            />
             <Field label="Learn More Link" required value={card.link} onChange={v => updateCard(card.id, "link", v)}
               placeholder="/resources/... or https://..." />
           </div>

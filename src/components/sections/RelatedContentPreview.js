@@ -1,4 +1,5 @@
 "use client";
+import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
 
 export default function RelatedContentPreview({ data = {} }) {
   const { rc_label = "", rc_impact = "", rc_cards = [] } = data;
@@ -20,17 +21,20 @@ export default function RelatedContentPreview({ data = {} }) {
 
         {rc_cards.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
-            {rc_cards.map((card, i) => (
+            {rc_cards.map((card, i) => {
+              const imageUrl         = getImageUrl(card.image_ref);
+              const imagePlaceholder = getImagePlaceholder(card.image_ref);
+              return (
               <div key={card.id || i} style={{ border: "1px solid #E0E0E0", borderRadius: 8, overflow: "hidden", background: "#fff" }}>
                 <div style={{ height: 180, background: "#F3F3F3", overflow: "hidden", position: "relative" }}>
-                  {card.image_url ? (
-                    <img src={card.image_url} alt={card.title}
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={card.title}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       onError={e => { e.target.style.display = "none"; }} />
                   ) : (
                     <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}>
                       <span style={{ fontSize: 24 }}>🖼️</span>
-                      {card.image_note && <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 8px" }}>{card.image_note}</span>}
+                      {imagePlaceholder && <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 8px" }}>{imagePlaceholder}</span>}
                     </div>
                   )}
                 </div>
@@ -55,7 +59,8 @@ export default function RelatedContentPreview({ data = {} }) {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

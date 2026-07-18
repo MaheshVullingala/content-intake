@@ -55,17 +55,22 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
     setUploading(true);
     setProgress(0);
     try {
-      const ext      = file.name.split(".").pop();
-      const safeName = `${fieldKey}_${Date.now()}.${ext}`;
-      const path     = `${requestId}/${safeName}`;
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const path          = `requests/${Date.now()}_${sanitizedName}`;
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       const uploadUrl   = `${supabaseUrl}/storage/v1/object/attachments/${path}`;
 
+      // Storage RLS requires the caller's own session token, not the anon
+      // key — the anon key alone is treated as unauthenticated and gets
+      // rejected with "new row violates row-level security policy".
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || supabaseKey;
+
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", uploadUrl);
-        xhr.setRequestHeader("Authorization", `Bearer ${supabaseKey}`);
+        xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
         xhr.setRequestHeader("apikey", supabaseKey);
         xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
         xhr.setRequestHeader("x-upsert", "true");

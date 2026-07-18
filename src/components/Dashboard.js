@@ -150,7 +150,11 @@ export default function Dashboard({ go, user }) {
   const getTabRows = (tabKey) => {
     if (user.role === "stakeholder") {
       if (tabKey === "tab1") return requests.filter(r => r.status === "draft" && !r.overall_status);
-      if (tabKey === "tab2") return requests.filter(r => r.status !== "draft" || r.overall_status);
+      // "My Requests" — everything this stakeholder owns, regardless of
+      // overall_status. requests is already scoped to created_by = user.id
+      // by the base query, so drafts (overall_status NULL) must not be
+      // excluded here or they vanish from this tab until submitted.
+      if (tabKey === "tab2") return requests;
     }
     if (user.role === "admin") {
       if (tabKey === "tab1") return requests.filter(r => r.overall_status === "pending_admin");
@@ -387,10 +391,22 @@ export default function Dashboard({ go, user }) {
                         </span>
                       )}
                       {req.priority === "urgent" && (
-                        <span style={{ marginLeft: 8, fontSize: 10, background: "#fef2f2", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>URGENT</span>
+                        <span
+                          title={req.priority_override_reason
+                            ? `Admin override: ${req.priority_override_reason}`
+                            : req.stakeholder_priority_reason
+                            ? `Stakeholder reason: ${req.stakeholder_priority_reason}`
+                            : undefined}
+                          style={{ marginLeft: 8, fontSize: 10, background: "#fef2f2", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: (req.priority_override_reason || req.stakeholder_priority_reason) ? "help" : "default" }}>URGENT</span>
                       )}
                       {req.priority === "high" && (
-                        <span style={{ marginLeft: 8, fontSize: 10, background: "#fffbeb", color: "#d97706", border: "1px solid #d9770633", borderRadius: 4, padding: "1px 6px", fontWeight: 600 }}>HIGH</span>
+                        <span
+                          title={req.priority_override_reason
+                            ? `Admin override: ${req.priority_override_reason}`
+                            : req.stakeholder_priority_reason
+                            ? `Stakeholder reason: ${req.stakeholder_priority_reason}`
+                            : undefined}
+                          style={{ marginLeft: 8, fontSize: 10, background: "#fffbeb", color: "#d97706", border: "1px solid #d9770633", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: (req.priority_override_reason || req.stakeholder_priority_reason) ? "help" : "default" }}>HIGH</span>
                       )}
                     </td>
                     <td style={{ padding: "0.9rem 1rem" }}>

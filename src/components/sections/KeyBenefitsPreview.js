@@ -1,4 +1,5 @@
 "use client";
+import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
 
 function getGridCols(count) {
   if (count <= 1) return "1fr";
@@ -39,20 +40,24 @@ export default function KeyBenefitsPreview({ data = {} }) {
 
         {kb_cards.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: getGridCols(kb_cards.length), gap: "2rem 3rem", marginTop: kb_impact ? 40 : 0 }}>
-            {kb_cards.map((card, idx) => (
+            {kb_cards.map((card, idx) => {
+              const iconUrl         = getImageUrl(card.image_ref);
+              const iconPlaceholder = getImagePlaceholder(card.image_ref);
+              return (
               <div key={card.id || idx}>
                 <div style={{ width: 48, height: 48, marginBottom: 20, background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                  {card.icon_url ? (
-                    <img src={card.icon_url} alt={card.icon_description || "icon"} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                  ) : card.icon_description ? (
+                  {iconUrl ? (
+                    <img src={iconUrl} alt={iconPlaceholder || "icon"} style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                      onError={e => { e.target.style.display = "none"; }} />
+                  ) : iconPlaceholder ? (
                     <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 4px", lineHeight: 1.3 }}>🎨</span>
                   ) : (
                     <span style={{ fontSize: 18, opacity: 0.3 }}>◻</span>
                   )}
                 </div>
-                {card.icon_description && (
+                {iconPlaceholder && (
                   <div style={{ fontSize: 10, color: "#B5B5B5", marginBottom: 12, fontStyle: "italic", lineHeight: 1.4 }}>
-                    Icon: {card.icon_description}
+                    Icon: {iconPlaceholder}
                   </div>
                 )}
                 <h3 style={{ fontSize: 16, fontWeight: 600, color: card.title ? "#181313" : "#E0E0E0", marginBottom: 12, lineHeight: 1.3, fontStyle: card.title ? "normal" : "italic" }}>
@@ -62,7 +67,8 @@ export default function KeyBenefitsPreview({ data = {} }) {
                   {card.description || "Card description..."}
                 </p>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

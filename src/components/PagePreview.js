@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 import FeaturesAppsPreview from "@/components/sections/FeaturesAppsPreview";
 import CustomerStoriesPreview from "@/components/sections/CustomerStoriesPreview";
@@ -17,12 +18,15 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   const sub_title     = req.sub_title     || "";
   const cta1_label    = req.cta1_label    || "";
   const cta2_label    = req.cta2_label    || "";
-  const banner_image  = req.banner_image  || "";
+  const banner_image_ref = p(req.banner_image_ref, null);
+  const banner_image     = getImageUrl(banner_image_ref) || "";
+  const banner_placeholder = getImagePlaceholder(banner_image_ref);
   const overview_label       = req.overview_label       || "";
   const overview_impact      = req.overview_impact      || "";
   const overview_description = req.overview_description || "";
-  const overview_media_url   = req.overview_media_url   || "";
-  const overview_media_note  = req.overview_media_note  || "";
+  const overview_media_ref   = p(req.overview_media_ref, null);
+  const overview_media_url   = getImageUrl(overview_media_ref) || "";
+  const overview_media_placeholder = getImagePlaceholder(overview_media_ref);
   const overview_media_type  = req.overview_media_type  || "image";
   const kb_label       = req.kb_label       || "";
   const kb_impact      = req.kb_impact      || "";
@@ -140,6 +144,11 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
           <p className={`banner-subtitle${!sub_title ? " placeholder" : ""}`}>
             {sub_title || "Subtitle goes here"}
           </p>
+          {!banner_image && banner_placeholder && (
+            <div style={{ marginTop: 12, display: "inline-block", background: "#F3F3F3", border: "1px dashed #D0D0D0", borderRadius: 6, padding: "8px 14px", fontSize: 12, color: "#646464" }}>
+              🎨 {banner_placeholder}
+            </div>
+          )}
           <div className="banner-ctas">
             {cta1_label && <div className="banner-cta-primary">↗ {cta1_label}</div>}
             {cta2_label && <div className="banner-cta-secondary">▷ {cta2_label}</div>}
@@ -169,9 +178,11 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
                   : <img src={overview_media_url} alt="Overview media" className="overview-media-img"
                       onError={e => { e.target.style.display = "none"; }} />
                 }
-                {overview_media_note && (
-                  <div className="overview-media-caption">{overview_media_note}</div>
-                )}
+              </div>
+            ) : overview_media_placeholder ? (
+              <div className="overview-media-placeholder">
+                <div className="icon">🎨</div>
+                <div className="text">{overview_media_placeholder}</div>
               </div>
             ) : (
               <div className="overview-media-placeholder">

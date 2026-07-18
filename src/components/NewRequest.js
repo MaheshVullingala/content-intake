@@ -71,6 +71,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const [activeSection, setActiveSection]= useState("banner");
   const [needsBrand,    setNeedsBrand]   = useState(false);
   const [priority,      setPriority]     = useState("normal");
+  const [priorityReason,setPriorityReason] = useState("");
   const [seoData,       setSeoData]      = useState(EMPTY_SEO);
   const previewRef = useRef(null);
   const [banner,        setBanner]       = useState(EMPTY_BANNER);
@@ -139,6 +140,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
       if (data.needs_brand) setNeedsBrand(true);
       setPriority(data.priority || "normal");
+      setPriorityReason(data.stakeholder_priority_reason || "");
       const { data: rc } = await supabase.from("comments").select("*").eq("request_id", draftId).eq("is_return", true).order("created_at", { ascending: false });
       setReturnComments(rc || []);
       setLoadingDraft(false);
@@ -178,6 +180,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     page_type: pageType, status, created_by: user.id,
     needs_brand: needsBrand,
     priority:    priority,
+    // Stakeholder's own justification for High/Urgent — kept separate from
+    // priority_override_reason, which is the admin's reason for changing it.
+    stakeholder_priority_reason: (priority === "high" || priority === "urgent")
+      ? priorityReason.trim()
+      : null,
     ...extra,
     seo_page_location: seoData.seo_page_location,
     seo_meta_title: seoData.seo_meta_title,
@@ -222,8 +229,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     } : {}),
     // Promo Section
     ...(!naMap["promo_section"] ? {
-      promo_bg_image:    promoData.promo_bg_image,
-      promo_bg_note:     promoData.promo_bg_note,
+      promo_bg_image_ref: promoData.promo_bg_image_ref,
       promo_label:       promoData.promo_label,
       promo_title:       promoData.promo_title,
       promo_description: promoData.promo_description,
@@ -475,6 +481,10 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   };
 
   const submit = async () => {
+    if ((priority === "high" || priority === "urgent") && !priorityReason.trim()) {
+      setError("Please provide a reason for High/Urgent priority before submitting.");
+      return;
+    }
     setSaving(true);
     setError("");
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -763,6 +773,23 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
               ))}
             </div>
           </div>
+
+          {/* Reason — required when priority is High or Urgent */}
+          {(priority === "high" || priority === "urgent") && (
+            <div className="field-wrap" style={{ marginTop: 4 }}>
+              <label className="field-label">
+                Reason for {priority === "urgent" ? "Urgent" : "High"} priority
+                <span className="req"> *</span>
+              </label>
+              <textarea
+                className="textarea"
+                value={priorityReason}
+                onChange={e => setPriorityReason(e.target.value)}
+                placeholder="Explain why this request needs elevated priority…"
+                rows={3}
+              />
+            </div>
+          )}
 
           {/* Brand team checkbox */}
           <div className="field-wrap" style={{ marginTop: 4 }}>

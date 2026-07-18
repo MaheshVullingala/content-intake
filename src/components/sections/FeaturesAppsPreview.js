@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { getImageUrl, getImagePlaceholder } from "@/lib/imageRef";
 
 export default function FeaturesAppsPreview({ data = {} }) {
   const {
@@ -70,14 +71,14 @@ export default function FeaturesAppsPreview({ data = {} }) {
             {fa_items[activeTab] && (
               <div>
                 <h3 style={{ fontSize: 20, fontWeight: 500, color: "#181313", marginBottom: 16 }}>{fa_items[activeTab].title}</h3>
-                {fa_items[activeTab].image_url && (
-                  <img src={fa_items[activeTab].image_url} alt={fa_items[activeTab].title}
+                {getImageUrl(fa_items[activeTab].image_ref) && (
+                  <img src={getImageUrl(fa_items[activeTab].image_ref)} alt={fa_items[activeTab].title}
                     style={{ width: "100%", maxHeight: 340, objectFit: "cover", borderRadius: 8, marginBottom: 20, border: "1px solid #E0E0E0" }}
                     onError={e => { e.target.style.display = "none"; }} />
                 )}
-                {!fa_items[activeTab].image_url && fa_items[activeTab].image_note && (
+                {!getImageUrl(fa_items[activeTab].image_ref) && getImagePlaceholder(fa_items[activeTab].image_ref) && (
                   <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.5rem", marginBottom: 20, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: "#B5B5B5" }}>🎨 Image: {fa_items[activeTab].image_note}</div>
+                    <div style={{ fontSize: 11, color: "#B5B5B5" }}>🎨 {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
                   </div>
                 )}
                 <p style={{ fontSize: 15, color: "#3C3C3C", lineHeight: 1.75, marginBottom: 20, wordBreak: "break-word" }}>{fa_items[activeTab].description}</p>
@@ -105,14 +106,14 @@ export default function FeaturesAppsPreview({ data = {} }) {
             {fa_items[activeTab] && (
               <div>
                 <h3 style={{ fontSize: 20, fontWeight: 500, color: "#181313", marginBottom: 16 }}>{fa_items[activeTab].title}</h3>
-                {fa_items[activeTab].image_url && (
-                  <img src={fa_items[activeTab].image_url} alt={fa_items[activeTab].title}
+                {getImageUrl(fa_items[activeTab].image_ref) && (
+                  <img src={getImageUrl(fa_items[activeTab].image_ref)} alt={fa_items[activeTab].title}
                     style={{ width: "100%", maxHeight: 340, objectFit: "cover", borderRadius: 8, marginBottom: 20, border: "1px solid #E0E0E0" }}
                     onError={e => { e.target.style.display = "none"; }} />
                 )}
-                {!fa_items[activeTab].image_url && fa_items[activeTab].image_note && (
+                {!getImageUrl(fa_items[activeTab].image_ref) && getImagePlaceholder(fa_items[activeTab].image_ref) && (
                   <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.5rem", marginBottom: 20, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: "#B5B5B5" }}>🎨 Image: {fa_items[activeTab].image_note}</div>
+                    <div style={{ fontSize: 11, color: "#B5B5B5" }}>🎨 {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
                   </div>
                 )}
                 <p style={{ fontSize: 15, color: "#3C3C3C", lineHeight: 1.75, marginBottom: 20, wordBreak: "break-word" }}>{fa_items[activeTab].description}</p>

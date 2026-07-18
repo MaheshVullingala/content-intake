@@ -19,6 +19,7 @@ export default function Dashboard({ go, user }) {
   const [search,       setSearch]       = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType,   setFilterType]   = useState("all");
+  const [showAttention, setShowAttention] = useState(false);
 
   const m          = ROLE_META[user.role];
   const isOp       = OPERATIONAL_ROLES.includes(user.role);
@@ -201,6 +202,26 @@ export default function Dashboard({ go, user }) {
 
   const displayRows      = applyFilters(getTabRows(tab));
   const hasActiveFilters = search || filterStatus !== "all" || filterType !== "all";
+
+  // ── Stakeholder "Needs Attention" ──────────────────────────────────────────
+  // taskProgress (not a `tasks` field — see fetchRequests above) is an array
+  // of { team_role, status } per request, populated only for v2 (overall_status
+  // set) rows.
+  const attentionRequests = user.role === "stakeholder"
+    ? requests.filter(r => r.taskProgress?.some(t =>
+        t.status === "pending_approval" || t.status === "needs_info"))
+    : [];
+
+  const getAttentionReason = (taskProgress) => {
+    const flagged = taskProgress?.find(t =>
+      t.status === "pending_approval" || t.status === "needs_info");
+    if (!flagged) return null;
+    const label = TASK_TEAMS.find(tm => tm.role === flagged.team_role)?.label || flagged.team_role;
+    return {
+      status: flagged.status,
+      text: flagged.status === "pending_approval" ? `${label} needs approval` : `${label} has a question`,
+    };
+  };
   const pageTypes        = ["Product", "Solutions", "Glossary", "On-demand Webinar"];
 
   const handleDelete = async () => {
@@ -284,7 +305,9 @@ export default function Dashboard({ go, user }) {
               {tabKeys.map(t => {
                 const count    = applyFilters(getTabRows(t)).length;
                 const isActive = tab === t;
-                return (
+                const isMyRequestsForStakeholder = t === "tab2" && user.role === "stakeholder";
+
+                const tabButton = (
                   <button key={t} onClick={() => { setTab(t); setSearch(""); setFilterStatus("all"); setFilterType("all"); }}
                     style={{
                       padding: "18px 24px 16px",
@@ -301,8 +324,102 @@ export default function Dashboard({ go, user }) {
                     <span style={{ background: isActive ? "#1b5793" : "#E0E0E0", color: isActive ? "#fff" : "#646464", borderRadius: 20, padding: "2px 9px", fontSize: 11, fontWeight: 600, minWidth: 22, textAlign: "center" }}>{count}</span>
                   </button>
                 );
+
+                if (!isMyRequestsForStakeholder) return tabButton;
+
+                return (
+                  <div key={t} style={{ position: "relative" }}>
+                    {tabButton}
+                    {attentionRequests.length > 0 && (
+                      <button
+                        onClick={e => { e.stopPropagation(); setShowAttention(v => !v); }}
+                        title={`${attentionRequests.length} request${attentionRequests.length !== 1 ? "s" : ""} need attention`}
+                        style={{
+                          position: "absolute", top: 8, right: 4,
+                          background: "#c0392b", color: "#fff", border: "2px solid #fff",
+                          borderRadius: "50%", width: 18, height: 18,
+                          fontSize: 10, fontWeight: 700, lineHeight: 1,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          cursor: "pointer", padding: 0,
+                          animation: "attnPulse 1.8s ease-in-out infinite",
+                        }}>
+                        {attentionRequests.length}
+                      </button>
+                    )}
+                    {showAttention && attentionRequests.length > 0 && (
+                      <>
+                        <div onClick={() => setShowAttention(false)}
+                          style={{ position: "fixed", inset: 0, zIndex: 998 }} />
+                        <div onClick={e => e.stopPropagation()}
+                          style={{
+                            position: "absolute", top: "100%", left: 0, marginTop: 6,
+                            background: "#fff", borderRadius: 12, minWidth: 320, maxWidth: 380,
+                            boxShadow: "0 8px 32px rgba(0,0,0,0.18)", border: "1px solid #E0E0E0",
+                            zIndex: 999, overflow: "hidden",
+                          }}>
+                          <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #F3F3F3",
+                                        display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "#181313" }}>
+                              ⚠️ Needs Attention
+                            </span>
+                            <button onClick={() => setShowAttention(false)}
+                              style={{ background: "none", border: "none", cursor: "pointer",
+                                       fontSize: 16, color: "#B5B5B5", lineHeight: 1, padding: 0 }}>
+                              ✕
+                            </button>
+                          </div>
+                          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                            {attentionRequests.slice(0, 5).map(r => {
+                              const reason = getAttentionReason(r.taskProgress);
+                              const borderColor = reason?.status === "pending_approval" ? "#9333ea" : "#d97706";
+                              return (
+                                <div
+                                  key={r.id}
+                                  onClick={() => { setShowAttention(false); go("detail", r.id); }}
+                                  style={{
+                                    padding: "10px 16px", borderLeft: `3px solid ${borderColor}`,
+                                    cursor: "pointer", borderBottom: "1px solid #F9F9F9",
+                                    fontFamily: "'Rubik',sans-serif", transition: "background 0.1s",
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.background = "#F9F9F9"; }}
+                                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                                >
+                                  <div style={{ fontSize: 13, fontWeight: 500, color: "#181313", marginBottom: 2,
+                                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {r.page_title || "Untitled"}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: borderColor, fontWeight: 500 }}>
+                                    {reason?.text}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {attentionRequests.length > 5 && (
+                            <button
+                              onClick={() => { setShowAttention(false); setTab("tab2"); setSearch(""); setFilterStatus("all"); setFilterType("all"); }}
+                              style={{
+                                width: "100%", padding: "10px", background: "#F9F9F9",
+                                border: "none", borderTop: "1px solid #F3F3F3",
+                                fontSize: 12, fontWeight: 600, color: "#1b5793", cursor: "pointer",
+                                fontFamily: "'Rubik',sans-serif",
+                              }}>
+                              View All ({attentionRequests.length})
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
               })}
             </div>
+            <style jsx>{`
+              @keyframes attnPulse {
+                0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.5); }
+                50%      { box-shadow: 0 0 0 5px rgba(192, 57, 43, 0); }
+              }
+            `}</style>
 
             {/* Search + filters */}
             <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 200, paddingTop: 8, paddingBottom: 8 }}>

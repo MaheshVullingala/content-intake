@@ -228,14 +228,39 @@ export default function TaskBoard({
     );
   }
 
-  // ── View 3: Stakeholder → TaskBoardOverview ─────────────────────────
+  // ── View 3: Stakeholder → TaskBoardOverview (+ PagePreview while a task
+  //           is pending their approval, so they can see the actual page
+  //           — including any Design Team image — before approving) ─────
   if (isStakeholder) {
+    const hasPendingApproval = localTasks.some(t => t.status === "pending_approval");
+
     return (
       <div>
         <Header />
         {isPendingAdmin ? (
           <div className="alert alert-info mt-12">
             ⏳ An administrator is reviewing your request and will set up tasks shortly.
+          </div>
+        ) : hasPendingApproval ? (
+          <div style={TWO_COL}>
+            <div style={{ overflowY: "auto" }}>
+              <PagePreview
+                req={req}
+                pageType={req.page_type}
+                attachments={designAttachments}
+              />
+            </div>
+            <div style={{ overflowY: "auto",
+                          borderLeft: "1px solid var(--color-border)",
+                          paddingLeft: "1.5rem" }}>
+              <TaskBoardOverview
+                tasks={localTasks}
+                req={req}
+                user={user}
+                supabase={supabase}
+                onRefresh={handleRefresh}
+              />
+            </div>
           </div>
         ) : (
           <TaskBoardOverview

@@ -480,3 +480,32 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
     information_schema isn't exposed through the REST API) — all three
     present, no other gaps
   - Build confirmed zero errors; committed as v146 and pushed to origin/main
+- Full 14-point audit run against this CONTEXT.md's claimed fix list —
+  every item verified present in the actual code (not just claimed);
+  only exception is confirming notifications_insert RLS policy is
+  applied live (no tool access to Postgres policy introspection, only
+  PostgREST's table/column-level schema)
+- Two stakeholder-facing improvements (v147):
+  - Dashboard.js "Needs Attention": attentionRequests derived from
+    r.taskProgress (NOT r.tasks — that field doesn't exist on fetched
+    rows; taskProgress is the array of {team_role, status} already
+    populated by fetchRequests for every overall_status-set request).
+    Red pulsing badge (scoped `<style jsx>` keyframe — no prior pulse
+    animation existed anywhere in the codebase, no new CSS file added)
+    on the "My Requests" tab, stakeholder only, when count > 0. Popup:
+    purple left-border for pending_approval, amber for needs_info, via
+    getAttentionReason() → "{TeamLabel} needs approval" / "has a
+    question" using TASK_TEAMS for the role→label lookup; capped at 5
+    items, "View All" only when count > 5 (switches to tab2); dismiss
+    via X, click-outside (same transparent-overlay pattern as the
+    existing delete modal), or clicking an item (also navigates via
+    go("detail", r.id))
+  - TaskBoard.js stakeholder routing: now shows the same two-column
+    PagePreview + TaskBoardOverview layout admin gets, but only when
+    localTasks.some(t => t.status === "pending_approval") — otherwise
+    unchanged (TaskBoardOverview alone). Uses localTasks (not the
+    tasks prop — localTasks is the live, refetched state; tasks is
+    only the initial useState seed) and the existing designAttachments
+    state so Design Team's mapped images render in the stakeholder's
+    approval view too.
+  - Build confirmed zero errors; committed as v147 and pushed to origin/main

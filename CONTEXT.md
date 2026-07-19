@@ -522,3 +522,40 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
     instead of orderedTasks; orderedTasks itself (TASK_TEAMS canonical
     order, used for the progress-bar count) is untouched
   - Build confirmed zero errors; committed as v148 and pushed to origin/main
+- v149: stakeholder can resolve an editorial_team/seo_team "needs_info"
+  question by editing content directly instead of just typing a text
+  answer:
+  - TaskBoardOverview.js task cards are now clickable (header row only —
+    not the whole card, so clicking into the answer textarea or
+    Approve/Reject buttons never bubbles up and collapses the card
+    mid-interaction). handleCardClick routing: needs_info from
+    editorial_team/seo_team AND isStakeholder → opens EditSectionModal;
+    locked → no-op; everything else → toggle expandedCard. opensEditModal
+    (drives which content block renders — teaser+✎ vs question box+▸/▾)
+    is gated by the same isStakeholder check, so admin viewing the same
+    needs_info card gets the plain expand/collapse behavior (question
+    visible, no answer box — matches showAnswer's existing isStakeholder
+    gate) instead of a UI that claims to open an editor it won't for them
+  - guessSection(question) — keyword match against question text
+    (SECTION_KEYWORDS map) to open EditSectionModal on the likely
+    section directly; falls back to section=null (picker) when nothing
+    matches
+  - EditSectionModal.js gained real section=null support (previously
+    SECTION_CONFIG[null] → undefined → the component silently rendered
+    nothing). Now: allowPicker=!section, pickedSection state defaults to
+    the section prop; when unset, renders a list of all SECTION_CONFIG
+    titles to choose from; once picked, the existing single-section edit
+    UI takes over, with a "← Back" control to return to the list. Every
+    existing caller (TaskBoard.js's editorial_team PagePreview-edit flow)
+    always passes a concrete section, so allowPicker is false there —
+    fully backward compatible, no other caller affected
+  - After save, onSaved auto-answers the question via handleEditSaved:
+    updateTask(status: "in_progress", answer: "Content has been
+    updated", answer_at, answer_given_by) — mirrors handleAnswer's own
+    status transition, fixed text instead of stakeholder-typed
+  - Other statuses gained expand-on-click content: completed→completed_at
+    date, in_progress→assignee note, pending/waiting_for_brand→a status
+    sentence. pending_approval's files+Approve/Reject and the
+    already-approved indicator are now also gated behind isExpanded
+    (previously always visible whenever status matched)
+  - Build confirmed zero errors; committed as v149 and pushed to origin/main

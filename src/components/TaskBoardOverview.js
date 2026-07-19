@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
+import EditSectionModal from "@/components/EditSectionModal";
 
 async function fetchTaskFiles(req, supabase) {
   const { data } = await supabase
@@ -12,6 +13,32 @@ async function fetchTaskFiles(req, supabase) {
     .order("created_at", { ascending: false });
   return data || [];
 }
+
+// Best-effort guess at which section a question is about, so the edit
+// modal can open directly on the right section instead of always making
+// the stakeholder pick. Falls back to the picker (section=null) when
+// nothing matches.
+const SECTION_KEYWORDS = {
+  banner:            ["banner", "headline", "cta"],
+  overview:          ["overview"],
+  key_benefits:      ["benefit"],
+  features_apps:     ["feature", "application", "tab"],
+  customer_stories:  ["customer stor", "testimonial", "quote", "endorsement"],
+  promo_section:     ["promo"],
+  related_content:   ["related content"],
+  resources:         ["resource"],
+  related_products:  ["related product"],
+  training_support:  ["training", "support"],
+  seo_meta:          ["seo", "meta", "keyword"],
+};
+
+const guessSection = (question = "") => {
+  const q = question.toLowerCase();
+  for (const [key, words] of Object.entries(SECTION_KEYWORDS)) {
+    if (words.some(w => q.includes(w))) return key;
+  }
+  return null;
+};
 
 const STATUS_PRIORITY = {
   pending_approval:  0, // needs attention — top
@@ -32,6 +59,8 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
   const [rejectNotes, setRejectNotes] = useState({});
   const [saving,      setSaving]      = useState(null); // taskId currently saving
   const [error,       setError]       = useState("");
+  const [expandedCard, setExpandedCard] = useState(null); // taskId currently expanded
+  const [editModal,    setEditModal]    = useState(null); // { task, section } or null
 
   // Load files only for tasks currently pending stakeholder approval
   useEffect(() => {
@@ -145,6 +174,39 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
     finally     { setSaving(null); }
   };
 
+  // Card click routing: editorial/seo questions open the content editor
+  // directly for the stakeholder (who edits, then an answer is sent
+  // automatically); admin clicking the same card just expands it to show
+  // the question, same as any other status. Locked cards do nothing.
+  const handleCardClick = (task) => {
+    if (task.status === "needs_info" && ["editorial_team", "seo_team"].includes(task.team_role) && isStakeholder) {
+      setEditModal({ task, section: guessSection(task.question) });
+    } else if (task.status === "locked") {
+      return;
+    } else {
+      setExpandedCard(prev => prev === task.id ? null : task.id);
+    }
+  };
+
+  // After the stakeholder edits content in response to an editorial/seo
+  // question, auto-answer the question and put the task back in progress
+  // — mirrors handleAnswer's own status transition, just with a fixed
+  // answer text instead of stakeholder-typed one.
+  const handleEditSaved = async () => {
+    const task = editModal?.task;
+    setEditModal(null);
+    if (!task) return;
+    try {
+      await updateTask(task.id, {
+        status:          "in_progress",
+        answer:          "Content has been updated",
+        answer_at:       new Date().toISOString(),
+        answer_given_by: user.id,
+      }, supabase);
+      onRefresh?.();
+    } catch (e) { setError(e.message || "Failed to send answer."); }
+  };
+
   return (
     <div>
       {/* ── Progress bar ─────────────────────────────────────────────── */}
@@ -192,6 +254,11 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
           const files           = fileMap[task.id] || [];
           const isSaving        = saving === task.id;
 
+          // Editorial/seo questions open the content editor instead of
+          // expanding inline; locked cards aren't clickable at all.
+          const opensEditModal = needsInfo && ["editorial_team", "seo_team"].includes(task.team_role) && isStakeholder;
+          const isExpanded     = expandedCard === task.id;
+
           return (
             <div
               key={task.id}
@@ -206,9 +273,18 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                 transition: "opacity 0.2s",
               }}
             >
-              {/* Card header: icon + team name + status badge */}
-              <div style={{ display: "flex", alignItems: "flex-start",
-                            gap: 10, marginBottom: 10 }}>
+              {/* Card header: icon + team name + status badge + expand/edit indicator.
+                  Click target is just this header, not the whole card, so clicking
+                  into the answer textarea / approve-reject buttons below never
+                  bubbles up and toggles the card shut mid-interaction. */}
+              <div
+                onClick={!isLocked ? () => handleCardClick(task) : undefined}
+                style={{
+                  display: "flex", alignItems: "flex-start",
+                  gap: 10, marginBottom: 10,
+                  cursor: isLocked ? "default" : "pointer",
+                }}
+              >
                 <span style={{ fontSize: 20, lineHeight: 1.2, flexShrink: 0 }}>
                   {isDone ? "✅" : isLocked ? "🔒" : (teamMeta?.icon ?? "📋")}
                 </span>
@@ -229,6 +305,14 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                     {statusMeta.icon} {statusMeta.label}
                   </span>
                 </div>
+                {!isLocked && (
+                  <span
+                    title={opensEditModal ? "Click to edit content" : (isExpanded ? "Collapse" : "Expand")}
+                    style={{ fontSize: 13, color: "var(--color-silver)", flexShrink: 0, marginTop: 2 }}
+                  >
+                    {opensEditModal ? "✎" : (isExpanded ? "▾" : "▸")}
+                  </span>
+                )}
               </div>
 
               {/* Assignee + last updated */}
@@ -244,8 +328,30 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                 )}
               </div>
 
-              {/* ── Needs Info: question box + answer input ──────────── */}
-              {needsInfo && (
+              {/* ── Needs Info from editorial/seo: compact teaser, click
+                     header to edit content (auto-answers on save) ────── */}
+              {needsInfo && opensEditModal && (
+                <div style={{
+                  background: "#fffbeb", border: "1px solid #d97706aa",
+                  borderRadius: "var(--radius)", padding: "8px 10px", marginBottom: 10,
+                }}>
+                  <div className="text-xs text-uppercase"
+                       style={{ color: "#92400e", marginBottom: 3 }}>
+                    Question
+                  </div>
+                  <div style={{ fontSize: "var(--text-sm)", fontWeight: 500,
+                                color: "var(--color-night)" }}>
+                    {task.question || "—"}
+                  </div>
+                  <div className="field-hint" style={{ marginTop: 6 }}>
+                    ✎ Click to edit content — answer is sent automatically on save
+                  </div>
+                </div>
+              )}
+
+              {/* ── Needs Info from other teams: question box + answer input,
+                     shown once expanded ──────────────────────────────── */}
+              {needsInfo && !opensEditModal && isExpanded && (
                 <div style={{ marginBottom: 10 }}>
                   <div style={{
                     background: "#fffbeb", border: "1px solid #d97706aa",
@@ -283,8 +389,9 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                 </div>
               )}
 
-              {/* ── Pending Approval: files + approve / reject ──────── */}
-              {showApproval && (
+              {/* ── Pending Approval: files + approve / reject, shown once
+                     expanded ─────────────────────────────────────────── */}
+              {showApproval && isExpanded && (
                 <div>
                   {files.length > 0 ? (
                     <div style={{ marginBottom: 10 }}>
@@ -352,16 +459,53 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
               )}
 
               {/* Already-approved indicator */}
-              {needsApproval && alreadyApproved && (
+              {needsApproval && alreadyApproved && isExpanded && (
                 <div className="alert alert-success"
                      style={{ fontSize: "var(--text-xs)", padding: "4px 8px" }}>
                   ✅ Approved by stakeholder
+                </div>
+              )}
+
+              {/* ── Other statuses: brief info once expanded ──────────── */}
+              {isExpanded && isDone && (
+                <div className="text-xs text-muted">
+                  {task.completed_at
+                    ? <>Completed {new Date(task.completed_at).toLocaleDateString("en-GB",
+                        { day: "numeric", month: "short", year: "numeric" })}</>
+                    : "Completed"}
+                </div>
+              )}
+
+              {isExpanded && task.status === "in_progress" && (
+                <div className="text-xs text-muted">
+                  ⚡ Actively being worked on
+                  {task.assignee?.name && <> by <strong>{task.assignee.name}</strong></>}
+                </div>
+              )}
+
+              {isExpanded && (task.status === "pending" || task.status === "waiting_for_brand") && (
+                <div className="text-xs text-muted">
+                  {task.status === "waiting_for_brand"
+                    ? "Waiting for Brand Team to deliver assets before this can start."
+                    : `Not started yet — waiting on ${teamMeta?.label ?? task.team_role}.`}
                 </div>
               )}
             </div>
           );
         })}
       </div>
+
+      {editModal && (
+        <EditSectionModal
+          section={editModal.section}
+          data={req}
+          requestId={req.id}
+          supabase={supabase}
+          user={user}
+          onClose={() => setEditModal(null)}
+          onSaved={handleEditSaved}
+        />
+      )}
     </div>
   );
 }

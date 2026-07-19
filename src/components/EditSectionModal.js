@@ -151,8 +151,14 @@ function EditField({ label, value, onChange, multiline, limit }) {
   );
 }
 
-export default function EditSectionModal({ section, data = {}, requestId, supabase, user, onClose, onSaved }) {
-  const config = SECTION_CONFIG[section];
+export default function EditSectionModal({ section = null, data = {}, requestId, supabase, user, onClose, onSaved }) {
+  // section=null → no section chosen yet; show a picker first. allowPicker
+  // stays true for the modal's lifetime even after a section is picked, so
+  // a "← Back" control can return to the picker (only relevant when the
+  // caller didn't pass a concrete section up front).
+  const allowPicker = !section;
+  const [pickedSection, setPickedSection] = useState(section);
+  const config = SECTION_CONFIG[pickedSection];
 
   const [values,    setValues]    = useState({});
   const [items,     setItems]     = useState([]);
@@ -180,13 +186,70 @@ export default function EditSectionModal({ section, data = {}, requestId, supaba
       setFaRows(parseJSON(data.fa_rows));
     }
     setError("");
-  }, [section]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pickedSection]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose?.(); };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // Picker mode — no section chosen yet, show a list to pick from
+  if (allowPicker && !pickedSection) {
+    return createPortal(
+      <div
+        style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 1000, padding: "1rem",
+        }}
+        onClick={onClose}
+      >
+        <div
+          style={{
+            background: "#fff", borderRadius: 12, width: "100%", maxWidth: 440,
+            maxHeight: "80vh", display: "flex", flexDirection: "column",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div style={{
+            padding: "1.1rem 1.5rem", borderBottom: "1px solid var(--color-border)",
+            display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
+          }}>
+            <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
+              Select a Section to Edit
+            </h3>
+            <button
+              onClick={onClose}
+              style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--color-silver)", lineHeight: 1 }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ padding: "1.25rem 1.5rem", overflowY: "auto", flex: 1 }}>
+            <div className="flex-col gap-8">
+              {Object.entries(SECTION_CONFIG).map(([key, cfg]) => (
+                <button
+                  key={key}
+                  onClick={() => setPickedSection(key)}
+                  style={{
+                    textAlign: "left", padding: "0.75rem 1rem",
+                    border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)",
+                    background: "var(--color-ghost)", cursor: "pointer",
+                    fontFamily: "'Rubik',sans-serif", fontSize: 14, color: "var(--color-night)",
+                  }}
+                >
+                  {cfg.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
 
   if (!config) return null;
 
@@ -245,7 +308,16 @@ export default function EditSectionModal({ section, data = {}, requestId, supaba
           padding: "1.1rem 1.5rem", borderBottom: "1px solid var(--color-border)",
           display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0,
         }}>
-          <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600 }}>
+          <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 10 }}>
+            {allowPicker && (
+              <button
+                onClick={() => setPickedSection(null)}
+                title="Back to section list"
+                style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "var(--color-silver)", padding: 0 }}
+              >
+                ←
+              </button>
+            )}
             Edit {config.title}
           </h3>
           <button

@@ -72,6 +72,12 @@ seo_team, design_team, web_team
   UPDATE policy letting web_team update any task on a request where
   web_team also has a task — confirmed applied 2026-07-19; resolves the
   "RLS Known Issue" below
+- sql/08-task-assignment-visibility.sql — get_user_can_assign() helper
+  (COALESCE'd to false) + REPLACED (same policy names, not new ones —
+  see "Task Assignment Flow" below for why that distinction mattered)
+  tasks_select / requests_select: leads (can_assign=true) see
+  everything for their team, members only see tasks/requests assigned
+  to them. Confirmed applied 2026-07-19
 
 ## Key tasks table columns (tasks-migration.sql)
 - id, request_id, team_role, status, is_required
@@ -214,6 +220,19 @@ added the missing target-team notification insert on request-changes
 session, just the notification was missing). See handleRequestChanges
 in TaskPanel.js.
 
+## Known Gaps
+Numbering follows the user's own external tracking, referenced starting
+2026-07-19 — Gaps 2 and 3 have not been described to/recorded by Claude
+in this session, so they're not documented here. Only what's actually
+been discussed is tracked below.
+- Gap 1 — Web Team "Request Changes" RLS: RESOLVED v153 (see "RLS Known
+  Issue" above).
+- Gap 4 — Admin reassignment: PARTIALLY DONE as of v154. Team leads
+  (can_assign=true) and super_admin can reassign a task via
+  AssigneeDropdown in TaskPanel.js (see "Task Assignment Flow" below).
+  Reassigning a task from AdminPanel.js directly (i.e. without opening
+  the request's TaskPanel) is still pending — lower priority per user.
+
 ## overall_status / web_team unlock (2026-07-17)
 Root cause of stakeholder-approves-but-badge-stays-stale bug:
 TaskBoardOverview.js's handleApprove/handleReject updated the task row
@@ -267,6 +286,41 @@ overlay is wired in (task_attachments lookup keyed by section_tag).
 RelatedContent.js previously had a completely separate, disconnected
 image_url/image_note plain-text pair that was superseded by ImageField/
 image_ref — removed in favor of the same pattern every other section uses.
+
+## Task Assignment Flow — COMPLETE 2026-07-19 (v154)
+RLS (sql/08-task-assignment-visibility.sql) + AssigneeDropdown
+(TaskPanel.js) together enforce and surface: leads (can_assign=true)
+see and can assign/reassign every task for their team on any request;
+regular members only ever see tasks/requests where the task is assigned
+to them (both DB-enforced via RLS and reflected in the UI). Corrected
+from the original spec before applying: every `= auth.uid()` comparison
+against assigned_to/created_by had to go through get_user_id() instead —
+auth.uid() is the Supabase Auth UUID, not public.users.id, per this
+schema's established auth_id-mapping convention. Also: the new RLS
+policies REPLACE the live tasks_select/requests_select policies (same
+names) rather than adding new ones — Postgres ORs multiple permissive
+policies together, so a differently-named additive policy would have
+left the old, broader policies in effect and had zero restrictive
+effect for 3 of 5 team roles.
+AssigneeDropdown: dropdown value is sourced directly from task.assigned_to
+(no separate local "selected" state, avoiding drift). First assignment
+applies immediately + notifies + audit-logs. Reassigning (target already
+assigned, including reassigning to "— Unassigned —") requires an inline
+reason textarea before the update fires; notifies both new and old
+assignee with different wording per whether it's a first assignment or
+a reassignment; audit_log has no dedicated reason column, so the reason
+is folded into new_value as descriptive text rather than inventing a
+field that isn't in the table. Visibility gate: user.can_assign ||
+user.role === 'super_admin'. Member fetch has no is_active filter — that
+column doesn't exist on public.users (confirmed live; columns are id,
+email, name, role, department, avatar_url, created_at, updated_at,
+auth_id, can_assign).
+Dashboard.js's isLead "Needs Review" tab (tab1) filter — unassigned OR
+assigned-to-self — was found to already be correctly implemented from
+an earlier session; no change was needed there (see PART 4 in this
+session's request; verified rather than reflexively "fixed").
+See "Known Gaps" above for what's still open (Gap 4 — admin
+reassignment via AdminPanel specifically, not via TaskPanel).
 
 ## task_attachments Table
 Created in Supabase (2026-07-16). Columns: id, task_id, request_id,
@@ -675,3 +729,13 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
   literal, so matched the real convention instead of being the first
   call site to reach for the unused constant
   - Build confirmed zero errors; committed as v153 and pushed to origin/main
+- v154: Task Assignment Flow — see the dedicated section above for the
+  full writeup (RLS correction details, AssigneeDropdown behavior,
+  Dashboard.js "Needs Review" verified-already-correct finding). SQL
+  (sql/08-task-assignment-visibility.sql) confirmed applied in Supabase
+  before the TaskPanel.js changes were built. Introduced the "Known
+  Gaps" section (numbered per the user's own external tracking) — Gap 1
+  resolved v153, Gap 4 partially done v154 (leads/super_admin can
+  reassign via TaskPanel; AdminPanel-direct reassignment still pending,
+  lower priority)
+  - Build confirmed zero errors; committed as v154 and pushed to origin/main

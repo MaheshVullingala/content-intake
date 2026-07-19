@@ -289,6 +289,29 @@ documented below — if a gap number is missing, it hasn't come up yet.
   TaskPanel" gap noted under Gap 4 (admin reassignment) above — the
   remaining lower-priority piece (reassigning directly from
   AdminPanel.js) is still not done.
+- Gap 6 — Section-specific questions from Editorial Team: RESOLVED
+  v159. TaskPanel.js gained a QUESTION_SECTIONS list matching
+  EditSectionModal.js's real SECTION_CONFIG keys exactly (the spec
+  originally said `promo` and omitted `resources` — corrected to
+  `promo_section` and added `resources` before implementing). The
+  section <select> only renders for editorial_team/seo_team (brand_team
+  and design_team don't ask content questions). handleAskQuestion
+  prefixes the saved question with `[section_key] ` when a section is
+  picked. TaskBoard.js regex-parses that tag
+  (`/^\[(\w+)\]/`) off the first open editorial/seo needs_info task and
+  passes it to PagePreview as highlightSection, which renders an amber
+  "✏️ Editorial Team has a question about this section" banner at the
+  top of the matching section.
+  Deliberately NOT done, per explicit decision: reintroducing
+  setEditModal/EditSectionModal into TaskBoardOverview.js's card click
+  handler. That mechanic was removed in v150 in favor of stakeholders
+  editing via PagePreview's own ✎ buttons (which already auto-answer
+  the open question on save via handleStakeholderEditSaved) — bringing
+  back a modal-from-card path would have reintroduced the exact dual
+  editing paths v150 eliminated. The highlightSection banner satisfies
+  the actual goal (point the stakeholder at the right section) without
+  it. TaskBoardOverview.js's card click handler is therefore unchanged
+  from v150.
 
 ## Duplicate publish implementations — found 2026-07-19, not consolidated
 TaskPanel.js's handlePublish and WebTeamView.js's handlePublish are two
@@ -861,3 +884,8 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
   TaskBoardOverview.js; TaskBoardOverview.js gates it to
   admin/super_admin on an expanded, unlocked card. Build confirmed zero
   errors; committed as v158 and pushed to origin/main
+- v159: Gap 6 (section-specific questions from Editorial Team) resolved
+  — see "Known Gaps" above for the full writeup, including the
+  deliberate decision to skip reintroducing the modal-from-card-click
+  mechanic that v150 removed. Build confirmed zero errors; committed as
+  v159 and pushed to origin/main

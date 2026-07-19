@@ -6,7 +6,6 @@ import { logAudit } from "@/lib/auditLogger";
 import { getFlaggedImageFields } from "@/lib/imageFields";
 import BrandFilesPanel from "@/components/BrandFilesPanel";
 
-const SECTION_TAGS  = ["Banner", "Overview", "Other"];
 const MAX_BRAND_MB  = 10 * 1024 * 1024;
 const MAX_DESIGN_MB = 20 * 1024 * 1024;
 
@@ -28,7 +27,6 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   const [saving,      setSaving]      = useState(false);
   const [question,    setQuestion]    = useState("");
   const [uploading,   setUploading]   = useState(false);
-  const [sectionTag,  setSectionTag]  = useState("Banner");
   const [myFiles,     setMyFiles]     = useState([]);
   const [error,       setError]       = useState("");
   // Web team request-changes modal
@@ -141,21 +139,18 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   };
 
   // ── File upload (bucket: "attachments" — same as v1 ImageField) ────────────
-  const isBrand  = user.role === "brand_team";
-  const maxBytes = isBrand ? MAX_BRAND_MB : MAX_DESIGN_MB;
-  const accept   = isBrand ? ".jpg,.jpeg,.png" : ".jpg,.jpeg,.png,.webp";
-
+  // Brand team only now — design team uploads via the per-field "Images to
+  // Map" mapping below instead of a generic bucket.
   const uploadFile = async (file) => {
     if (!file) return;
-    if (file.size > maxBytes) {
-      setError(`File too large — max ${isBrand ? "10" : "20"} MB.`);
+    if (file.size > MAX_BRAND_MB) {
+      setError("File too large — max 10 MB.");
       return;
     }
     setUploading(true); setError("");
     try {
       const ext  = file.name.split(".").pop();
-      const tag  = isBrand ? "brand" : sectionTag.toLowerCase();
-      const path = `tasks/${req.id}/${user.role}/${tag}/${Date.now()}.${ext}`;
+      const path = `tasks/${req.id}/${user.role}/brand/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("attachments").upload(path, file);
       if (upErr) throw upErr;
@@ -170,7 +165,7 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
         file_size:    file.size,
         storage_path: path,
         public_url:   publicUrl,
-        section_tag:  isBrand ? null : sectionTag,
+        section_tag:  null,
       });
       if (dbErr) throw dbErr;
       await fetchMyFiles();
@@ -345,39 +340,6 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
     </div>
   );
 
-  // ── Upload zone: Design Team (section-tagged) ───────────────────────────────
-  const UploadZone = () => (
-    <>
-      <div className="field-wrap">
-        <label className="field-label">Section</label>
-        <select className="select" value={sectionTag}
-                onChange={e => setSectionTag(e.target.value)}>
-          {SECTION_TAGS.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
-      </div>
-      <div
-        style={{
-          border: "2px dashed var(--color-border)", borderRadius: "var(--radius-lg)",
-          padding: "1.5rem", textAlign: "center", cursor: "pointer",
-          background: "var(--color-ghost)", marginBottom: 12,
-          transition: "border-color 0.15s",
-        }}
-        onClick={() => fileRef.current?.click()}
-      >
-        <div style={{ fontSize: 22, marginBottom: 4 }}>{uploading ? "⏳" : "📤"}</div>
-        <div style={{ fontSize: "var(--text-sm)", color: "var(--color-dim)" }}>
-          {uploading ? "Uploading…" : "Click to upload JPEG / PNG / WebP"}
-        </div>
-        <div className="field-hint">Max 20 MB per file</div>
-        <input
-          ref={fileRef} type="file" accept={accept}
-          style={{ display: "none" }}
-          onChange={e => { uploadFile(e.target.files[0]); e.target.value = ""; }}
-        />
-      </div>
-    </>
-  );
-
   // ── Upload zone: Brand Team (no section mapping) ────────────────────────────
   const BrandUploadZone = () => (
     <div
@@ -395,7 +357,7 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
       </div>
       <div className="field-hint">Max 10 MB per file</div>
       <input
-        ref={fileRef} type="file" accept={accept}
+        ref={fileRef} type="file" accept=".jpg,.jpeg,.png"
         style={{ display: "none" }}
         onChange={e => { uploadFile(e.target.files[0]); e.target.value = ""; }}
       />
@@ -616,29 +578,16 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
             </div>
           )}
           <BrandFilesPanel requestId={req.id} supabase={supabase} />
-          <FileList />
-          {(isActive || isPendingApproval) && !isWaitingBrand && (
-            <>
-              {!isPendingApproval && <UploadZone />}
-              <button
-                className="btn-primary btn-full"
-                onClick={handleSubmitApproval}
-                disabled={saving || myFiles.length === 0 || isPendingApproval}
-              >
-                {saving              ? "Submitting…"
-                 : isPendingApproval ? "✓ Awaiting Stakeholder Approval"
-                 :                    "👁️ Submit for Stakeholder Approval"}
-              </button>
-            </>
-          )}
         </div>
       )}
 
       {/* ── DESIGN TEAM: Images to Map ──────────────────────────────────
-          One row per stakeholder-flagged image field. Upload target for
-          each row is section_tag = `design_team:{fieldId}`, independent
-          of the generic Banner/Overview/Other bucket above. ────────────── */}
-      {user.role === "design_team" && flaggedFields.length > 0 && (
+          Only upload path for design_team now — one row per stakeholder-
+          flagged image field. Upload target for each row is section_tag =
+          `design_team:{fieldId}`. Always rendered (not gated on having
+          flagged fields) so Submit for Approval always has somewhere to
+          live, even on a request with nothing flagged. ────────────────── */}
+      {user.role === "design_team" && (
         <div className="card">
           <h3 style={{ margin: "0 0 4px", fontSize: "var(--text-base)", fontWeight: 600 }}>
             🗺️ Images to Map
@@ -646,6 +595,11 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
           <p className="field-hint" style={{ marginBottom: 12 }}>
             Upload your resized image for each field the stakeholder flagged.
           </p>
+          {flaggedFields.length === 0 && (
+            <div className="alert alert-info mb-8" style={{ fontSize: "var(--text-xs)" }}>
+              No images flagged by stakeholder yet.
+            </div>
+          )}
           <div className="flex-col gap-8">
             {flaggedFields.map(field => {
               const mapped = getMappedFile(field.fieldId);
@@ -711,6 +665,17 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
               e.target.value = "";
             }}
           />
+          {(isActive || isPendingApproval) && !isWaitingBrand && (
+            <button
+              className="btn-primary btn-full mt-12"
+              onClick={handleSubmitApproval}
+              disabled={saving || myFiles.length === 0 || isPendingApproval}
+            >
+              {saving              ? "Submitting…"
+               : isPendingApproval ? "✓ Awaiting Stakeholder Approval"
+               :                    "👁️ Submit for Stakeholder Approval"}
+            </button>
+          )}
         </div>
       )}
 

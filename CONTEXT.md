@@ -589,3 +589,29 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
     Kept as a reusable capability, not removed, but nothing currently
     exercises it — worth knowing if it looks unused in a future search
   - Build confirmed zero errors; committed as v150 and pushed to origin/main
+- v151: TaskPanel.js — design_team no longer has a general/unmapped
+  upload path, only "Images to Map":
+  - "Design Assets" card now just header + brand-wait toggle +
+    BrandFilesPanel. <FileList/> and the general upload+submit block
+    removed from it.
+  - "Images to Map" card changed from flaggedFields.length > 0-gated to
+    ALWAYS rendering for design_team (empty-state message "No images
+    flagged by stakeholder yet." when there's nothing to map) — the
+    Submit for Stakeholder Approval button moved here, at the bottom,
+    same gating as before ((isActive || isPendingApproval) &&
+    !isWaitingBrand to show; disabled on saving/no-files/pending).
+    Decided deliberately: the previous flaggedFields-gated card would
+    have left design_team with literally no way to submit for approval
+    on a request where the stakeholder never flagged any image field
+  - Confirmed myFiles/fetchMyFiles must stay — NOT design_team-upload-
+    only as the task description assumed. getMappedFile() (Images to
+    Map's "is this field already mapped" lookup) reads from myFiles,
+    and brand_team's FileList/handleDeleteFile/submit-gating still use
+    it directly too. Nothing removed there.
+  - Dead code removed: UploadZone component, SECTION_TAGS constant,
+    sectionTag state, and the isBrand-ternary branches inside
+    uploadFile (only BrandUploadZone calls it now, always brand-only —
+    accept=".jpg,.jpeg,.png" inlined directly into BrandUploadZone).
+    FileList, BrandUploadZone, fileRef all kept — brand_team still
+    uses them unchanged.
+  - Build confirmed zero errors; committed as v151 and pushed to origin/main

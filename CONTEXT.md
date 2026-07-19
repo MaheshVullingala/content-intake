@@ -68,6 +68,10 @@ seo_team, design_team, web_team
   (TEXT) — confirmed applied 2026-07-19, for the SEO Team AI-generation
   feature (see session log below); existing seo_page_location,
   seo_meta_title, seo_meta_description, seo_meta_keywords predate this file
+- sql/07-tasks-web-team-request-changes.sql — second PERMISSIVE tasks
+  UPDATE policy letting web_team update any task on a request where
+  web_team also has a task — confirmed applied 2026-07-19; resolves the
+  "RLS Known Issue" below
 
 ## Key tasks table columns (tasks-migration.sql)
 - id, request_id, team_role, status, is_required
@@ -196,13 +200,19 @@ seo_team, design_team, web_team
   brand_team's task_attachments for a request; used by design_team
   (TaskPanel) and web_team (WebTeamView).
 
-## RLS Known Issue
-TaskPanel Web Team "Request Changes" sets another team's task to
+## RLS Known Issue — RESOLVED 2026-07-19 (v153)
+~~TaskPanel Web Team "Request Changes" sets another team's task to
 pending_action, but current RLS only allows web_team to update rows
-where team_role = 'web_team'. Will silently fail unless:
-  a) RLS policy is expanded to allow web_team cross-task updates, OR
-  b) Moved to a server-side API route (/api/tasks/request-changes)
-TODO comment is in TaskPanel.js handleRequestChanges.
+where team_role = 'web_team'.~~ Fixed via
+sql/07-tasks-web-team-request-changes.sql — a second PERMISSIVE
+tasks UPDATE policy allowing web_team to update any task on a request
+where web_team also has a task (Postgres ORs multiple permissive
+policies together, so this only widens access, never narrows the base
+tasks_update policy). Confirmed applied in Supabase. Same commit also
+added the missing target-team notification insert on request-changes
+(the web_team-own-task pause was already implemented from an earlier
+session, just the notification was missing). See handleRequestChanges
+in TaskPanel.js.
 
 ## overall_status / web_team unlock (2026-07-17)
 Root cause of stakeholder-approves-but-badge-stays-stale bug:
@@ -279,8 +289,8 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
    approval.given). Not yet logged: request.submitted, approval.rejected,
    attachment.uploaded, user.role_switched, task.assigned (reassign
    dropdown), rejection via TaskBoardOverview's handleReject, publish.
-4. RLS known issue (below) — web_team "Request Changes" cross-task update
-   still unresolved.
+4. ~~RLS known issue — web_team "Request Changes" cross-task update~~
+   RESOLVED v153, see below.
 5. End-to-end browser testing — login as each role, submit a request,
    advance through full workflow, verify TaskBoard routing, confirm
    notifications arrive, test impersonation switcher.
@@ -651,3 +661,17 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
     syncOverallStatus/tryUnlockWebTeam completion flow rather than
     duplicating it
   - Build confirmed zero errors; committed as v152 and pushed to origin/main
+- v153: fixed the "RLS Known Issue" (web_team Request Changes cross-task
+  update) — see that section above for the full writeup. Also found
+  while re-reading handleRequestChanges: the web_team-own-task pause was
+  already implemented from an earlier session (contrary to the task's
+  assumption that it was missing) — only the target-team notification
+  insert was actually absent; added it, fire-and-forget with try/catch,
+  matching the exact pattern already used elsewhere in this file and in
+  TaskBoardOverview.js. Used the raw string "changes_requested" rather
+  than importing NOTIFICATION_TYPES.CHANGES_REQUESTED from constants.js
+  — that constants object is defined but never imported/used anywhere
+  in the codebase; every existing notification insert uses a raw string
+  literal, so matched the real convention instead of being the first
+  call site to reach for the unused constant
+  - Build confirmed zero errors; committed as v153 and pushed to origin/main

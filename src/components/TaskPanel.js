@@ -351,8 +351,9 @@ Return this exact format:
     try {
       const targetTask = tasks.find(t => t.team_role === changeTeam);
       if (!targetTask) { setError("That team has no task for this request."); return; }
-      // TODO: current RLS allows web_team to update only own task rows.
-      // Move this to an API route if the policy blocks cross-team writes.
+      // Cross-team update — requires the tasks_update_web_team_request_changes
+      // RLS policy (sql/07-tasks-web-team-request-changes.sql); the base
+      // tasks_update policy only allows a team to update its own task rows.
       const { error: err } = await supabase
         .from("tasks")
         .update({
@@ -373,6 +374,24 @@ Return this exact format:
         })
         .eq("request_id", req.id)
         .eq("team_role",  "web_team");
+      // Notify the target team — fire and forget, never let a notification
+      // failure (e.g. RLS 403) block or delay the request-changes flow.
+      try {
+        const { data: targetUsers } = await supabase
+          .from("users").select("id").eq("role", changeTeam);
+        if (targetUsers?.length) {
+          supabase.from("notifications").insert(
+            targetUsers.map(u => ({
+              user_id:    u.id,
+              type:       "changes_requested",
+              title:      "Web Team requested changes",
+              message:    `Web Team needs changes for "${req.page_title}": "${note}"`,
+              request_id: req.id,
+              action_url: `/requests/${req.id}`,
+            }))
+          ).then(() => {}).catch(() => {});
+        }
+      } catch { /* notification failure must not block the request-changes flow */ }
       setShowChanges(false);
       setChangeNote("");
       onRefresh?.();

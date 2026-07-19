@@ -61,6 +61,13 @@ seo_team, design_team, web_team
   changing priority) which the stakeholder-side field used to collide with
   — AdminTaskSetup's task-creation write was silently nulling the
   stakeholder's original reason even when the admin never touched priority
+- sql/05-promo-bg-image-ref.sql — documents requests.promo_bg_image_ref
+  (JSONB) — confirmed present live; see "Image ref fields" below for the
+  buildPayload bug this was tied to
+- sql/06-seo-og-fields.sql — adds requests.seo_og_title, seo_og_description
+  (TEXT) — confirmed applied 2026-07-19, for the SEO Team AI-generation
+  feature (see session log below); existing seo_page_location,
+  seo_meta_title, seo_meta_description, seo_meta_keywords predate this file
 
 ## Key tasks table columns (tasks-migration.sql)
 - id, request_id, team_role, status, is_required
@@ -615,3 +622,32 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
     FileList, BrandUploadZone, fileRef all kept — brand_team still
     uses them unchanged.
   - Build confirmed zero errors; committed as v151 and pushed to origin/main
+- v152: AI-powered SEO generation for seo_team in TaskPanel.js. Several
+  spec/reality mismatches caught and corrected before implementing (same
+  class of bug as promo_bg_image_ref/r.tasks earlier this session):
+  - Real requests columns are seo_meta_title/seo_meta_description/
+    seo_meta_keywords/seo_page_location — NOT seo_title/seo_description/
+    seo_keywords/page_url as originally specified. Used the real names
+    throughout: seoFields state, the AI-generated JSON shape, and the
+    DB save. seo_og_title/seo_og_description didn't exist at all —
+    added via sql/06-seo-og-fields.sql (confirmed applied 2026-07-19)
+  - /api/ai's actual contract (checked src/app/api/ai/route.js) is
+    POST {prompt, systemPrompt?} → {text}; max_tokens is hardcoded to
+    1000 server-side and NOT read from the request body at all, so the
+    spec's {prompt, max_tokens: 500} would have silently done nothing.
+    Followed the existing SectionAIAssist.js calling convention instead:
+    strip stray ```json fences from data.text, then JSON.parse
+  - SEO_FIELD_CONFIGS (module-level) drives all 5 fields: Meta
+    Title/OG Title (50-70 chars), Meta Description/OG Description
+    (120-160 chars), Meta Keywords (comma-separated, shown as a term
+    count, no color coding — per spec). seoFields lazy-initialized from
+    req.seo_meta_title etc. on mount (pre-fills immediately, no flash)
+  - handleGenerateSEO builds a prompt with real page context
+    (parseKbTitles/parseFaTitles over kb_cards/fa_items), calls
+    /api/ai, merges the parsed result into seoFields
+  - handleApproveSEO saves all 5 fields to requests, then calls the
+    existing handleComplete() (same function editorial_team's "Mark
+    Content Approved" already uses) — reuses the established
+    syncOverallStatus/tryUnlockWebTeam completion flow rather than
+    duplicating it
+  - Build confirmed zero errors; committed as v152 and pushed to origin/main

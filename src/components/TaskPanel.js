@@ -21,6 +21,33 @@ function fileIcon(name = "") {
        : "📎";
 }
 
+// ── SEO Team fields ──────────────────────────────────────────────────────────
+// Real requests table columns — NOT seo_title/seo_description/seo_keywords/
+// seo_og_*; seo_og_title/seo_og_description are new (see
+// sql/06-seo-og-fields.sql — must be applied before Approve & Complete can
+// save them).
+const SEO_FIELD_CONFIGS = [
+  { key: "seo_meta_title",       label: "Meta Title",       type: "text",     min: 50,  max: 70  },
+  { key: "seo_meta_description", label: "Meta Description", type: "textarea", min: 120, max: 160 },
+  { key: "seo_meta_keywords",    label: "Meta Keywords",    type: "keywords" },
+  { key: "seo_og_title",         label: "OG Title",         type: "text",     min: 50,  max: 70  },
+  { key: "seo_og_description",   label: "OG Description",   type: "textarea", min: 120, max: 160 },
+];
+
+const parseKbTitles = (kb_cards) => {
+  try {
+    const cards = Array.isArray(kb_cards) ? kb_cards : JSON.parse(kb_cards || "[]");
+    return cards.map(c => c.title).filter(Boolean).join(", ");
+  } catch { return ""; }
+};
+
+const parseFaTitles = (fa_items) => {
+  try {
+    const items = Array.isArray(fa_items) ? fa_items : JSON.parse(fa_items || "[]");
+    return items.map(i => i.title).filter(Boolean).join(", ");
+  } catch { return ""; }
+};
+
 export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   const myTask = tasks.find(t => t.team_role === user.role) ?? null;
 
@@ -35,6 +62,16 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   const [changeNote,  setChangeNote]  = useState("");
   // Design team: which flagged field a mapped-image upload targets
   const [mappingField, setMappingField] = useState(null);
+  // SEO team — pre-filled from existing DB values on mount
+  const [seoFields, setSeoFields] = useState(() => ({
+    seo_meta_title:       req.seo_meta_title       || "",
+    seo_meta_description: req.seo_meta_description || "",
+    seo_meta_keywords:    req.seo_meta_keywords    || "",
+    seo_og_title:         req.seo_og_title         || "",
+    seo_og_description:   req.seo_og_description   || "",
+  }));
+  const [generating, setGenerating] = useState(false);
+  const [genError,   setGenError]   = useState("");
 
   const fileRef       = useRef();
   const mappedFileRef = useRef();
@@ -100,6 +137,68 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
       ]).then(() => onRefresh?.()).catch(() => {});
     }
   };
+
+  // ── SEO team: AI generation + save-and-complete ─────────────────────────────
+  const handleGenerateSEO = async () => {
+    setGenerating(true); setGenError("");
+    try {
+      const prompt = `You are an SEO specialist for Cadence Design Systems, a leading EDA software company.
+
+Generate SEO metadata for this page:
+- Page Type: ${req.page_type || ""}
+- Page Title: ${req.page_title || ""}
+- Page Location: ${req.seo_page_location || ""}
+- Overview: ${req.overview_impact || ""}. ${req.overview_description || ""}
+- Key Benefits: ${parseKbTitles(req.kb_cards)}
+- Features: ${parseFaTitles(req.fa_items)}
+
+Rules:
+- Meta title: 50-70 chars, include "| Cadence" at end
+- Meta description: 120-160 chars, include soft CTA like "Learn how..." or "Discover..."
+- Keywords: 8-10 relevant terms, comma separated
+- OG title: same as meta title or slight variation
+- OG description: same as meta description
+- Return ONLY valid JSON, no markdown, no explanation
+
+Return this exact format:
+{
+  "seo_meta_title": "...",
+  "seo_meta_description": "...",
+  "seo_meta_keywords": "...",
+  "seo_og_title": "...",
+  "seo_og_description": "..."
+}`;
+
+      const res = await fetch("/api/ai", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ prompt }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const clean  = (data.text || "").replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(clean);
+      setSeoFields(prev => ({ ...prev, ...parsed }));
+    } catch (e) {
+      setGenError("Failed to generate SEO content. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleApproveSEO = async () => {
+    setError("");
+    const { error: reqErr } = await supabase.from("requests").update({
+      seo_meta_title:       seoFields.seo_meta_title,
+      seo_meta_description: seoFields.seo_meta_description,
+      seo_meta_keywords:    seoFields.seo_meta_keywords,
+      seo_og_title:         seoFields.seo_og_title,
+      seo_og_description:   seoFields.seo_og_description,
+    }).eq("id", req.id);
+    if (reqErr) { setError(reqErr.message); return; }
+    await handleComplete();
+  };
+
   const handleSubmitApproval = async () => {
     const ok = await doUpdate({ status: "pending_approval" });
     if (!ok) return;
@@ -518,15 +617,81 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
       {/* ── SEO TEAM ─────────────────────────────────────────────────── */}
       {user.role === "seo_team" && (isActive || myTask.status === "needs_info") && (
         <div className="card">
-          <p className="field-hint" style={{ marginBottom: 12 }}>
-            Review meta title, description and keywords in the left panel.
-          </p>
+          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600 }}>
+            🔍 SEO Metadata
+          </h3>
+
           <button
-            className="btn-primary btn-full"
-            onClick={handleComplete}
+            className="btn-ghost btn-full mb-12"
+            onClick={handleGenerateSEO}
+            disabled={generating}
+          >
+            {generating ? "Generating…" : "✨ Generate SEO with AI"}
+          </button>
+
+          {genError && <div className="alert alert-error mb-12">{genError}</div>}
+
+          <div className="flex-col gap-12">
+            {SEO_FIELD_CONFIGS.map(f => {
+              const val = seoFields[f.key] || "";
+              if (f.type === "keywords") {
+                const kwCount = val.split(",").map(s => s.trim()).filter(Boolean).length;
+                return (
+                  <div className="field-wrap" key={f.key} style={{ marginBottom: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between",
+                                  alignItems: "center", marginBottom: 4 }}>
+                      <label className="field-label" style={{ margin: 0 }}>{f.label}</label>
+                      <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "monospace",
+                                     color: "var(--color-silver)" }}>
+                        {kwCount} term{kwCount !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <textarea
+                      className="textarea" rows={2}
+                      placeholder="keyword one, keyword two, ..."
+                      value={val}
+                      onChange={e => setSeoFields(p => ({ ...p, [f.key]: e.target.value }))}
+                    />
+                  </div>
+                );
+              }
+              const len     = val.length;
+              const inRange = len >= f.min && len <= f.max;
+              return (
+                <div className="field-wrap" key={f.key} style={{ marginBottom: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between",
+                                alignItems: "center", marginBottom: 4 }}>
+                    <label className="field-label" style={{ margin: 0 }}>{f.label}</label>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, fontFamily: "monospace",
+                      color: inRange ? "var(--color-success)" : "#d97706",
+                    }}>
+                      {len}/{f.max}
+                    </span>
+                  </div>
+                  {f.type === "textarea"
+                    ? <textarea
+                        className="textarea" rows={2}
+                        value={val}
+                        onChange={e => setSeoFields(p => ({ ...p, [f.key]: e.target.value }))}
+                      />
+                    : <input
+                        className="input"
+                        value={val}
+                        onChange={e => setSeoFields(p => ({ ...p, [f.key]: e.target.value }))}
+                      />
+                  }
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            className="btn-primary btn-full mt-12"
+            onClick={handleApproveSEO}
             disabled={saving}
           >
-            {saving ? "Saving…" : "✅ Mark SEO Approved"}
+            {saving ? "Saving…" : "✅ Approve & Complete"}
           </button>
         </div>
       )}

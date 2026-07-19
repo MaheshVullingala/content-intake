@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
+import AssigneeDropdown from "@/components/AssigneeDropdown";
 
 async function fetchTaskFiles(req, supabase) {
   const { data } = await supabase
@@ -26,6 +27,7 @@ const STATUS_PRIORITY = {
 
 export default function TaskBoardOverview({ req, user, tasks, supabase, onRefresh, singleColumn = false }) {
   const isStakeholder = user.role === "stakeholder";
+  const isAdmin        = ["admin", "super_admin"].includes(user.role);
 
   const [fileMap,     setFileMap]     = useState({});
   const [answers,     setAnswers]     = useState({});
@@ -445,6 +447,11 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                     ? "Waiting for Brand Team to deliver assets before this can start."
                     : `Not started yet — waiting on ${teamMeta?.label ?? task.team_role}.`}
                 </div>
+              )}
+
+              {/* ── Admin: reassign any task once expanded ────────────── */}
+              {isAdmin && isExpanded && !isLocked && (
+                <AssigneeDropdown task={task} req={req} user={user} supabase={supabase} onRefresh={onRefresh} />
               )}
             </div>
           );

@@ -1,5 +1,5 @@
 # Content Intake Portal — Project Context
-Last updated: 2026-07-18
+Last updated: 2026-07-19
 
 ## Project
 Internal web app for Cadence Design Systems.
@@ -276,6 +276,19 @@ documented below — if a gap number is missing, it hasn't come up yet.
     returning visits; the celebratory message is layered on top via a
     separate publishSuccess local-state flag, shown only for the
     person who just clicked the button in that session.
+- Gap 5 — Admin task reassignment from TaskBoardOverview: RESOLVED v158.
+  AssigneeDropdown was extracted verbatim out of TaskPanel.js into its
+  own file, src/components/AssigneeDropdown.js, and is now imported by
+  both TaskPanel.js (unchanged call site/behavior) and
+  TaskBoardOverview.js (new). In TaskBoardOverview.js it renders inside
+  each task card's expanded content, gated to
+  `isAdmin && isExpanded && !isLocked` where
+  `isAdmin = ["admin", "super_admin"].includes(user.role)` — the
+  stakeholder view of TaskBoardOverview is untouched since isAdmin is
+  false there. This finally closes the "reassign without opening
+  TaskPanel" gap noted under Gap 4 (admin reassignment) above — the
+  remaining lower-priority piece (reassigning directly from
+  AdminPanel.js) is still not done.
 
 ## Duplicate publish implementations — found 2026-07-19, not consolidated
 TaskPanel.js's handlePublish and WebTeamView.js's handlePublish are two
@@ -391,6 +404,11 @@ user.role === 'super_admin'. Member fetch has no is_active filter — that
 column doesn't exist on public.users (confirmed live; columns are id,
 email, name, role, department, avatar_url, created_at, updated_at,
 auth_id, can_assign).
+AssigneeDropdown now lives in its own file, src/components/
+AssigneeDropdown.js (extracted from TaskPanel.js in v158), imported by
+both TaskPanel.js and TaskBoardOverview.js — see Gap 5 above for the
+TaskBoardOverview.js integration (admin/super_admin only, per expanded
+card).
 Dashboard.js's isLead "Needs Review" tab (tab1) filter — unassigned OR
 assigned-to-self — was found to already be correctly implemented from
 an earlier session; no change was needed there (see PART 4 in this
@@ -836,3 +854,10 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
   (.in("role", ["admin","super_admin"]) instead of .eq("role","admin"))
   per follow-up request, applied to both handlePublish implementations.
   Build confirmed zero errors; committed as v157 and pushed to origin/main
+- v158: Gap 5 (admin task reassignment from TaskBoardOverview) resolved
+  — see "Known Gaps" and "Task Assignment Flow" above. AssigneeDropdown
+  extracted from TaskPanel.js into its own component,
+  src/components/AssigneeDropdown.js, imported by both TaskPanel.js and
+  TaskBoardOverview.js; TaskBoardOverview.js gates it to
+  admin/super_admin on an expanded, unlocked card. Build confirmed zero
+  errors; committed as v158 and pushed to origin/main

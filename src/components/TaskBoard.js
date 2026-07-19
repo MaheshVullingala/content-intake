@@ -6,7 +6,7 @@ import TaskPanel         from "@/components/TaskPanel";
 import PagePreview       from "@/components/PagePreview";
 import WebTeamView       from "@/components/WebTeamView";
 import EditSectionModal  from "@/components/EditSectionModal";
-import { OVERALL_STATUS_META, getTasksForRequest } from "@/lib/taskUtils";
+import { OVERALL_STATUS_META, getTasksForRequest, updateTask } from "@/lib/taskUtils";
 
 const TEAM_ROLES = new Set([
   "editorial_team", "brand_team", "seo_team", "design_team", "web_team",
@@ -67,6 +67,23 @@ export default function TaskBoard({
   useEffect(() => { fetchTasks(); fetchDesignAttachments(); }, [req.id]);
 
   const handleRefresh = () => { fetchTasks(); fetchDesignAttachments(); onRefresh?.(); };
+
+  // After the stakeholder edits content via a PagePreview ✎ button in
+  // response to an editorial/seo question, auto-answer whichever
+  // needs_info task(s) prompted it — the edit isn't tied to one specific
+  // task, so every currently-open editorial/seo question gets resolved.
+  const handleStakeholderEditSaved = async () => {
+    setEditModal(null);
+    const needsInfoTasks = localTasks.filter(t =>
+      t.status === "needs_info" && ["editorial_team", "seo_team"].includes(t.team_role));
+    await Promise.all(needsInfoTasks.map(t => updateTask(t.id, {
+      status:          "in_progress",
+      answer:          "Content has been updated",
+      answer_at:       new Date().toISOString(),
+      answer_given_by: user.id,
+    }, supabase)));
+    handleRefresh();
+  };
 
   // ── Shared page header ──────────────────────────────────────────────
   function Header() {
@@ -230,9 +247,14 @@ export default function TaskBoard({
 
   // ── View 3: Stakeholder → TaskBoardOverview (+ PagePreview while a task
   //           is pending their approval, so they can see the actual page
-  //           — including any Design Team image — before approving) ─────
+  //           — including any Design Team image — before approving; or
+  //           while editorial/seo has a needs_info question, so they can
+  //           resolve it by editing content directly via PagePreview's
+  //           own ✎ buttons instead of just typing a text answer) ──────
   if (isStakeholder) {
     const hasPendingApproval = localTasks.some(t => t.status === "pending_approval");
+    const hasNeedsInfo = localTasks.some(t =>
+      t.status === "needs_info" && ["editorial_team", "seo_team"].includes(t.team_role));
 
     return (
       <div>
@@ -241,13 +263,16 @@ export default function TaskBoard({
           <div className="alert alert-info mt-12">
             ⏳ An administrator is reviewing your request and will set up tasks shortly.
           </div>
-        ) : hasPendingApproval ? (
+        ) : (hasPendingApproval || hasNeedsInfo) ? (
           <div style={TWO_COL}>
             <div style={{ overflowY: "auto" }}>
               <PagePreview
                 req={req}
                 pageType={req.page_type}
                 attachments={designAttachments}
+                editorialMode={hasNeedsInfo}
+                activeEditSection={editModal?.section}
+                onEditSection={(section) => setEditModal({ section, data: req })}
               />
             </div>
             <div style={{ overflowY: "auto",
@@ -262,6 +287,17 @@ export default function TaskBoard({
                 singleColumn
               />
             </div>
+            {editModal && (
+              <EditSectionModal
+                section={editModal.section}
+                data={editModal.data}
+                requestId={req.id}
+                supabase={supabase}
+                user={user}
+                onClose={() => setEditModal(null)}
+                onSaved={handleStakeholderEditSaved}
+              />
+            )}
           </div>
         ) : (
           <TaskBoardOverview

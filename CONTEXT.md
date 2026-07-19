@@ -559,3 +559,33 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
     already-approved indicator are now also gated behind isExpanded
     (previously always visible whenever status matched)
   - Build confirmed zero errors; committed as v149 and pushed to origin/main
+- v150: reworked v149's stakeholder content-editing flow — replaced the
+  task-card-click-opens-a-modal approach with PagePreview's own ✎ edit
+  buttons (the same ones editorial_team already uses), on user feedback
+  that editing via the actual page preview is a better UX than a
+  detached modal triggered from a task card:
+  - TaskBoard.js stakeholder routing: two-column layout (PagePreview +
+    TaskBoardOverview, singleColumn) now triggers on hasPendingApproval
+    OR hasNeedsInfo (needs_info from editorial_team/seo_team).
+    editorialMode={hasNeedsInfo} specifically (not the OR) — a pure
+    approval flow with no question doesn't get edit buttons.
+    handleStakeholderEditSaved answers every currently-open
+    editorial/seo needs_info task (not just one — a PagePreview edit
+    isn't tied to a specific task the way a card click was)
+  - TaskBoardOverview.js: removed EditSectionModal import/render,
+    editModal state, handleEditSaved, opensEditModal, and
+    guessSection/SECTION_KEYWORDS entirely — no longer needed since the
+    stakeholder now picks the section by clicking its own ✎ button
+    directly, rather than the app guessing from question text.
+    handleCardClick is back to two branches (locked→no-op, else→toggle
+    expand); the needs_info block is one isExpanded-gated block again,
+    showing "Use the edit buttons (✎) on the preview..." for
+    isStakeholder && editorial/seo, else the original answer textarea
+  - EditSectionModal.js's section=null picker mode (added in v149) is
+    UNCHANGED and still there, but is now dormant — neither
+    editorial_team's own flow nor this reworked stakeholder flow ever
+    passes section=null anymore (TaskBoard.js's onEditSection always
+    receives a concrete section from whichever ✎ button was clicked).
+    Kept as a reusable capability, not removed, but nothing currently
+    exercises it — worth knowing if it looks unused in a future search
+  - Build confirmed zero errors; committed as v150 and pushed to origin/main

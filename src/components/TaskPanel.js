@@ -72,6 +72,11 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   }));
   const [generating, setGenerating] = useState(false);
   const [genError,   setGenError]   = useState("");
+  // Web team — shown once, right after this session's own publish action.
+  // Lives outside the isActive-gated web_team card, since publishing
+  // flips the task to "completed" and that whole card unmounts on the
+  // next render once onRefresh() lands.
+  const [publishSuccess, setPublishSuccess] = useState(false);
 
   const fileRef       = useRef();
   const mappedFileRef = useRef();
@@ -410,6 +415,36 @@ Return this exact format:
         .update({ overall_status: "published", published_at: new Date().toISOString() })
         .eq("id", req.id);
       if (reqErr) { setError(reqErr.message); return; }
+
+      // Notify stakeholder + admins — fire and forget, never let a
+      // notification failure block the publish flow.
+      try {
+        const notifications = [];
+        if (req.created_by) {
+          notifications.push({
+            user_id:    req.created_by,
+            type:       "published",
+            title:      "Your page has been published!",
+            message:    `"${req.page_title}" has been published to AEM by the Web Team.`,
+            request_id: req.id,
+            action_url: `/requests/${req.id}`,
+          });
+        }
+        const { data: admins } = await supabase.from("users").select("id").in("role", ["admin", "super_admin"]);
+        (admins || []).forEach(a => notifications.push({
+          user_id:    a.id,
+          type:       "published",
+          title:      "Page published",
+          message:    `"${req.page_title}" has been published.`,
+          request_id: req.id,
+          action_url: `/requests/${req.id}`,
+        }));
+        if (notifications.length) {
+          supabase.from("notifications").insert(notifications).then(() => {}).catch(() => {});
+        }
+      } catch { /* notification failure must not block publish */ }
+
+      setPublishSuccess(true);
       onRefresh?.();
     } catch (e) { setError(e.message || "Failed to publish."); }
     finally     { setSaving(false); }
@@ -484,6 +519,12 @@ Return this exact format:
 
   return (
     <div className="flex-col gap-12">
+
+      {publishSuccess && (
+        <div className="alert alert-success">
+          🎉 Page published successfully! The stakeholder has been notified.
+        </div>
+      )}
 
       {/* ── Status card ──────────────────────────────────────────────── */}
       <div className="card">

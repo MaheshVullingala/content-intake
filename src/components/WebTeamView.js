@@ -106,8 +106,12 @@ function SectionHead({ children }) {
 export default function WebTeamView({ req, user, supabase, attachments = [], onRefresh }) {
   const [copiedKey,  setCopiedKey]  = useState(null);
   const [zipping,    setZipping]    = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [pubError,   setPubError]   = useState("");
+  const [publishing,     setPublishing]     = useState(false);
+  const [pubError,       setPubError]       = useState("");
+  // Shown once, right after this session's own publish click — distinct
+  // from isPublished below, which persists across visits regardless of
+  // who published or when.
+  const [publishSuccess, setPublishSuccess] = useState(false);
 
   const isPublished = req.overall_status === "published";
 
@@ -166,6 +170,36 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
           .update({ status: "completed", completed_at: now })
           .eq("id", wt.id);
       }
+
+      // Notify stakeholder + admins — fire and forget, never let a
+      // notification failure block the publish flow.
+      try {
+        const notifications = [];
+        if (req.created_by) {
+          notifications.push({
+            user_id:    req.created_by,
+            type:       "published",
+            title:      "Your page has been published!",
+            message:    `"${req.page_title}" has been published to AEM by the Web Team.`,
+            request_id: req.id,
+            action_url: `/requests/${req.id}`,
+          });
+        }
+        const { data: admins } = await supabase.from("users").select("id").in("role", ["admin", "super_admin"]);
+        (admins || []).forEach(a => notifications.push({
+          user_id:    a.id,
+          type:       "published",
+          title:      "Page published",
+          message:    `"${req.page_title}" has been published.`,
+          request_id: req.id,
+          action_url: `/requests/${req.id}`,
+        }));
+        if (notifications.length) {
+          supabase.from("notifications").insert(notifications).then(() => {}).catch(() => {});
+        }
+      } catch { /* notification failure must not block publish */ }
+
+      setPublishSuccess(true);
       onRefresh?.();
     } catch (e) { setPubError(e.message || "Error."); }
     finally     { setPublishing(false); }
@@ -448,7 +482,9 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
         {pubError && <div className="alert alert-error mb-8">{pubError}</div>}
         {isPublished ? (
           <div className="alert alert-success">
-            ✅ This request has been published.
+            {publishSuccess
+              ? "🎉 Page published successfully! The stakeholder has been notified."
+              : "✅ This request has been published."}
           </div>
         ) : (
           <button

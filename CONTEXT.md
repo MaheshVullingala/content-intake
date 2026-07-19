@@ -252,11 +252,42 @@ documented below — if a gap number is missing, it hasn't come up yet.
   pending_action red, pending gray, locked light gray). Only the
   "X of 5 tasks complete" text was actually missing — added, no query
   changes were needed.
-- Gap 4 — Admin reassignment: PARTIALLY DONE as of v154. Team leads
-  (can_assign=true) and super_admin can reassign a task via
-  AssigneeDropdown in TaskPanel.js (see "Task Assignment Flow" below).
-  Reassigning a task from AdminPanel.js directly (i.e. without opening
-  the request's TaskPanel) is still pending — lower priority per user.
+- Gap 4 — NUMBERING COLLISION: the user has used "Gap 4" for two
+  different things across this session. Both are documented below as
+  given; not reconciled into a single number since that's the user's
+  own external tracking, not Claude's to renumber.
+  - Gap 4 (as defined 2026-07-19 during the Task Assignment Flow work)
+    — Admin reassignment: PARTIALLY DONE as of v154. Team leads
+    (can_assign=true) and super_admin can reassign a task via
+    AssigneeDropdown in TaskPanel.js (see "Task Assignment Flow"
+    below). Reassigning a task from AdminPanel.js directly (i.e.
+    without opening the request's TaskPanel) is still pending — lower
+    priority per user.
+  - Gap 4 (as redefined 2026-07-19 for the "Published confirmation +
+    stakeholder notification" task) — RESOLVED v157. Both duplicate
+    handlePublish implementations (TaskPanel.js and WebTeamView.js —
+    web_team sees both simultaneously; see "Duplicate publish
+    implementations" note below) now insert a notification to the
+    stakeholder (req.created_by) and to every admin/super_admin user,
+    and show the exact success message on first publish
+    ("🎉 Page published successfully!..."). WebTeamView.js's existing
+    persistent "this request has been published" indicator (driven by
+    req.overall_status, shows on every future visit) was kept for
+    returning visits; the celebratory message is layered on top via a
+    separate publishSuccess local-state flag, shown only for the
+    person who just clicked the button in that session.
+
+## Duplicate publish implementations — found 2026-07-19, not consolidated
+TaskPanel.js's handlePublish and WebTeamView.js's handlePublish are two
+independent implementations of the same action. web_team sees both
+components at once (WebTeamView left, TaskPanel right in TaskBoard.js's
+TWO_COL layout), so both "Mark as Published" buttons are live
+simultaneously and either can be clicked. Gap 4's publish-notification
+fix (v157) was applied to both, to avoid the fix silently not applying
+depending on which button gets used — but the underlying duplication
+itself wasn't refactored away (out of scope for what was asked). Worth
+consolidating into one shared path if this becomes a recurring source
+of the two implementations drifting apart.
 
 ## RLS member visibility — KNOWN LIMITATION (2026-07-19)
 sql/08-task-assignment-visibility.sql (role-aware tasks_select/
@@ -797,3 +828,11 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
   Gaps" above for the full writeup on how little actually needed to
   change. Build confirmed zero errors; committed as v156 and pushed to
   origin/main
+- v157: Gap 4 (published confirmation + notification) resolved — see
+  "Known Gaps" and "Duplicate publish implementations" above for the
+  full writeup, including a numbering collision with the other Gap 4
+  (admin reassignment) that was flagged rather than silently
+  reconciled. Admin notification broadened to admin + super_admin
+  (.in("role", ["admin","super_admin"]) instead of .eq("role","admin"))
+  per follow-up request, applied to both handlePublish implementations.
+  Build confirmed zero errors; committed as v157 and pushed to origin/main

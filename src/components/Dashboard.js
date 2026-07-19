@@ -536,16 +536,21 @@ export default function Dashboard({ go, user }) {
                         <span style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 500 }}>{s.label}</span>
                       )}
                       {isNewWorkflow && req.taskProgress && req.taskProgress.length > 0 && (
-                        <div style={{ display: "flex", gap: 3, marginTop: 5 }}>
-                          {TASK_TEAMS.map(team => {
-                            const t = req.taskProgress.find(x => x.team_role === team.role);
-                            const dot = t ? TASK_STATUS_META[t.status] : null;
-                            return (
-                              <div key={team.role}
-                                title={`${team.label}: ${dot?.label || "Not assigned"}`}
-                                style={{ width: 7, height: 7, borderRadius: "50%", background: dot?.color || "#E0E0E0", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }} />
-                            );
-                          })}
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
+                          <div style={{ display: "flex", gap: 3 }}>
+                            {TASK_TEAMS.map(team => {
+                              const t = req.taskProgress.find(x => x.team_role === team.role);
+                              const dot = t ? TASK_STATUS_META[t.status] : null;
+                              return (
+                                <div key={team.role}
+                                  title={`${team.label}: ${dot?.label || "Not assigned"}`}
+                                  style={{ width: 7, height: 7, borderRadius: "50%", background: dot?.color || "#E0E0E0", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }} />
+                              );
+                            })}
+                          </div>
+                          <span style={{ fontSize: 10, color: "#B5B5B5" }}>
+                            {req.taskProgress.filter(t => t.status === "completed").length} of {TASK_TEAMS.length} tasks complete
+                          </span>
                         </div>
                       )}
                     </td>

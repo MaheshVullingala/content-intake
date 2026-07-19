@@ -240,6 +240,18 @@ documented below — if a gap number is missing, it hasn't come up yet.
   to "pending_action" (a different value), so the rejection-reason
   display can never misattribute a web_team change-request as a
   stakeholder rejection.
+- Gap 3 — Stakeholder progress indicator: RESOLVED v156. Turned out
+  ~95% already built — the 5-dot per-TASK_TEAMS-entry progress row
+  (Dashboard.js:538-550) already rendered for every role including
+  stakeholder (not admin-gated), taskProgress was already populated on
+  stakeholder rows (fetchRequests's taskProgress block runs
+  unconditionally on `rows`, after the stakeholder query already
+  scoped rows to created_by=user.id), and TASK_STATUS_META's existing
+  colors already matched the requested scheme exactly (completed
+  green, in_progress blue, pending_approval purple, needs_info orange,
+  pending_action red, pending gray, locked light gray). Only the
+  "X of 5 tasks complete" text was actually missing — added, no query
+  changes were needed.
 - Gap 4 — Admin reassignment: PARTIALLY DONE as of v154. Team leads
   (can_assign=true) and super_admin can reassign a task via
   AssigneeDropdown in TaskPanel.js (see "Task Assignment Flow" below).
@@ -781,3 +793,7 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
   visibility — KNOWN LIMITATION" above. Gap 2 (Brand Team rejection
   notification) resolved — see "Known Gaps" above for the full writeup.
   Build confirmed zero errors; committed as v155 and pushed to origin/main
+- v156: Gap 3 (stakeholder progress indicator) resolved — see "Known
+  Gaps" above for the full writeup on how little actually needed to
+  change. Build confirmed zero errors; committed as v156 and pushed to
+  origin/main

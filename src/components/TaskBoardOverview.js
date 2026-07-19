@@ -140,6 +140,29 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
         .update({ pending_action_note: note || null })
         .eq("id", task.id);
       await syncOverallStatus(req.id, supabase);
+
+      // Notify the rejected team — fire and forget, never let a
+      // notification failure block the reject flow. Generalized to
+      // task.team_role rather than hardcoded to brand_team, since this
+      // same function handles both brand_team and design_team rejections.
+      try {
+        const teamLabel = TASK_TEAMS.find(t => t.role === task.team_role)?.label ?? task.team_role;
+        const { data: teamUsers } = await supabase
+          .from("users").select("id").eq("role", task.team_role);
+        if (teamUsers?.length) {
+          supabase.from("notifications").insert(
+            teamUsers.map(u => ({
+              user_id:    u.id,
+              type:       "approval_rejected",
+              title:      `Stakeholder rejected ${teamLabel} output`,
+              message:    `Rejection reason: ${note}`,
+              request_id: req.id,
+              action_url: `/requests/${req.id}`,
+            }))
+          ).then(() => {}).catch(() => {});
+        }
+      } catch { /* notification failure must not block the reject flow */ }
+
       setRejectNotes(p => ({ ...p, [task.id]: "" }));
       onRefresh?.();
     } catch (e) { setError(e.message || "Error."); }

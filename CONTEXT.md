@@ -222,16 +222,49 @@ in TaskPanel.js.
 
 ## Known Gaps
 Numbering follows the user's own external tracking, referenced starting
-2026-07-19 — Gaps 2 and 3 have not been described to/recorded by Claude
-in this session, so they're not documented here. Only what's actually
-been discussed is tracked below.
+2026-07-19. Only what's actually been discussed with Claude is
+documented below — if a gap number is missing, it hasn't come up yet.
 - Gap 1 — Web Team "Request Changes" RLS: RESOLVED v153 (see "RLS Known
   Issue" above).
+- Gap 2 — Brand Team rejection notification: RESOLVED v155. handleReject
+  in TaskBoardOverview.js now inserts a notification (type
+  approval_rejected) for the rejected team, generalized to
+  task.team_role rather than hardcoded brand_team (the same function
+  handles both brand_team and design_team rejections — design_team
+  would otherwise have stayed silently un-notified). TaskPanel.js now
+  shows the rejection reason prominently in both brand_team's and
+  design_team's card (`myTask.status === "in_progress" &&
+  myTask.pending_action_note`) — the status==="in_progress" check is
+  load-bearing, not cosmetic: pending_action_note is also written by
+  handleRequestChanges (web_team → any team), but that flow sets status
+  to "pending_action" (a different value), so the rejection-reason
+  display can never misattribute a web_team change-request as a
+  stakeholder rejection.
 - Gap 4 — Admin reassignment: PARTIALLY DONE as of v154. Team leads
   (can_assign=true) and super_admin can reassign a task via
   AssigneeDropdown in TaskPanel.js (see "Task Assignment Flow" below).
   Reassigning a task from AdminPanel.js directly (i.e. without opening
   the request's TaskPanel) is still pending — lower priority per user.
+
+## RLS member visibility — KNOWN LIMITATION (2026-07-19)
+sql/08-task-assignment-visibility.sql (role-aware tasks_select/
+requests_select — leads see everything for their team, members only
+see tasks/requests assigned to them) was applied, then rolled back to
+permissive policies (tasks_select / requests_select: `auth.uid() IS NOT
+NULL`) — restored outside this conversation, Claude has no record of
+who/how. User confirmed this rollback is intentional and the
+restriction is deferred: "Skip the RLS member visibility for now...
+Mark this as a known limitation to revisit on internal server."
+AssigneeDropdown, get_user_can_assign(), and the rest of the Task
+Assignment Flow (see below) are unaffected by this rollback and still
+work — the UI-level assignment/reassignment logic doesn't depend on the
+stricter RLS to function, it just means a non-lead member can currently
+still SELECT tasks/requests not assigned to them at the DB level (the
+UI doesn't currently expose a path that would surface this, but it's
+not DB-enforced right now). Revisit sql/08 when moving to an internal
+server. Claude could not independently verify the current live policy
+state (pg_policies isn't exposed via PostgREST, same limitation as
+information_schema) — this is based on the user's report.
 
 ## overall_status / web_team unlock (2026-07-17)
 Root cause of stakeholder-approves-but-badge-stays-stale bug:
@@ -739,3 +772,12 @@ pending-approval fileMap, BrandFilesPanel.js reference view. See
   reassign via TaskPanel; AdminPanel-direct reassignment still pending,
   lower priority)
   - Build confirmed zero errors; committed as v154 and pushed to origin/main
+- v155: temp debug logging (get_user_role/get_user_can_assign/get_user_id
+  RPC calls in Dashboard.js) added and removed within the session to
+  verify sql/08's helper functions work live — confirmed all three
+  return correct values (role, true/false, UUID) from the browser.
+  User then reported the role-aware RLS from sql/08 was rolled back to
+  permissive policies outside this conversation — see "RLS member
+  visibility — KNOWN LIMITATION" above. Gap 2 (Brand Team rejection
+  notification) resolved — see "Known Gaps" above for the full writeup.
+  Build confirmed zero errors; committed as v155 and pushed to origin/main

@@ -721,6 +721,11 @@ Return this exact format:
           <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600 }}>
             🎨 Brand Assets
           </h3>
+          {myTask.status === "in_progress" && myTask.pending_action_note && (
+            <div className="alert alert-error mb-12">
+              <strong>Rejection reason:</strong> {myTask.pending_action_note}
+            </div>
+          )}
           <FileList />
           {(isActive || isPendingApproval) && (
             <>
@@ -745,6 +750,11 @@ Return this exact format:
           <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600 }}>
             🖼️ Design Assets
           </h3>
+          {myTask.status === "in_progress" && myTask.pending_action_note && (
+            <div className="alert alert-error mb-12">
+              <strong>Rejection reason:</strong> {myTask.pending_action_note}
+            </div>
+          )}
           {/* Brand wait toggle */}
           {isActive && (
             <div style={{ marginBottom: 12 }}>

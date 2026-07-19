@@ -255,6 +255,10 @@ export default function TaskBoard({
     const hasPendingApproval = localTasks.some(t => t.status === "pending_approval");
     const hasNeedsInfo = localTasks.some(t =>
       t.status === "needs_info" && ["editorial_team", "seo_team"].includes(t.team_role));
+    const needsInfoSection = localTasks
+      .find(t => t.status === "needs_info" &&
+        ["editorial_team", "seo_team"].includes(t.team_role))
+      ?.question?.match(/^\[(\w+)\]/)?.[1] || null;
 
     return (
       <div>
@@ -273,6 +277,7 @@ export default function TaskBoard({
                 editorialMode={hasNeedsInfo}
                 activeEditSection={editModal?.section}
                 onEditSection={(section) => setEditModal({ section, data: req })}
+                highlightSection={needsInfoSection}
               />
             </div>
             <div style={{ overflowY: "auto",

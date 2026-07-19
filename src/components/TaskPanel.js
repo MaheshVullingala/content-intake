@@ -35,6 +35,21 @@ const SEO_FIELD_CONFIGS = [
   { key: "seo_og_description",   label: "OG Description",   type: "textarea", min: 120, max: 160 },
 ];
 
+// Keys must match EditSectionModal.js's SECTION_CONFIG exactly.
+const QUESTION_SECTIONS = [
+  { key: "banner",            label: "Banner" },
+  { key: "overview",          label: "Overview" },
+  { key: "key_benefits",      label: "Key Benefits" },
+  { key: "features_apps",     label: "Features / Applications" },
+  { key: "customer_stories",  label: "Customer Stories" },
+  { key: "promo_section",     label: "Promo Section" },
+  { key: "related_content",   label: "Related Content" },
+  { key: "resources",         label: "Resources" },
+  { key: "related_products",  label: "Related Products" },
+  { key: "training_support",  label: "Training & Support" },
+  { key: "seo_meta",          label: "SEO Meta" },
+];
+
 const parseKbTitles = (kb_cards) => {
   try {
     const cards = Array.isArray(kb_cards) ? kb_cards : JSON.parse(kb_cards || "[]");
@@ -54,6 +69,7 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
 
   const [saving,      setSaving]      = useState(false);
   const [question,    setQuestion]    = useState("");
+  const [questionSection, setQuestionSection] = useState("");
   const [uploading,   setUploading]   = useState(false);
   const [myFiles,     setMyFiles]     = useState([]);
   const [error,       setError]       = useState("");
@@ -228,16 +244,18 @@ Return this exact format:
   const handleAskQuestion = async () => {
     const q = question.trim();
     if (!q) return;
+    const fullQuestion = questionSection ? `[${questionSection}] ${q}` : q;
     setSaving(true); setError("");
     try {
       const { error: err } = await updateTask(myTask.id, {
         status:            "needs_info",
-        question:          q,
+        question:          fullQuestion,
         question_at:       new Date().toISOString(),
         question_asked_by: user.id,
       }, supabase);
       if (err) { setError(err.message); return; }
       setQuestion("");
+      setQuestionSection("");
       onRefresh?.();
     } catch (e) { setError(e.message || "Failed to send question."); }
     finally     { setSaving(false); }
@@ -642,6 +660,19 @@ Return this exact format:
           <p className="field-hint" style={{ marginBottom: 10 }}>
             Non-blocking — your task stays active while you wait for an answer.
           </p>
+          {["editorial_team", "seo_team"].includes(user.role) && (
+            <select
+              className="select"
+              style={{ marginBottom: 8 }}
+              value={questionSection}
+              onChange={e => setQuestionSection(e.target.value)}
+            >
+              <option value="">Which section is this about? (optional)</option>
+              {QUESTION_SECTIONS.map(s => (
+                <option key={s.key} value={s.key}>{s.label}</option>
+              ))}
+            </select>
+          )}
           <textarea
             className="textarea"
             rows={2}

@@ -1,164 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { supabase } from "@/lib/supabase";
+import { getAccessToken } from "@/lib/security";
 
-const SYSTEM_PROMPT = `You are a senior B2B content writer for Cadence Design Systems — a world-leading EDA and Intelligent System Design company whose computational software powers nearly every semiconductor chip designed worldwide. You write exclusively for cadence.com product pages.
-
-CADENCE BRAND IDENTITY:
-- Cadence is a market leader in AI, digital twins, and computational software for silicon-to-systems design
-- Tagline: "Intelligent System Design™" — always imply intelligence, precision, and systems-level thinking
-- Markets served: hyperscale computing, mobile communications, automotive, aerospace, industrial, life sciences, robotics
-- Cadence customers are "the world's most innovative companies" — write to match their ambition
-
-TONE OF VOICE (learned from cadence.com):
-- Authoritative, not arrogant — state facts and outcomes, not opinions
-- Precision-first — engineers trust specificity ("5X faster regression throughput", "ISO 26262 certification") over vague claims
-- Benefit-led — every sentence answers "what does this do for my design?"
-- Active voice, strong verbs: "accelerates", "delivers", "enables", "achieves", "powers", "drives"
-- Outcome-oriented: tie features directly to engineering outcomes (tapeout, time-to-market, verification closure, coverage)
-- Professional warmth — confident peer-to-peer, never salesy or breathless
-
-REAL CADENCE HEADLINE PATTERNS (match this style):
-- "High-speed logic simulation for functional verification of complex IP, SoC, and system-level designs"
-- "Empowering high-performance product design with a complete, intuitive system innovation platform"
-- "Accelerate verification bring-up while expanding beyond the resource capacity of a single simulation"
-- "Ensure performance, security, and streamlined design from chip to package to board to case"
-- "Achieve verification closure and meet your time-to-market goals"
-
-BANNED WORDS (never use these):
-"cutting-edge", "revolutionary", "game-changing", "robust", "seamless", "leverage", "utilize", "synergy",
-"best-in-breed", "world-class", "unlock potential", "harness the power", "take your design to the next level",
-"innovative solution", "comprehensive solution" (use specific descriptors instead)
-
-PREFERRED WORDS & PHRASES:
-"verification closure", "time-to-market", "design productivity", "tapeout confidence", "signoff accuracy",
-"computational software", "Intelligent System Design", "silicon-to-systems", "full-chip", "SoC-level",
-"achieve", "accelerate", "enable", "deliver", "advance", "drive", "power"
-
-AUDIENCE: SoC architects, chip designers, verification engineers, PCB designers, hardware engineering managers at tier-1 semiconductor, hyperscale, automotive and aerospace companies. They are experts — write as a knowledgeable peer, not a salesperson.
-
-OUTPUT RULES:
-- Return ONLY valid JSON — no markdown, no backticks, no preamble, no explanation
-- Follow character limits strictly — count carefully
-- Never include field names or labels in the output values
-- Write as if already live on cadence.com — polished, publication-ready
-- For headlines: use sentence case unless it is a product name (product names use Title Case)
-- For descriptions: 2-3 focused paragraphs, no bullet points in prose fields`;
-
-// ── Per-section prompt builders ───────────────────────────────────────────────
-const buildPrompt = (sectionKey, mode, currentContent, direction) => {
-  const base = {
-    seo_meta: {
-      fields: `{
-  "seo_meta_title": "max 60 chars - keyword-rich, includes product name",
-  "seo_meta_description": "max 155 chars - compelling with clear value proposition",
-  "seo_meta_keywords": "8-12 comma-separated EDA/technical keywords"
-}`,
-      context: "SEO meta data for a Cadence product page",
-    },
-    banner: {
-      fields: `{
-  "page_title": "max 70 chars - Product Name + short powerful descriptor, Title Case, e.g. 'Xcelium Logic Simulator | Accelerate Verification Closure'",
-  "sub_title": "max 120 chars - one sentence expanding on the title with the primary engineering benefit, e.g. 'High-speed simulation for functional verification of complex IP, SoC, and system-level designs'",
-  "cta1_label": "max 30 chars - primary CTA, action verb e.g. 'Request Demo', 'Download Datasheet', 'Start Free Trial'",
-  "cta2_label": "max 30 chars - secondary CTA e.g. 'Watch Overview', 'View Technical Brief', 'Explore Features'"
-}`,
-      context: "banner section for a Cadence product page",
-    },
-    overview: {
-      fields: `{
-  "overview_label": "max 30 chars - uppercase section tag e.g. 'OVERVIEW', 'PRODUCT HIGHLIGHTS', 'ABOUT'",
-  "overview_impact": "max 100 chars - bold headline stating the primary engineering outcome, e.g. 'Deliver verification closure faster across complex SoC and full-chip designs'",
-  "overview_description": "max 600 chars - 2-3 paragraphs. Para 1: what the product does and who it is for. Para 2: key technical capabilities with specific outcomes. Para 3: how it fits into the broader Cadence Intelligent System Design ecosystem or flow. No bullet points. No buzzwords."
-}`,
-      context: "overview section for a Cadence product page",
-    },
-    key_benefits: {
-      fields: `{
-  "kb_label": "max 30 chars - section label e.g. KEY BENEFITS",
-  "kb_impact": "max 100 chars - section headline",
-  "kb_description": "max 300 chars - supporting paragraph",
-  "kb_cards": [
-    { "title": "max 50 chars", "description": "max 150 chars - benefit for the engineer" },
-    { "title": "...", "description": "..." },
-    { "title": "...", "description": "..." }
-  ]
-}`,
-      context: "key benefits section for a Cadence product page",
-    },
-    features_apps: {
-      fields: `{
-  "fa_label": "max 30 chars - e.g. FEATURES, CAPABILITIES",
-  "fa_impact": "max 100 chars - compelling section headline",
-  "fa_description": "max 300 chars - brief intro to features"
-}`,
-      context: "features section header for a Cadence product page",
-    },
-    customer_stories: {
-      fields: `{
-  "cs_label": "max 30 chars - e.g. CUSTOMER SUCCESS",
-  "cs_impact": "max 100 chars - headline showing customer outcomes"
-}`,
-      context: "customer stories section header for a Cadence product page",
-    },
-    promo_section: {
-      fields: `{
-  "promo_label": "max 30 chars - e.g. GET STARTED",
-  "promo_title": "max 120 chars - compelling offer headline",
-  "promo_description": "max 300 chars - what the user gets and why they should act",
-  "promo_btn_label": "max 30 chars - CTA button text"
-}`,
-      context: "promo section for a Cadence product page",
-    },
-    related_content: {
-      fields: `{
-  "rc_label": "max 30 chars - e.g. RELATED CONTENT",
-  "rc_impact": "max 100 chars - headline inviting exploration"
-}`,
-      context: "related content section header for a Cadence product page",
-    },
-    training_support: {
-      fields: `{
-  "ts_label": "max 40 chars - e.g. TRAINING & SUPPORT",
-  "ts_impact": "max 80 chars - headline about Cadence support"
-}`,
-      context: "training and support section header for a Cadence product page",
-    },
-  };
-
-  const config = base[sectionKey];
-  if (!config) return null;
-
-  if (mode === "improve") {
-    return `A stakeholder has written this draft content for the ${config.context}:
-
-"${currentContent}"
-
-Your task: rewrite it to match cadence.com standards. Keep their intent and key facts but:
-- Elevate to Cadence brand voice (authoritative, precise, benefit-led)
-- Replace vague language with specific engineering outcomes
-- Remove any buzzwords or marketing fluff
-- Ensure it reads like it belongs on a live cadence.com product page
-
-Follow all character limits exactly. Return ONLY this JSON (no extra text):
-${config.fields}`;
-  }
-
-  if (mode === "direction") {
-    return `Generate professional cadence.com-standard content for the ${config.context}.
-
-The stakeholder wants to convey:
-"${direction}"
-
-${currentContent ? `They also have this existing draft for context (do not copy it, use it as reference only):\n"${currentContent}"\n` : ""}
-Write in Cadence brand voice: authoritative, technically precise, outcome-focused. Sound like a cadence.com product page.
-
-Follow all character limits exactly. Return ONLY this JSON (no extra text):
-${config.fields}`;
-  }
-
-  return null;
-};
+// The Cadence brand-voice system prompt and per-section field schemas used
+// to live here (and, nearly identically, in AIAssistant.js too). Both are
+// now server-side only, in src/lib/aiPrompts.js -- this component sends
+// only { sectionKey, mode, currentContent, direction } and the server
+// builds the actual prompt. See that file's header comment for why: the
+// old design let any authenticated user send an arbitrary systemPrompt
+// straight through to Claude, since the route trusted whatever the client
+// sent as prompt/systemPrompt verbatim.
 
 // ── Section label map ─────────────────────────────────────────────────────────
 const SECTION_LABELS = {
@@ -204,14 +57,15 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
     setError("");
     setResult(null);
 
-    const prompt = buildPrompt(sectionKey, selectedMode, currentContent, direction);
-    if (!prompt) { setError("Section not supported."); setLoading(false); return; }
-
     try {
+      const token = await getAccessToken(supabase);
       const response = await fetch("/api/ai", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, systemPrompt: SYSTEM_PROMPT }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ sectionKey, mode: selectedMode, currentContent, direction }),
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);

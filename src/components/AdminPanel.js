@@ -9,46 +9,57 @@ const csvEscape = (val) => {
 };
 
 // ── Character Limits configuration panel ────────────────────────────────────
+// Mirrors constants.js's CHAR_LIMITS exactly (the actual defaults every
+// form falls back to) plus EditSectionModal.js's 4 generic card-item
+// limits, so every field configurable here corresponds to a real
+// enforcement point. Previously this list included ~13 invented
+// per-section-per-card-type keys (kb_card_title, cs_quote, rc_card_title,
+// etc.) that no code anywhere read — none of the sections' card-editing
+// UI enforces per-section-granular limits, they all share one generic
+// title/description/quote/customer set (the "Card Items" group below).
+// Saving here writes to char_limit_overrides, read by useCharLimits()
+// (src/lib/charLimits.js) in NewRequest.js / EditSectionModal.js /
+// ProposeChangeWizard.js.
 const CHAR_LIMIT_FIELDS = [
-  { section: "SEO Meta Data",       key: "seo_page_location",     label: "Page Location (URL)",       default: 300 },
-  { section: "SEO Meta Data",       key: "seo_meta_title",        label: "Meta Title",                default: 70  },
-  { section: "SEO Meta Data",       key: "seo_meta_description",  label: "Meta Description",          default: 160 },
-  { section: "SEO Meta Data",       key: "seo_meta_keywords",     label: "Meta Keywords",             default: 300 },
-  { section: "Banner",              key: "page_title",            label: "Page Title",                default: 70  },
-  { section: "Banner",              key: "sub_title",             label: "Subtitle",                  default: 120 },
-  { section: "Banner",              key: "cta1_label",            label: "CTA 1 Label",               default: 30  },
-  { section: "Banner",              key: "cta2_label",            label: "CTA 2 Label",               default: 30  },
-  { section: "Overview",            key: "overview_impact",       label: "Impact Statement",          default: 100 },
-  { section: "Overview",            key: "overview_description",  label: "Description",               default: 600 },
-  { section: "Key Benefits",        key: "kb_impact",             label: "Impact Statement",          default: 100 },
-  { section: "Key Benefits",        key: "kb_description",        label: "Description",               default: 300 },
-  { section: "Key Benefits",        key: "kb_card_title",         label: "Card Title (per card)",     default: 50  },
-  { section: "Key Benefits",        key: "kb_card_description",   label: "Card Description (per)",    default: 150 },
-  { section: "Features / Apps",     key: "fa_impact",             label: "Impact Statement",          default: 100 },
-  { section: "Features / Apps",     key: "fa_description",        label: "Description",               default: 300 },
-  { section: "Features / Apps",     key: "fa_item_title",         label: "Tab/Item Title",            default: 50  },
-  { section: "Features / Apps",     key: "fa_item_description",   label: "Tab/Item Description",      default: 200 },
-  { section: "Features / Apps",     key: "fa_item_cta_label",     label: "Tab CTA Label",             default: 25  },
-  { section: "Customer Stories",    key: "cs_impact",             label: "Impact Statement",          default: 100 },
-  { section: "Customer Stories",    key: "cs_quote",              label: "Quote (per card)",          default: 300 },
-  { section: "Customer Stories",    key: "cs_customer",           label: "Customer Details",          default: 100 },
-  { section: "Promo Section",       key: "promo_label",           label: "Label",                     default: 25  },
-  { section: "Promo Section",       key: "promo_title",           label: "Title",                     default: 100 },
-  { section: "Promo Section",       key: "promo_description",     label: "Description",               default: 300 },
-  { section: "Promo Section",       key: "promo_btn_label",       label: "Button Label",              default: 25  },
-  { section: "Related Content",     key: "rc_impact",             label: "Impact Statement",          default: 100 },
-  { section: "Related Content",     key: "rc_card_label",         label: "Card Label (per)",          default: 25  },
-  { section: "Related Content",     key: "rc_card_title",         label: "Card Title (per)",          default: 80  },
-  { section: "Related Content",     key: "rc_card_description",   label: "Card Description",          default: 200 },
-  { section: "Related Products",    key: "rp_impact",             label: "Impact Statement",          default: 100 },
-  { section: "Related Products",    key: "rp_description",        label: "Description",               default: 300 },
-  { section: "Related Products",    key: "rp_card_title",         label: "Card Title (per)",          default: 80  },
-  { section: "Related Products",    key: "rp_card_description",   label: "Card Description (per)",    default: 200 },
-  { section: "Related Products",    key: "rp_card_cta_label",     label: "Card CTA Label",            default: 25  },
-  { section: "Training & Support",  key: "ts_impact",             label: "Impact Statement",          default: 100 },
-  { section: "Training & Support",  key: "ts_card_title",         label: "Card Title (all cards)",    default: 80  },
-  { section: "Training & Support",  key: "ts_card_description",   label: "Card Description (all)",    default: 200 },
-  { section: "Training & Support",  key: "ts_card_cta_label",     label: "Card CTA Label (all)",      default: 25  },
+  { section: "SEO Meta Data",       key: "seo_page_location",     label: "Page Location (URL)",  default: 300 },
+  { section: "SEO Meta Data",       key: "seo_meta_title",        label: "Meta Title",           default: 70  },
+  { section: "SEO Meta Data",       key: "seo_meta_description",  label: "Meta Description",     default: 160 },
+  { section: "SEO Meta Data",       key: "seo_meta_keywords",     label: "Meta Keywords",        default: 300 },
+  { section: "Banner",              key: "page_title",            label: "Page Title",           default: 70  },
+  { section: "Banner",              key: "sub_title",             label: "Subtitle",             default: 120 },
+  { section: "Banner",              key: "cta1_label",            label: "CTA 1 Label",          default: 30  },
+  { section: "Banner",              key: "cta1_link",             label: "CTA 1 Link",           default: 300 },
+  { section: "Banner",              key: "cta2_label",            label: "CTA 2 Label",          default: 30  },
+  { section: "Banner",              key: "cta2_link",             label: "CTA 2 Link",           default: 300 },
+  { section: "Overview",            key: "overview_label",        label: "Label",                default: 30  },
+  { section: "Overview",            key: "overview_impact",       label: "Impact Statement",     default: 100 },
+  { section: "Overview",            key: "overview_description",  label: "Description",          default: 600 },
+  { section: "Key Benefits",        key: "kb_label",              label: "Label",                default: 30  },
+  { section: "Key Benefits",        key: "kb_impact",             label: "Impact Statement",     default: 100 },
+  { section: "Key Benefits",        key: "kb_description",        label: "Description",          default: 300 },
+  { section: "Features / Apps",     key: "fa_label",              label: "Label",                default: 30  },
+  { section: "Features / Apps",     key: "fa_impact",             label: "Impact Statement",     default: 100 },
+  { section: "Features / Apps",     key: "fa_description",        label: "Description",          default: 300 },
+  { section: "Customer Stories",    key: "cs_label",              label: "Label",                default: 30  },
+  { section: "Customer Stories",    key: "cs_impact",             label: "Impact Statement",     default: 100 },
+  { section: "Promo Section",       key: "promo_label",           label: "Label",                default: 30  },
+  { section: "Promo Section",       key: "promo_title",           label: "Title",                default: 120 },
+  { section: "Promo Section",       key: "promo_description",     label: "Description",          default: 300 },
+  { section: "Promo Section",       key: "promo_btn_label",       label: "Button Label",         default: 30  },
+  { section: "Promo Section",       key: "promo_btn_link",        label: "Button Link",          default: 300 },
+  { section: "Related Content",     key: "rc_label",              label: "Label",                default: 30  },
+  { section: "Related Content",     key: "rc_impact",             label: "Impact Statement",     default: 100 },
+  { section: "Resources",           key: "res_label",             label: "Label",                default: 30  },
+  { section: "Resources",           key: "res_impact",            label: "Impact Statement",     default: 100 },
+  { section: "Related Products",    key: "rp_label",              label: "Label",                default: 30  },
+  { section: "Related Products",    key: "rp_impact",             label: "Impact Statement",     default: 100 },
+  { section: "Related Products",    key: "rp_description",        label: "Description",          default: 300 },
+  { section: "Training & Support",  key: "ts_label",              label: "Label",                default: 40  },
+  { section: "Training & Support",  key: "ts_impact",             label: "Impact Statement",     default: 80  },
+  { section: "Card Items (shared across all card-based sections)", key: "title",       label: "Card Title",       default: 60  },
+  { section: "Card Items (shared across all card-based sections)", key: "description", label: "Card Description", default: 200 },
+  { section: "Card Items (shared across all card-based sections)", key: "quote",       label: "Quote (Customer Stories)", default: 300 },
+  { section: "Card Items (shared across all card-based sections)", key: "customer",    label: "Customer Details (Customer Stories)", default: 60 },
 ];
 
 function CharLimitsPanel({ user }) {
@@ -58,10 +69,11 @@ function CharLimitsPanel({ user }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("settings").select("key, value").like("key", "char_limit_%")
-      .then(({ data }) => {
+    supabase.from("char_limit_overrides").select("key, value")
+      .then(({ data, error }) => {
+        if (error) { setLoading(false); return; }
         const stored = {};
-        (data || []).forEach(r => { stored[r.key.replace("char_limit_", "")] = Number(r.value); });
+        (data || []).forEach(r => { stored[r.key] = Number(r.value); });
         setLimits(stored);
         setLoading(false);
       });
@@ -73,7 +85,11 @@ function CharLimitsPanel({ user }) {
     const num = parseInt(value);
     if (!num || num < 1) return;
     setSaving(key);
-    await supabase.from("settings").upsert({ key: `char_limit_${key}`, value: String(num) }, { onConflict: "key" });
+    const { error } = await supabase.from("char_limit_overrides").upsert(
+      { key, value: num, updated_by: user?.email },
+      { onConflict: "key" }
+    );
+    if (error) { setMsg(`Failed to save ${key}: ${error.message}`); setSaving(null); return; }
     setLimits(p => ({ ...p, [key]: num }));
     setSaving(null);
     setMsg(`✓ ${key} limit saved`);
@@ -132,6 +148,16 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
   const [msg,       setMsg]       = useState("");
   const [savingTimeout, setSavingTimeout] = useState(false);
   const [localTimeout,  setLocalTimeout]  = useState(timeoutMins);
+  const [emailEnabled,      setEmailEnabled]      = useState(false);
+  const [savingEmailToggle, setSavingEmailToggle] = useState(false);
+
+  // Loaded independently of timeoutMins (which page.js already fetches
+  // elsewhere) — this is the only place that needs to know the flag, so
+  // no reason to thread it through as a prop.
+  useEffect(() => {
+    supabase.from("settings").select("email_notifications_enabled").eq("id", "global").maybeSingle()
+      .then(({ data }) => setEmailEnabled(!!data?.email_notifications_enabled));
+  }, []);
 
   // ── Audit log tab ──────────────────────────────────────────────────────
   const [auditLog,       setAuditLog]       = useState([]);
@@ -575,6 +601,47 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                 }}
                 style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.7rem 1.6rem", fontSize: 14, fontWeight: 500, cursor: savingTimeout ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: savingTimeout ? 0.7 : 1 }}>
                 {savingTimeout ? "Saving..." : "Save Setting"}
+              </button>
+            </div>
+          )}
+
+          {tab === "settings" && (
+            <div className="card" style={{ maxWidth: 480, marginTop: 20 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Email Notifications</h3>
+              <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 20, lineHeight: 1.6 }}>
+                In addition to in-app notifications, email a copy out via SMTP.
+                Requires SMTP_HOST/SMTP_FROM (and credentials, if your relay
+                needs them) to be configured in the environment — this toggle
+                has no effect until that's done. See CLAUDE.md for the full
+                env var list.
+              </p>
+
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 20 }}>
+                <input
+                  type="checkbox"
+                  checked={emailEnabled}
+                  onChange={e => setEmailEnabled(e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 13, color: "#181313" }}>
+                  Send email notifications
+                </span>
+              </label>
+
+              <button
+                disabled={savingEmailToggle}
+                onClick={async () => {
+                  setSavingEmailToggle(true);
+                  const { error } = await supabase.from("settings").upsert(
+                    { id: "global", email_notifications_enabled: emailEnabled, updated_by: user.email },
+                    { onConflict: "id" }
+                  );
+                  setMsg(error ? "Failed to save email setting." : `Email notifications ${emailEnabled ? "enabled" : "disabled"}.`);
+                  setTimeout(() => setMsg(""), 3000);
+                  setSavingEmailToggle(false);
+                }}
+                style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.7rem 1.6rem", fontSize: 14, fontWeight: 500, cursor: savingEmailToggle ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: savingEmailToggle ? 0.7 : 1 }}>
+                {savingEmailToggle ? "Saving..." : "Save Setting"}
               </button>
             </div>
           )}

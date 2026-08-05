@@ -4,11 +4,9 @@ import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockW
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 import { getFlaggedImageFields } from "@/lib/imageFields";
+import { getAccessToken, validateFile } from "@/lib/security";
 import BrandFilesPanel from "@/components/BrandFilesPanel";
 import AssigneeDropdown from "@/components/AssigneeDropdown";
-
-const MAX_BRAND_MB  = 10 * 1024 * 1024;
-const MAX_DESIGN_MB = 20 * 1024 * 1024;
 
 function formatBytes(b) {
   if (!b) return "";
@@ -191,9 +189,13 @@ Return this exact format:
   "seo_og_description": "..."
 }`;
 
+      const token = await getAccessToken(supabase);
       const res = await fetch("/api/ai", {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body:    JSON.stringify({ prompt }),
       });
       const data = await res.json();
@@ -266,10 +268,8 @@ Return this exact format:
   // Map" mapping below instead of a generic bucket.
   const uploadFile = async (file) => {
     if (!file) return;
-    if (file.size > MAX_BRAND_MB) {
-      setError("File too large — max 10 MB.");
-      return;
-    }
+    const check = validateFile(file, { maxSizeMB: 10, allowedTypes: ["image/jpeg", "image/png"] });
+    if (!check.valid) { setError(check.error); return; }
     setUploading(true); setError("");
     try {
       const ext  = file.name.split(".").pop();
@@ -303,7 +303,8 @@ Return this exact format:
 
   const uploadMappedImage = async (field, file) => {
     if (!file) return;
-    if (file.size > MAX_DESIGN_MB) { setError("File too large — max 20 MB."); return; }
+    const check = validateFile(file, { maxSizeMB: 20, allowedTypes: ["image/jpeg", "image/png", "image/webp"] });
+    if (!check.valid) { setError(check.error); return; }
     setUploading(true); setError("");
     try {
       // Only one image per field — remove the previous mapping first
@@ -604,6 +605,32 @@ Return this exact format:
 
         {error && <div className="alert alert-error mt-8">{error}</div>}
       </div>
+
+      {/* ── Content updated by stakeholder (mid-flight change, admin-
+          approved) — see PendingChangeCard.js's approve handler, which
+          writes this note to every task on the request. ──────────────── */}
+      {myTask.content_update_note && !myTask.content_update_read && (
+        <div className="card" style={{ borderColor: "#9333ea", background: "#faf5ff" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
+            <div>
+              <div className="text-xs text-uppercase text-muted" style={{ fontWeight: 600, marginBottom: 4 }}>
+                📝 Content Updated
+              </div>
+              <div className="text-sm">{myTask.content_update_note}</div>
+            </div>
+            <button
+              className="btn-ghost"
+              style={{ flexShrink: 0, padding: "4px 10px", fontSize: 12 }}
+              onClick={async () => {
+                await updateTask(myTask.id, { content_update_read: true }, supabase);
+                onRefresh?.();
+              }}
+            >
+              Mark as Read
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Q&A thread ───────────────────────────────────────────────── */}
       {myTask.question && (

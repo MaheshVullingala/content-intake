@@ -4,13 +4,20 @@ import { supabase } from "@/lib/supabase";
 
 const DEPARTMENTS = ["Product Team", "Content Team", "Design Team", "Web Team", "Marketing", "Engineering", "Operations", "Other"];
 
+// Registration is restricted to company email addresses. This is a
+// client-side gate for UX only — the authoritative check lives in
+// Postgres (see sql/12-enforce-cadence-email-domain.sql), which blocks
+// the signup even if this check is bypassed.
+const ALLOWED_EMAIL_DOMAIN = "cadence.com";
+
 export default function Register({ onSwitch }) {
-  const [form,    setForm]    = useState({ name: "", email: "", password: "", confirm: "", department: "" });
+  const [form,    setForm]    = useState({ name: "", email: "", password: "", confirm: "", department: "", intent: "" });
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
   const [success, setSuccess] = useState(false);
 
   const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
+  const isStakeholderIntent = form.intent === "stakeholder";
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -19,11 +26,33 @@ export default function Register({ onSwitch }) {
     if (form.password.length < 8)       { setError("Password must be at least 8 characters."); return; }
     if (!form.name.trim())              { setError("Please enter your full name."); return; }
     if (!form.department)               { setError("Please select your department."); return; }
+    if (!form.intent)                   { setError("Please tell us why you're signing up."); return; }
+    if (!form.email.trim().toLowerCase().endsWith("@" + ALLOWED_EMAIL_DOMAIN)) {
+      setError(`Registration is limited to @${ALLOWED_EMAIL_DOMAIN} email addresses.`);
+      return;
+    }
 
     setLoading(true);
     try {
       const { error } = await Promise.race([
-        supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { name: form.name.trim(), department: form.department } } }),
+        supabase.auth.signUp({
+          email: form.email,
+          password: form.password,
+          options: {
+            data: {
+              name:       form.name.trim(),
+              department: form.department,
+              // Read server-side by the handle_new_user() trigger, which
+              // only special-cases this exact literal — anything else (or
+              // a tampered client request) falls through to 'pending' as
+              // before. Stakeholder is the only role safe to self-grant:
+              // RLS scopes it to the requester's own requests only. Team
+              // roles (editorial/brand/seo/design/web) and admin still
+              // always require a human to assign, on purpose.
+              role_request: isStakeholderIntent ? "stakeholder" : undefined,
+            },
+          },
+        }),
         new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 15000))
       ]);
       if (error) { setError(error.message); return; }
@@ -40,7 +69,9 @@ export default function Register({ onSwitch }) {
       <p style={{ fontSize: 13, color: "#646464", lineHeight: 1.7, marginBottom: 24 }}>
         We sent a verification link to <strong style={{ color: "#1b5793" }}>{form.email}</strong>.<br />
         Click the link to verify your account.<br />
-        An admin will then assign your role.
+        {isStakeholderIntent
+          ? "You'll have stakeholder access right away — no approval needed."
+          : "An admin will then assign your role."}
       </p>
       <button onClick={() => onSwitch("login")}
         style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.65rem 1.5rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
@@ -92,6 +123,32 @@ export default function Register({ onSwitch }) {
       </div>
 
       <div style={{ marginBottom: 14 }}>
+        <label style={labelStyle}>I'm signing up to...</label>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[
+            { key: "stakeholder", label: "📝 Request content", hint: "Get access right away" },
+            { key: "team",        label: "🛠️ Join a content team", hint: "Needs admin approval" },
+          ].map(opt => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => upd("intent", opt.key)}
+              style={{
+                flex: 1, textAlign: "left", cursor: "pointer",
+                border: `1.5px solid ${form.intent === opt.key ? "#1b5793" : "#e2e8f0"}`,
+                background: form.intent === opt.key ? "#e8f4fb" : "#fff",
+                borderRadius: 8, padding: "0.6rem 0.7rem",
+                fontFamily: "'Rubik',sans-serif",
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#0f2744" }}>{opt.label}</div>
+              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{opt.hint}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>Department</label>
         <select value={form.department} onChange={e => upd("department", e.target.value)} required
           style={{ ...inputStyle, cursor: "pointer" }}
@@ -117,7 +174,9 @@ export default function Register({ onSwitch }) {
       </div>
 
       <div style={{ background: "#e8f4fb", border: "1px solid #1b579322", borderRadius: 8, padding: "0.7rem 0.9rem", marginBottom: 20, fontSize: 12, color: "#1b5793", fontFamily: "'Rubik',sans-serif", lineHeight: 1.6 }}>
-        ℹ️ After registration, an admin will assign your role before you can access the portal.
+        {isStakeholderIntent
+          ? "ℹ️ Stakeholder access is granted automatically — no admin approval needed. You can start submitting requests as soon as you verify your email."
+          : "ℹ️ After registration, an admin will assign your role before you can access the portal."}
       </div>
 
       <button type="submit" disabled={loading}

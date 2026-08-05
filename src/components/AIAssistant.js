@@ -1,225 +1,30 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { supabase } from "@/lib/supabase";
+import { getAccessToken } from "@/lib/security";
 
-// ── Cadence system prompt ────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are a senior B2B content writer for Cadence Design Systems — a world-leading EDA and Intelligent System Design company whose computational software powers nearly every semiconductor chip designed worldwide. You write exclusively for cadence.com product pages.
-
-CADENCE BRAND IDENTITY:
-- Cadence is a market leader in AI, digital twins, and computational software for silicon-to-systems design
-- Tagline: "Intelligent System Design™" — always imply intelligence, precision, and systems-level thinking
-- Markets served: hyperscale computing, mobile communications, automotive, aerospace, industrial, life sciences, robotics
-- Cadence customers are "the world's most innovative companies" — write to match their ambition
-
-TONE OF VOICE (learned from cadence.com):
-- Authoritative, not arrogant — state facts and outcomes, not opinions
-- Precision-first — engineers trust specificity ("5X faster regression throughput", "ISO 26262 certification") over vague claims
-- Benefit-led — every sentence answers "what does this do for my design?"
-- Active voice, strong verbs: "accelerates", "delivers", "enables", "achieves", "powers", "drives"
-- Outcome-oriented: tie features directly to engineering outcomes (tapeout, time-to-market, verification closure, coverage)
-- Professional warmth — confident peer-to-peer, never salesy or breathless
-
-REAL CADENCE HEADLINE PATTERNS (match this style):
-- "High-speed logic simulation for functional verification of complex IP, SoC, and system-level designs"
-- "Empowering high-performance product design with a complete, intuitive system innovation platform"
-- "Accelerate verification bring-up while expanding beyond the resource capacity of a single simulation"
-- "Ensure performance, security, and streamlined design from chip to package to board to case"
-- "Achieve verification closure and meet your time-to-market goals"
-
-BANNED WORDS (never use these):
-"cutting-edge", "revolutionary", "game-changing", "robust", "seamless", "leverage", "utilize", "synergy",
-"best-in-breed", "world-class", "unlock potential", "harness the power", "take your design to the next level",
-"innovative solution", "comprehensive solution" (use specific descriptors instead)
-
-PREFERRED WORDS & PHRASES:
-"verification closure", "time-to-market", "design productivity", "tapeout confidence", "signoff accuracy",
-"computational software", "Intelligent System Design", "silicon-to-systems", "full-chip", "SoC-level",
-"achieve", "accelerate", "enable", "deliver", "advance", "drive", "power"
-
-AUDIENCE: SoC architects, chip designers, verification engineers, PCB designers, hardware engineering managers at tier-1 semiconductor, hyperscale, automotive and aerospace companies. They are experts — write as a knowledgeable peer, not a salesperson.
-
-OUTPUT RULES:
-- Return ONLY valid JSON — no markdown, no backticks, no preamble, no explanation
-- Follow character limits strictly — count carefully
-- Never include field names or labels in the output values
-- Write as if already live on cadence.com — polished, publication-ready
-- For headlines: use sentence case unless it is a product name (product names use Title Case)
-- For descriptions: 2-3 focused paragraphs, no bullet points in prose fields`;
-
-// ── Section configs ───────────────────────────────────────────────────────────
+// The Cadence brand-voice system prompt, per-section field schemas, and
+// prompt builders (including formatBrief) used to live here -- they're now
+// server-side only, in src/lib/aiPrompts.js. This component sends only
+// { sectionKey, mode: "brief", brief } and the server builds the actual
+// prompt from a fixed template. See that file's header comment for why:
+// the old design let any authenticated user send an arbitrary systemPrompt
+// straight through to Claude, since the route trusted whatever the client
+// sent as prompt/systemPrompt verbatim. SECTION_CONFIGS below is now pure
+// display metadata (label/icon/desc for the section picker) -- it no
+// longer influences what gets generated.
 const SECTION_CONFIGS = {
-  seo_meta: {
-    label: "SEO Meta Data",
-    icon: "🔍",
-    desc: "Page location, meta title, description and keywords",
-    fields: ["seo_page_location","seo_meta_title","seo_meta_description","seo_meta_keywords"],
-    prompt: (brief) => `Generate SEO meta data for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "seo_meta_title": "max 60 chars - keyword-rich title including product name",
-  "seo_meta_description": "max 155 chars - compelling description with a clear value proposition",
-  "seo_meta_keywords": "8-12 comma-separated EDA/technical keywords relevant to this product"
-}`,
-  },
-  banner: {
-    label: "Banner",
-    icon: "🏷",
-    desc: "Page title, subtitle and CTA buttons",
-    fields: ["page_title","sub_title","cta1_label","cta2_label"],
-    prompt: (brief) => `Generate banner content for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "page_title": "max 70 chars - product name + powerful descriptor, Title Case",
-  "sub_title": "max 120 chars - expands on title with key value proposition",
-  "cta1_label": "max 30 chars - primary action verb e.g. Request Demo, Download Datasheet",
-  "cta2_label": "max 30 chars - secondary action e.g. Watch Video, Learn More"
-}`,
-  },
-  overview: {
-    label: "Overview",
-    icon: "📋",
-    desc: "Section label, impact statement and description",
-    fields: ["overview_label","overview_impact","overview_description"],
-    prompt: (brief) => `Generate overview section content for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "overview_label": "max 30 chars - short section tag e.g. OVERVIEW, HIGHLIGHTS, ABOUT",
-  "overview_impact": "max 100 chars - bold headline highlighting the #1 key benefit",
-  "overview_description": "max 600 chars - 2-3 paragraph professional description of the product capabilities and benefits. No buzzwords."
-}`,
-  },
-  key_benefits: {
-    label: "Key Benefits",
-    icon: "⭐",
-    desc: "Section header and 3-4 benefit cards",
-    fields: ["kb_label","kb_impact","kb_description","kb_cards"],
-    prompt: (brief) => `Generate key benefits section content for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "kb_label": "max 30 chars - section label e.g. KEY BENEFITS, WHY CADENCE",
-  "kb_impact": "max 100 chars - section headline",
-  "kb_description": "max 300 chars - supporting paragraph",
-  "kb_cards": [
-    { "title": "max 50 chars - benefit title", "description": "max 150 chars - what this benefit means for the engineer" },
-    { "title": "...", "description": "..." },
-    { "title": "...", "description": "..." }
-  ]
-}`,
-  },
-  features_apps: {
-    label: "Features / Apps",
-    icon: "🔧",
-    desc: "Section header and feature highlights",
-    fields: ["fa_label","fa_impact","fa_description"],
-    prompt: (brief) => `Generate features section header content for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "fa_label": "max 30 chars - section label e.g. FEATURES, CAPABILITIES, APPLICATIONS",
-  "fa_impact": "max 100 chars - compelling section headline",
-  "fa_description": "max 300 chars - brief intro to the features listed below"
-}`,
-  },
-  customer_stories: {
-    label: "Customer Stories",
-    icon: "💬",
-    desc: "Section header and story cards",
-    fields: ["cs_label","cs_impact"],
-    prompt: (brief) => `Generate customer stories section header for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "cs_label": "max 30 chars - section label e.g. CUSTOMER SUCCESS, CASE STUDIES",
-  "cs_impact": "max 100 chars - headline showing customer outcomes e.g. How leading teams achieve breakthrough results"
-}`,
-  },
-  promo_section: {
-    label: "Promo Section",
-    icon: "🎯",
-    desc: "Promo label, title, description and CTA",
-    fields: ["promo_label","promo_title","promo_description","promo_btn_label"],
-    prompt: (brief) => `Generate promo section content for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "promo_label": "max 30 chars - short label e.g. GET STARTED, FREE TRIAL, WEBINAR",
-  "promo_title": "max 120 chars - compelling offer headline",
-  "promo_description": "max 300 chars - brief description of what the user gets and why they should act",
-  "promo_btn_label": "max 30 chars - CTA button text e.g. Register Now, Download Free"
-}`,
-  },
-  related_content: {
-    label: "Related Content",
-    icon: "🔗",
-    desc: "Section label and impact statement",
-    fields: ["rc_label","rc_impact"],
-    prompt: (brief) => `Generate related content section header for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "rc_label": "max 30 chars - section label e.g. RELATED CONTENT, EXPLORE MORE, RESOURCES",
-  "rc_impact": "max 100 chars - headline inviting further exploration"
-}`,
-  },
-  training_support: {
-    label: "Training & Support",
-    icon: "🎓",
-    desc: "Section label and impact statement",
-    fields: ["ts_label","ts_impact"],
-    prompt: (brief) => `Generate training and support section header for this Cadence product page.
-
-PRODUCT BRIEF:
-${formatBrief(brief)}
-
-Return ONLY this JSON (no extra text):
-{
-  "ts_label": "max 40 chars - section label e.g. TRAINING & SUPPORT, LEARN & GROW",
-  "ts_impact": "max 80 chars - headline about Cadence's support ecosystem"
-}`,
-  },
+  seo_meta:         { label: "SEO Meta Data",      icon: "\ud83d\udd0d", desc: "Page location, meta title, description and keywords" },
+  banner:           { label: "Banner",              icon: "\ud83c\udff7", desc: "Page title, subtitle and CTA buttons" },
+  overview:         { label: "Overview",            icon: "\ud83d\udccb", desc: "Section label, impact statement and description" },
+  key_benefits:     { label: "Key Benefits",        icon: "\u2b50",       desc: "Section header and 3-4 benefit cards" },
+  features_apps:    { label: "Features / Apps",     icon: "\ud83d\udd27", desc: "Section header and feature highlights" },
+  customer_stories: { label: "Customer Stories",    icon: "\ud83d\udcac", desc: "Section header and story cards" },
+  promo_section:    { label: "Promo Section",       icon: "\ud83c\udfaf", desc: "Promo label, title, description and CTA" },
+  related_content:  { label: "Related Content",     icon: "\ud83d\udd17", desc: "Section label and impact statement" },
+  training_support: { label: "Training & Support",  icon: "\ud83c\udf93", desc: "Section label and impact statement" },
 };
-
-function formatBrief(brief) {
-  return `Product Name: ${brief.productName}
-Category: ${brief.category}
-What it does: ${brief.summary}
-Key Features / Capabilities:
-${brief.features}
-Target Audience: ${brief.audience}
-Unique Selling Point / Key Differentiator: ${brief.usp}${brief.pageGoal ? `
-Page Goal: ${brief.pageGoal}` : ""}${brief.keyMessage ? `
-Key Message: ${brief.keyMessage}` : ""}
-
-IMPORTANT: Generate content that sounds like it belongs on cadence.com — authoritative, technical, benefit-led. Use the product name exactly as given. Reference specific engineering outcomes where possible.`;
-}
 
 // ── Product Brief Form ────────────────────────────────────────────────────────
 function ProductBriefForm({ brief, setBrief, onSave }) {
@@ -231,6 +36,7 @@ function ProductBriefForm({ brief, setBrief, onSave }) {
     ["features",     "Key Features (one per line) *","Mixed-signal simulation\nParallel processing\nUVM support...",         true],
     ["audience",     "Target Audience *",            "e.g. SoC architects, verification engineers, chip designers",            false],
     ["usp",          "Unique Selling Point *",       "e.g. 3x faster simulation with lower memory footprint",                  true],
+    ["proofPoints",  "Verified Proof Points (optional)", "Real numbers/certifications you can vouch for, e.g. '3x faster regression vs v20.1, ISO 26262 ASIL D certified'. Leave blank if you don't have one — AI will describe capabilities without inventing a number.", true],
     ["pageGoal",     "Page Goal (optional)",         "e.g. Drive demo requests, promote new release, replace legacy page",     false],
     ["keyMessage",   "Key Message (optional)",       "e.g. Only simulator with native ISO 26262 fault injection built-in",     false],
   ];
@@ -283,13 +89,14 @@ function SectionPicker({ brief, setBrief, availableSections, onGenerate, onEditB
     if (!config) { setGenerating(null); return; }
 
     try {
+      const token = await getAccessToken(supabase);
       const response = await fetch("/api/ai", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: config.prompt(brief),
-          systemPrompt: SYSTEM_PROMPT,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ sectionKey, mode: "brief", brief }),
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);
@@ -362,7 +169,7 @@ function SectionPicker({ brief, setBrief, availableSections, onGenerate, onEditB
 }
 
 // ── Main Floating AI Assistant ────────────────────────────────────────────────
-const EMPTY_BRIEF = { productName: "", category: "", summary: "", features: "", audience: "", usp: "", pageGoal: "", keyMessage: "" };
+const EMPTY_BRIEF = { productName: "", category: "", summary: "", features: "", audience: "", usp: "", proofPoints: "", pageGoal: "", keyMessage: "" };
 
 export default function AIAssistant({ availableSections = [], onGenerate }) {
   const [open,        setOpen]       = useState(false);

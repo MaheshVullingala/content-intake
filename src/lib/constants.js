@@ -281,6 +281,9 @@ export const NOTIFICATION_TYPES = {
   CHANGES_REQUESTED: 'changes_requested',
   WEB_TEAM_UNLOCKED: 'web_team_unlocked',
   PUBLISHED:         'published',
+  CONTENT_CHANGE_SUBMITTED: 'content_change_submitted',
+  CONTENT_CHANGE_REJECTED:  'content_change_rejected',
+  CONTENT_UPDATED:          'content_updated',
 };
 
 export const AUDIT_ACTIONS = {
@@ -295,6 +298,10 @@ export const AUDIT_ACTIONS = {
   ATTACHMENT_UPLOADED:    'attachment.uploaded',
   USER_ROLE_SWITCHED:     'user.role_switched',
   CONTENT_EDITED:         'content.edited',
+  CONTENT_CHANGE_SUBMITTED:  'content_change.submitted',
+  CONTENT_CHANGE_APPROVED:   'content_change.approved',
+  CONTENT_CHANGE_REJECTED:   'content_change.rejected',
+  CONTENT_CHANGE_FAST_LANED: 'content_change.fast_laned',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -3,10 +3,14 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { CHAR_LIMITS, AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
+import { useCharLimits } from "@/lib/charLimits";
 
 // Sub-field char limits for JSONB card/item arrays — not covered by the
 // top-level CHAR_LIMITS map in constants.js, so kept local to this modal.
-const ITEM_LIMITS = { title: 60, description: 200, quote: 300, customer: 60 };
+// One shared set applied across every section's card items (not
+// per-section-granular) — admin-overridable via char_limit_overrides,
+// same table AdminPanel.js's Char Limits tab writes to.
+const DEFAULT_ITEM_LIMITS = { title: 60, description: 200, quote: 300, customer: 60 };
 
 const VIEW_TYPE_LABELS = {
   list: "List", tabs_horizontal: "Horizontal Tabs",
@@ -14,7 +18,9 @@ const VIEW_TYPE_LABELS = {
 };
 
 // Which scalar fields + which array field (if any) each section exposes.
-const SECTION_CONFIG = {
+// Exported so ProposeChangePanel.js can build readable field labels for a
+// stakeholder-proposed change diff without duplicating this map.
+export const SECTION_CONFIG = {
   banner: {
     title: "Banner",
     fields: [
@@ -151,7 +157,17 @@ function EditField({ label, value, onChange, multiline, limit }) {
   );
 }
 
-export default function EditSectionModal({ section = null, data = {}, requestId, supabase, user, onClose, onSaved }) {
+export default function EditSectionModal({
+  section = null, data = {}, requestId, supabase, user, onClose, onSaved,
+  // When true, Save does NOT write to `requests` or log an audit entry —
+  // it just hands the built payload to onSaved(payload, section) and lets
+  // the caller decide what to do with it (used by ProposeChangePanel to
+  // stage a stakeholder-proposed change for admin review instead of
+  // applying it immediately). Default false preserves the original
+  // immediate-write behavior for every existing caller.
+  deferApply = false,
+}) {
+  const ITEM_LIMITS = useCharLimits(supabase, DEFAULT_ITEM_LIMITS);
   // section=null → no section chosen yet; show a picker first. allowPicker
   // stays true for the modal's lifetime even after a section is picked, so
   // a "← Back" control can return to the picker (only relevant when the
@@ -277,6 +293,15 @@ export default function EditSectionModal({ section = null, data = {}, requestId,
       if (faIsTable) { payload.fa_columns = faColumns; payload.fa_rows = faRows; }
       else            { payload.fa_items = faItems; }
     }
+
+    if (deferApply) {
+      // Staged mode — nothing written yet, caller (ProposeChangePanel)
+      // accumulates this section's payload into a pending changeset.
+      setSaving(false);
+      onSaved?.(payload, pickedSection);
+      return;
+    }
+
     const { error: err } = await supabase.from("requests").update(payload).eq("id", requestId);
     setSaving(false);
     if (err) { setError(err.message || "Failed to save."); return; }

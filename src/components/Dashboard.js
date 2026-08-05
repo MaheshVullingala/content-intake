@@ -32,7 +32,7 @@ export default function Dashboard({ go, user }) {
       tab1: { label: "📝 My Drafts",        key: "tab1" },
       tab2: { label: "📋 My Requests",       key: "tab2" },
     };
-    if (user.role === "admin") return {
+    if (["admin", "super_admin"].includes(user.role)) return {
       tab1: { label: "⚠️ Pending Review",    key: "tab1" },
       tab2: { label: "📋 All Requests",      key: "tab2" },
     };
@@ -112,6 +112,21 @@ export default function Dashboard({ go, user }) {
         }));
       }
 
+      // Admin/super_admin: flag rows with a pending content_change_requests
+      // row (stakeholder proposed a mid-flight edit, awaiting review) so
+      // "Pending Review" surfaces it without opening each request — see
+      // the badge in the row render below and PendingChangeCard.js for
+      // where it's actually approved/rejected.
+      if (["admin", "super_admin"].includes(user.role) && parallelIds.length > 0) {
+        const { data: pendingChanges } = await supabase
+          .from("content_change_requests")
+          .select("request_id")
+          .eq("status", "pending")
+          .in("request_id", parallelIds);
+        const pendingChangeIds = new Set((pendingChanges || []).map(c => c.request_id));
+        rows = rows.map(r => ({ ...r, hasPendingChange: pendingChangeIds.has(r.id) }));
+      }
+
       setRequests(rows);
 
       // Fetch return comments
@@ -157,8 +172,12 @@ export default function Dashboard({ go, user }) {
       // excluded here or they vanish from this tab until submitted.
       if (tabKey === "tab2") return requests;
     }
-    if (user.role === "admin") {
-      if (tabKey === "tab1") return requests.filter(r => r.overall_status === "pending_admin");
+    if (["admin", "super_admin"].includes(user.role)) {
+      // Pending Review — new submissions awaiting task setup, PLUS any
+      // in-flight request with a stakeholder-proposed content change
+      // awaiting approve/reject (see hasPendingChange in fetchRequests).
+      if (tabKey === "tab1") return requests.filter(r =>
+        r.overall_status === "pending_admin" || r.hasPendingChange);
       return requests; // tab2 — all requests (including legacy with overall_status = null)
     }
 
@@ -492,7 +511,8 @@ export default function Dashboard({ go, user }) {
                 const isAssignedToMe  = req.assigned_to === user.id;
                 const assigneeName    = req.assignee?.name;
 
-                const rowBg = isAssignedToMe && isOp ? "#f0fafb" :
+                const rowBg = req.hasPendingChange ? "#faf5ff" :
+                              isAssignedToMe && isOp ? "#f0fafb" :
                               act ? "#FAFAFA" :
                               isDesignQuery ? "#e8f4fb" :
                               isReturnedDraft ? "#fffbf0" : "#fff";
@@ -501,6 +521,13 @@ export default function Dashboard({ go, user }) {
                   <tr key={req.id} style={{ borderBottom: i < displayRows.length - 1 ? "1px solid #F9F9F9" : "none", background: rowBg, borderLeft: req.priority === "urgent" ? "3px solid #c0392b" : "none" }}>
                     <td style={{ padding: "0.9rem 1rem", fontSize: 14, color: "#181313" }}>
                       {req.page_title || <span style={{ color: "#B5B5B5", fontStyle: "italic" }}>Untitled</span>}
+                      {req.hasPendingChange && (
+                        <span
+                          title="Stakeholder proposed a content change — open the request to review and approve/reject it"
+                          style={{ marginLeft: 8, fontSize: 10, background: "#faf5ff", color: "#9333ea", border: "1px solid #9333ea33", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: "help" }}>
+                          📝 CONTENT UPDATED
+                        </span>
+                      )}
                       {isDraft && !isReturnedDraft && <span style={{ marginLeft: 8, fontSize: 10, background: "#F3F3F3", color: "#B5B5B5", border: "1px solid #E0E0E0", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>DRAFT</span>}
                       {isReturnedDraft && (
                         <span style={{ marginLeft: 8, fontSize: 10, background: isDesignQuery ? "#eff6ff" : "#fff3cd", color: isDesignQuery ? "#1b5793" : "#856404", border: `1px solid ${isDesignQuery ? "#3b82f633" : "#ffc10744"}`, borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>

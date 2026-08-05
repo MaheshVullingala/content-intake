@@ -7,7 +7,11 @@ import { PARALLEL_TEAMS } from './constants';
 // ─── Team config ─────────────────────────────────────────────────────────────
 // Rich metadata used by AdminTaskSetup and TaskBoard to render team cards.
 export const TASK_TEAMS = [
-  { role: 'editorial_team', label: 'Editorial Team', icon: '✍️',  color: '#2a7a4b', bg: '#ecfdf5', alwaysRequired: true,  webLocked: false, selfCompletes: false },
+  // selfCompletes: true — editorial_team marks its own task complete
+  // directly (TaskPanel.js's handleComplete), same as seo_team. No
+  // stakeholder approval gate exists for this team today; this flag
+  // previously said false, which didn't match the actual behavior.
+  { role: 'editorial_team', label: 'Editorial Team', icon: '✍️',  color: '#2a7a4b', bg: '#ecfdf5', alwaysRequired: true,  webLocked: false, selfCompletes: true },
   { role: 'brand_team',     label: 'Brand Team',     icon: '🎨',  color: '#d97706', bg: '#fffbeb', alwaysRequired: false, webLocked: false, selfCompletes: false },
   { role: 'seo_team',       label: 'SEO Team',       icon: '🔍',  color: '#1b5793', bg: '#eff6ff', alwaysRequired: true,  webLocked: false, selfCompletes: true  },
   { role: 'design_team',    label: 'Design Team',    icon: '🖼️', color: '#ea580c', bg: '#fff7ed', alwaysRequired: true,  webLocked: false, selfCompletes: false },
@@ -115,6 +119,28 @@ export async function tryUnlockWebTeam(requestId, supabase) {
     .from('requests')
     .update({ overall_status: 'pending_web', updated_at: now() })
     .eq('id', requestId);
+
+  // Notify web_team members — otherwise nobody finds out this task became
+  // actionable until they happen to check the dashboard themselves. Fire
+  // and forget: a notification failure must never fail the unlock itself.
+  try {
+    const { data: req } = await supabase
+      .from('requests').select('page_title').eq('id', requestId).single();
+    const { data: webUsers } = await supabase
+      .from('users').select('id').eq('role', 'web_team');
+    if (webUsers?.length) {
+      supabase.from('notifications').insert(
+        webUsers.map(u => ({
+          user_id:    u.id,
+          type:       'web_team_unlocked',
+          title:      'A page is ready for Web Team',
+          message:    `All other teams have finished "${req?.page_title || 'a request'}" — it's ready for implementation.`,
+          request_id: requestId,
+          action_url: `/requests/${requestId}`,
+        }))
+      ).then(() => {}).catch(() => {});
+    }
+  } catch { /* notification failure must not block the unlock */ }
 
   return { unlocked: true, error: reqError || null };
 }

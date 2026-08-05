@@ -44,6 +44,15 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
   }, [showPreview]);
 
   const toggle = (role) => {
+    // editorial_team, seo_team, design_team and web_team are alwaysRequired
+    // in TASK_TEAMS — every request must go through them, no exceptions.
+    // Only brand_team is genuinely optional. Previously this checkbox let an
+    // admin uncheck any team including the mandatory ones; only web_team was
+    // silently force-re-added on submit (see handleCreate), so unchecking
+    // e.g. editorial_team would let a request publish without ever having
+    // gone through editorial review. Block toggling mandatory teams instead.
+    const team = TASK_TEAMS.find(t => t.role === role);
+    if (team?.alwaysRequired) return;
     setSelected(prev => {
       const next = new Set(prev);
       next.has(role) ? next.delete(role) : next.add(role);
@@ -72,6 +81,20 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
         })
         .eq("id", req.id);
       if (reqErr) { setError(reqErr.message); setSaving(false); return; }
+
+      // Let the stakeholder know if their requested priority got overridden —
+      // previously this was only visible if they happened to reopen the
+      // request afterward. Fire and forget, never block task creation on it.
+      if (priorityChanged && req.created_by) {
+        supabase.from("notifications").insert({
+          user_id:    req.created_by,
+          type:       "priority_changed",
+          title:      "Priority updated by admin",
+          message:    `"${req.page_title || "Your request"}" priority was changed from ${PRIORITY_META[origPriority]?.label ?? origPriority} to ${PRIORITY_META[priority]?.label ?? priority}${priorityReason.trim() ? `: ${priorityReason.trim()}` : "."}`,
+          request_id: req.id,
+          action_url: `/requests/${req.id}`,
+        }).then(() => {}).catch(() => {});
+      }
 
       // Fix 2 — guarantee web_team is always in the creation list
       const teamsToCreate = [...new Set([...selected, "web_team"])];
@@ -149,9 +172,12 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
         <div className="flex-col gap-8">
           {TASK_TEAMS.map(team => {
             const isChecked = selected.has(team.role);
-            const isBrand   = team.role === "brand_team";
+            const isBrand    = team.role === "brand_team";
+            const isRequired = !!team.alwaysRequired;
             const hint = team.webLocked
               ? "Web Team will be locked until all other tasks complete"
+              : isRequired
+              ? "Required for every request"
               : (isBrand && req.needs_brand)
               ? "Stakeholder suggested Brand Team involvement"
               : TEAM_HINTS[team.role];
@@ -164,7 +190,7 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
                   borderRadius: "var(--radius-lg)",
                   border: `1px solid ${isChecked ? team.color + "44" : "var(--color-border)"}`,
                   background: isChecked ? team.bg : "var(--color-ghost)",
-                  cursor: "pointer",
+                  cursor: isRequired ? "default" : "pointer",
                   userSelect: "none",
                   transition: "all 0.15s",
                 }}
@@ -172,11 +198,12 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
                 <input
                   type="checkbox"
                   checked={isChecked}
+                  disabled={isRequired}
                   onChange={() => toggle(team.role)}
                   style={{
                     width: 15, height: 15,
                     accentColor: team.color,
-                    cursor: "pointer",
+                    cursor: isRequired ? "default" : "pointer",
                     flexShrink: 0,
                   }}
                 />
@@ -195,6 +222,12 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
                     style={{ fontSize: 10, whiteSpace: "nowrap",
                              opacity: isChecked ? 1 : 0.5 }}>
                     Optional
+                  </span>
+                )}
+                {isRequired && (
+                  <span className="badge badge-light"
+                    style={{ fontSize: 10, whiteSpace: "nowrap" }}>
+                    Required
                   </span>
                 )}
               </label>

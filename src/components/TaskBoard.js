@@ -6,6 +6,8 @@ import TaskPanel         from "@/components/TaskPanel";
 import PagePreview       from "@/components/PagePreview";
 import WebTeamView       from "@/components/WebTeamView";
 import EditSectionModal  from "@/components/EditSectionModal";
+import ProposeChangeWizard from "@/components/ProposeChangeWizard";
+import PendingChangeCard   from "@/components/PendingChangeCard";
 import { OVERALL_STATUS_META, getTasksForRequest, updateTask } from "@/lib/taskUtils";
 
 const TEAM_ROLES = new Set([
@@ -35,6 +37,14 @@ export default function TaskBoard({
   // which is the legacy v1 attachments table. Passed to PagePreview so it
   // can show Design Team's uploaded image in place of the placeholder box.
   const [designAttachments, setDesignAttachments] = useState([]);
+  // Stakeholder "Suggest a Change" compose flow — see
+  // ProposeChangeWizard.js, which owns its own reason/section state and
+  // renders NewRequest.js's tabbed section editor. TaskBoard.js only
+  // needs to know whether it's open.
+  const [composingChange, setComposingChange] = useState(false);
+  // Admin-side: the single pending content_change_requests row for this
+  // request, if any — reviewed inline via PendingChangeCard.js.
+  const [pendingChange, setPendingChange] = useState(null);
 
   const isAdmin       = ["admin", "super_admin"].includes(user.role);
   const isTeamMember  = TEAM_ROLES.has(user.role);
@@ -64,9 +74,21 @@ export default function TaskBoard({
     if (!error) setDesignAttachments(data || []);
   };
 
-  useEffect(() => { fetchTasks(); fetchDesignAttachments(); }, [req.id]);
+  const fetchPendingChange = async () => {
+    const { data, error } = await supabase
+      .from("content_change_requests")
+      .select("*")
+      .eq("request_id", req.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!error) setPendingChange(data || null);
+  };
 
-  const handleRefresh = () => { fetchTasks(); fetchDesignAttachments(); onRefresh?.(); };
+  useEffect(() => { fetchTasks(); fetchDesignAttachments(); fetchPendingChange(); }, [req.id]);
+
+  const handleRefresh = () => { fetchTasks(); fetchDesignAttachments(); fetchPendingChange(); onRefresh?.(); };
 
   // After the stakeholder edits content via a PagePreview ✎ button in
   // response to an editorial/seo question, auto-answer whichever
@@ -252,6 +274,27 @@ export default function TaskBoard({
   //           resolve it by editing content directly via PagePreview's
   //           own ✎ buttons instead of just typing a text answer) ──────
   if (isStakeholder) {
+    // Composing a mid-flight change proposal — takes over the whole view
+    // until submitted or cancelled. ProposeChangeWizard.js owns its own
+    // reason/section state and renders the same tabbed section editor
+    // NewRequest.js uses to create a request, so a previously-empty/N/A
+    // section can be filled in here too (EditSectionModal-per-section
+    // couldn't do that — see the "confusing" feedback that prompted this).
+    if (composingChange) {
+      return (
+        <div>
+          <Header />
+          <ProposeChangeWizard
+            req={req}
+            user={user}
+            supabase={supabase}
+            onCancel={() => setComposingChange(false)}
+            onSubmitted={() => { setComposingChange(false); handleRefresh(); }}
+          />
+        </div>
+      );
+    }
+
     const hasPendingApproval = localTasks.some(t => t.status === "pending_approval");
     const hasNeedsInfo = localTasks.some(t =>
       t.status === "needs_info" && ["editorial_team", "seo_team"].includes(t.team_role));
@@ -305,13 +348,22 @@ export default function TaskBoard({
             )}
           </div>
         ) : (
-          <TaskBoardOverview
-            tasks={localTasks}
-            req={req}
-            user={user}
-            supabase={supabase}
-            onRefresh={handleRefresh}
-          />
+          <div>
+            {req.overall_status && req.overall_status !== "published" && (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+                <button className="btn-ghost" onClick={() => setComposingChange(true)}>
+                  ✎ Suggest a Change
+                </button>
+              </div>
+            )}
+            <TaskBoardOverview
+              tasks={localTasks}
+              req={req}
+              user={user}
+              supabase={supabase}
+              onRefresh={handleRefresh}
+            />
+          </div>
         )}
       </div>
     );
@@ -329,6 +381,18 @@ export default function TaskBoard({
           <div style={{ overflowY: "auto",
                         borderLeft: "1px solid var(--color-border)",
                         paddingLeft: "1.5rem" }}>
+            {pendingChange && (
+              <div style={{ marginBottom: 16 }}>
+                <PendingChangeCard
+                  change={pendingChange}
+                  req={req}
+                  user={user}
+                  supabase={supabase}
+                  tasks={localTasks}
+                  onResolved={handleRefresh}
+                />
+              </div>
+            )}
             <TaskBoardOverview
               tasks={localTasks}
               req={req}

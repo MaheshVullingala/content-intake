@@ -3,7 +3,8 @@ import { sanitizePayload, validateFile, getAuthHeaders } from "@/lib/security";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
-import { PAGE_TYPES, getSectionsForPageType, CHAR_LIMITS } from "@/lib/constants";
+import { PAGE_TYPES, getSectionsForPageType, CHAR_LIMITS as DEFAULT_CHAR_LIMITS } from "@/lib/constants";
+import { useCharLimits } from "@/lib/charLimits";
 import PagePreview from "@/components/PagePreview";
 import AIAssistant from "@/components/AIAssistant";
 import SectionAIAssist from "@/components/SectionAIAssist";
@@ -65,6 +66,7 @@ const parseJSONB = (val, fb = []) => {
 };
 
 export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav, onClearPendingNav }) {
+  const CHAR_LIMITS = useCharLimits(supabase, DEFAULT_CHAR_LIMITS);
   const [step,          setStep]         = useState(draftId ? 2 : 1);
   const [draftDbId,     setDraftDbId]    = useState(draftId || null);
   const [pageType,      setPageType]     = useState("");
@@ -123,29 +125,50 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   // Load draft data if editing
   useEffect(() => {
     if (!draftId) return;
+    let cancelled = false;
+    // Safety net matching the same pattern saveDraft() already uses below —
+    // without this, any unhandled failure in the query (a network blip, the
+    // 10s abort in src/lib/supabase.js's fetch wrapper firing, anything
+    // that makes the awaited call *reject* rather than resolve with an
+    // {error} field) left loadingDraft stuck true forever with nothing to
+    // catch it, since the whole function had no try/catch — the spinner
+    // just spun indefinitely instead of failing visibly.
+    const safetyTimeout = setTimeout(() => {
+      if (!cancelled) { setLoadingDraft(false); setError("Draft took too long to load. Check your connection and try again."); }
+    }, 10000);
     const loadDraft = async () => {
-      const { data, error } = await supabase.from("requests").select("*").eq("id", draftId).single();
-      if (error || !data) { go("dashboard"); return; }
-      setPageType(data.page_type || "");
-      setSeoData({ seo_page_location: data.seo_page_location||"", seo_meta_title: data.seo_meta_title||"", seo_meta_description: data.seo_meta_description||"", seo_meta_keywords: data.seo_meta_keywords||"" });
-      setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image_ref: data.banner_image_ref||null });
-      setOverview({ overview_label: "OVERVIEW", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null });
-      if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: "KEY BENEFITS", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
-      if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: "FEATURES", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
-      if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: "CUSTOMER STORIES", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
-      if (data.promo_title) setPromoData({ promo_bg_image: data.promo_bg_image||"", promo_bg_note: data.promo_bg_note||"", promo_label: data.promo_label||"", promo_title: data.promo_title||"", promo_description: data.promo_description||"", promo_btn_label: data.promo_btn_label||"", promo_btn_link: data.promo_btn_link||"" });
-      if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: "RELATED CONTENT", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
-      if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
-      if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
-      if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
-      if (data.needs_brand) setNeedsBrand(true);
-      setPriority(data.priority || "normal");
-      setPriorityReason(data.stakeholder_priority_reason || "");
-      const { data: rc } = await supabase.from("comments").select("*").eq("request_id", draftId).eq("is_return", true).order("created_at", { ascending: false });
-      setReturnComments(rc || []);
-      setLoadingDraft(false);
+      try {
+        const { data, error } = await supabase.from("requests").select("*").eq("id", draftId).single();
+        if (cancelled) return;
+        if (error || !data) { go("dashboard"); return; }
+        setPageType(data.page_type || "");
+        setSeoData({ seo_page_location: data.seo_page_location||"", seo_meta_title: data.seo_meta_title||"", seo_meta_description: data.seo_meta_description||"", seo_meta_keywords: data.seo_meta_keywords||"" });
+        setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image_ref: data.banner_image_ref||null });
+        setOverview({ overview_label: "OVERVIEW", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null });
+        if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: "KEY BENEFITS", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
+        if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: "FEATURES", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
+        if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: "CUSTOMER STORIES", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
+        if (data.promo_title) setPromoData({ promo_bg_image: data.promo_bg_image||"", promo_bg_note: data.promo_bg_note||"", promo_label: data.promo_label||"", promo_title: data.promo_title||"", promo_description: data.promo_description||"", promo_btn_label: data.promo_btn_label||"", promo_btn_link: data.promo_btn_link||"" });
+        if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: "RELATED CONTENT", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
+        if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
+        if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
+        if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
+        if (data.needs_brand) setNeedsBrand(true);
+        setPriority(data.priority || "normal");
+        setPriorityReason(data.stakeholder_priority_reason || "");
+        if (cancelled) return;
+        const { data: rc } = await supabase.from("comments").select("*").eq("request_id", draftId).eq("is_return", true).order("created_at", { ascending: false });
+        if (cancelled) return;
+        setReturnComments(rc || []);
+      } catch (e) {
+        console.error("Load draft error:", e);
+        if (!cancelled) go("dashboard");
+      } finally {
+        if (!cancelled) { clearTimeout(safetyTimeout); setLoadingDraft(false); }
+      }
     };
     loadDraft();
+    return () => { cancelled = true; clearTimeout(safetyTimeout); };
   }, [draftId]);
 
   const updSeo      = (k, v) => setSeoData(p  => ({ ...p, [k]: v }));
@@ -304,20 +327,23 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       // Small delay to ensure React state has flushed before reading values
       await new Promise(resolve => setTimeout(resolve, 50));
       const payload = sanitizePayload(buildPayload("draft"));
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      // Real session JWT, not the anon key — RLS needs auth.uid() to
+      // resolve to the caller, which the anon key alone can never do (see
+      // getAuthHeaders in @/lib/security). saveAndExit() and submit() in
+      // this same file already did this correctly; this function was the
+      // one place still sending the anon key directly, which made every
+      // Save Draft click hit requests_insert/requests_update as an
+      // unauthenticated request — get_user_role()/get_user_id() both
+      // resolve to NULL, so the RLS check always fails with 42501,
+      // regardless of who's actually logged in.
+      const authHeaders = await getAuthHeaders(supabase);
       if (draftDbId) {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
         const res = await fetch(
           `${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`,
           {
             method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
-              "Prefer": "return=minimal",
-            },
+            headers: authHeaders,
             body: JSON.stringify({ ...payload, updated_at: new Date().toISOString() }),
           }
         );
@@ -327,19 +353,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           return;
         }
       } else {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
         const res = await fetch(
           `${supabaseUrl}/rest/v1/requests`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
-              "Prefer": "return=representation",
-            },
+            headers: { ...authHeaders, "Prefer": "return=representation" },
             body: JSON.stringify(payload),
           }
         );

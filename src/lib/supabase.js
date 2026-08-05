@@ -50,9 +50,27 @@ export const getUserProfile = async (retries = 2) => {
         .single();
 
       if (byEmail) {
-        // Link auth_id silently
-        supabase.from('users').update({ auth_id: user.id }).eq('id', byEmail.id).then(() => {});
-        return { ...byEmail, auth_id: user.id };
+        // Link auth_id via a SECURITY DEFINER RPC, not a direct client
+        // .update() — this table's own users_update RLS policy requires
+        // auth_id = auth.uid() to already be true before a row can be
+        // updated, which is a chicken-and-egg problem for exactly this
+        // first-link case (the row's auth_id is NULL or stale, i.e. NOT
+        // yet equal to auth.uid() — that's the whole reason we're here).
+        // A direct .update() call here silently fails RLS (0 rows
+        // affected, no error surfaced by Supabase's client), so the link
+        // never actually lands and every subsequent write that depends on
+        // get_user_id()/get_user_role() (requests, tasks, everything)
+        // fails with a 42501 forever for that user. link_auth_id_by_email()
+        // bypasses RLS narrowly and safely: it only ever links a row whose
+        // auth_id IS NULL, matched against the caller's own verified email
+        // from auth.users (never a client-supplied value). See
+        // sql/16-fix-auth-id-linking.sql.
+        const { data: linked, error: linkError } = await supabase.rpc('link_auth_id_by_email');
+        if (!linkError && linked) return linked;
+        // RPC failed (or another tab/request already linked it) — fall
+        // back to the row as originally fetched rather than lying about
+        // auth_id being linked when we can't confirm it actually is.
+        return byEmail;
       }
 
       return null;

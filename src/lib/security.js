@@ -49,7 +49,16 @@ export const validateFile = (file, options = {}) => {
   return { valid: true };
 };
 
-// 3. Get user JWT token for authenticated Supabase REST calls
+// 3a. Get the current session's raw access token, for calling our own
+// /api/* routes with an Authorization: Bearer header (those routes verify
+// it server-side with supabase.auth.getUser(token) — see /api/ai and
+// /api/audit). Returns null if there's no active session.
+export const getAccessToken = async (supabase) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token || null;
+};
+
+// 3b. Get user JWT token for authenticated Supabase REST calls
 export const getAuthHeaders = async (supabase) => {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

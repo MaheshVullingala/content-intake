@@ -19,7 +19,31 @@ Required in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ANTHROPIC_API_KEY=
+SUPABASE_SERVICE_ROLE_KEY=       # server-only; used by /api/audit and /api/notifications/send-pending
 ```
+
+Optional — email notifications (`src/lib/email.js`). Safe to leave unset; sending
+just no-ops until `SMTP_HOST`/`SMTP_FROM` are both present, and the
+`settings.email_notifications_enabled` flag (AdminPanel → Settings) is
+also off by default. Org uses Outlook/Microsoft 365, so this is built
+against generic SMTP — works with `smtp.office365.com` + mailbox
+credentials, or an internal Exchange Online relay connector that
+allowlists the app's IP and needs no auth at all:
+```
+SMTP_HOST=                       # e.g. smtp.office365.com, or an internal relay host
+SMTP_PORT=587                    # 587 (STARTTLS) is typical for Office 365; 465 = implicit TLS
+SMTP_SECURE=false                # "true" only for port 465
+SMTP_USER=                       # omit along with SMTP_PASSWORD for an anonymous/IP-allowlisted relay
+SMTP_PASSWORD=
+SMTP_FROM=                       # e.g. "Content Intake Portal <noreply@cadence.com>"
+CRON_SECRET=                     # shared secret checked by /api/notifications/send-pending; set before it's reachable from outside your own scheduler
+NEXT_PUBLIC_APP_URL=             # e.g. https://content-intake-delta.vercel.app — used to build links in emails
+```
+On Vercel, `vercel.json` already schedules the sweep every 5 minutes
+(note: Vercel's Hobby plan limits cron to once/day — Pro or self-hosted
+needed for 5-minute granularity). On the self-hosted VM, wire an
+equivalent system cron / systemd timer hitting the same URL with
+`curl -H "Authorization: Bearer $CRON_SECRET" https://.../api/notifications/send-pending`.
 
 ## Architecture
 

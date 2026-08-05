@@ -1693,3 +1693,25 @@ This is the same *class* of bug as the save-draft issue (missing error handling)
 **Fix:** wrapped `loadDraft()`'s body in `try/catch/finally`, added a `cancelled` flag (guards against state updates after unmount / a newer `draftId` superseding an in-flight load), and added a 10-second `safetyTimeout` mirroring the pattern `saveDraft()` already used — so `loadingDraft` is guaranteed to eventually become `false` no matter what happens to the underlying promise. On timeout or catch, `error` is set and rendered through the existing `alert-error` banner (already used by every other error path in this file), so the failure is visible instead of silent. Also re-indented the try-block body for readability (cosmetic only).
 
 File: `src/components/NewRequest.js` (lines ~125-172).
+
+## Fill Test Data button (2026-08-05)
+
+Added a "🎲 Fill Test Data" button in `NewRequest.js` step 2 (next to Save as
+Draft), for QA/testing convenience — populates every section that applies to
+the selected page type with placeholder Lorem Ipsum content in one click, so
+you don't have to hand-fill the whole form on every test pass.
+
+- `src/lib/testData.js` — pure client-side Lorem Ipsum generator
+  (`generateTestData(pageType, sectionKeys, limits)`). No network calls,
+  writes nothing to the DB — it only sets React state, same as typing into
+  the fields by hand. Respects `getSectionsForPageType()` so it only fills
+  sections that actually apply to the chosen page type, and truncates every
+  field to the live `CHAR_LIMITS` (including admin overrides via
+  `useCharLimits`) so nothing trips a char-limit warning.
+- `NewRequest.js`'s `fillTestData()` calls the generator and applies the
+  result to each section's state slice, and clears any N/A marks on the
+  sections it just filled so the generated content is actually visible in
+  the preview instead of being hidden behind a "marked N/A" placeholder.
+- Image fields are left empty (`image_ref: null`) — there's no fake file to
+  upload, so cards/banners will show their empty-image placeholder, which is
+  expected and fine for testing text/layout.

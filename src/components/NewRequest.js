@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import { PAGE_TYPES, getSectionsForPageType, CHAR_LIMITS as DEFAULT_CHAR_LIMITS } from "@/lib/constants";
 import { useCharLimits } from "@/lib/charLimits";
+import { generateTestData } from "@/lib/testData";
 import PagePreview from "@/components/PagePreview";
 import AIAssistant from "@/components/AIAssistant";
 import SectionAIAssist from "@/components/SectionAIAssist";
@@ -175,6 +176,33 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const updBanner   = (k, v) => setBanner(p  => ({ ...p,  [k]: v }));
   const updOverview = (k, v) => setOverview(p => ({ ...p,  [k]: v }));
   const toggleNA    = (key)  => setNaMap(p   => ({ ...p,  [key]: !p[key] }));
+
+  // Fill every applicable section with placeholder Lorem Ipsum content —
+  // QA/testing convenience only. Purely client-side state, nothing is
+  // written to the DB until Save Draft / Submit is clicked. Also clears
+  // any N/A marks on sections it fills so the generated content is
+  // actually visible in the preview.
+  const fillTestData = () => {
+    if (!pageType) return;
+    const sectionKeys = getSectionsForPageType(pageType).map(s => s.key);
+    const t = generateTestData(pageType, sectionKeys, CHAR_LIMITS);
+    if (t.seoData)   setSeoData(p   => ({ ...p, ...t.seoData }));
+    if (t.banner)    setBanner(p    => ({ ...p, ...t.banner }));
+    if (t.overview)  setOverview(p  => ({ ...p, ...t.overview }));
+    if (t.kbData)    setKbData(p    => ({ ...p, ...t.kbData }));
+    if (t.faData)    setFaData(p    => ({ ...p, ...t.faData }));
+    if (t.csData)    setCsData(p    => ({ ...p, ...t.csData }));
+    if (t.promoData) setPromoData(p => ({ ...p, ...t.promoData }));
+    if (t.rcData)    setRcData(p    => ({ ...p, ...t.rcData }));
+    if (t.resData)   setResData(p   => ({ ...p, ...t.resData }));
+    if (t.rpData)    setRpData(p    => ({ ...p, ...t.rpData }));
+    if (t.tsData)    setTsData(p    => ({ ...p, ...t.tsData }));
+    setNaMap(p => {
+      const next = { ...p };
+      sectionKeys.forEach(k => { delete next[k]; });
+      return next;
+    });
+  };
 
   const sections   = pageType ? getSectionsForPageType(pageType) : [];
   const hasContent = banner.page_title || overview.overview_impact;
@@ -698,6 +726,18 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
         {/* Right: Save as Draft + Preview & Submit */}
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          {step === 2 && pageType && (
+            <button type="button" onClick={fillTestData} title="Fill every section with placeholder Lorem Ipsum content — for testing only, nothing is saved until you click Save/Submit"
+              style={{
+                background: "#fff", color: "#856404",
+                border: "1px dashed #d4a72c", borderRadius: 8,
+                padding: "0.55rem 1.2rem", fontSize: 13, fontWeight: 500,
+                cursor: "pointer",
+                fontFamily: "'Rubik', sans-serif", whiteSpace: "nowrap",
+              }}>
+              🎲 Fill Test Data
+            </button>
+          )}
           {step === 2 && pageType && (
             <button onClick={saveDraft} disabled={saving}
               style={{

@@ -396,7 +396,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
                   ))}
                 </div>
               </div>
-              <ImageField label="Media / Image" value={overview.overview_media_ref} onChange={v => setOverview(p => ({ ...p, overview_media_ref: v }))} fieldKey="overview_media" requestId={req.id} hideDescription />
+              <ImageField label="Media / Image" value={overview.overview_media_ref} onChange={v => setOverview(p => ({ ...p, overview_media_ref: v }))} fieldKey="overview_media" requestId={req.id} />
             </div>
           </SectionLayout>
         )}

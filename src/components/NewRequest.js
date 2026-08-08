@@ -1225,7 +1225,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                           ))}
                         </div>
                       </div>
-                      <ImageField label="Media / Image" value={overview.overview_media_ref} onChange={v => updOverview("overview_media_ref", v)} fieldKey="overview_media" requestId={draftId || "draft"} hideDescription />
+                      <ImageField label="Media / Image" value={overview.overview_media_ref} onChange={v => updOverview("overview_media_ref", v)} fieldKey="overview_media" requestId={draftId || "draft"} />
                       {overview.overview_media_type !== "video" && (
                         <Field label="Alt Text" required charLimit={CHAR_LIMITS.overview_media_alt} value={overview.overview_media_alt} onChange={v => updOverview("overview_media_alt", v)}
                           placeholder="Describe what this image shows, for screen readers"

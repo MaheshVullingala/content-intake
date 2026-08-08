@@ -73,7 +73,7 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
               <div>
                 <h3 style={{ fontSize: 20, fontWeight: 500, color: "#181313", marginBottom: 16 }}>{fa_items[activeTab].title}</h3>
                 {activeTabImage && (
-                  <img src={activeTabImage} alt={fa_items[activeTab].title}
+                  <img src={activeTabImage} alt={fa_items[activeTab].image_alt || fa_items[activeTab].title}
                     style={{ width: "100%", maxHeight: 340, objectFit: "cover", borderRadius: 8, marginBottom: 20, border: "1px solid #E0E0E0" }}
                     onError={e => { e.target.style.display = "none"; }} />
                 )}
@@ -108,7 +108,7 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
               <div>
                 <h3 style={{ fontSize: 20, fontWeight: 500, color: "#181313", marginBottom: 16 }}>{fa_items[activeTab].title}</h3>
                 {activeTabImage && (
-                  <img src={activeTabImage} alt={fa_items[activeTab].title}
+                  <img src={activeTabImage} alt={fa_items[activeTab].image_alt || fa_items[activeTab].title}
                     style={{ width: "100%", maxHeight: 340, objectFit: "cover", borderRadius: 8, marginBottom: 20, border: "1px solid #E0E0E0" }}
                     onError={e => { e.target.style.display = "none"; }} />
                 )}

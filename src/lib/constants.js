@@ -85,7 +85,7 @@ export const ROLE_FOR_STATUS = {
 export const CHAR_LIMITS = {
   page_title:70, sub_title:120, cta1_label:30, cta2_label:30, cta1_link:300, cta2_link:300,
   seo_page_location:300, seo_meta_title:70, seo_meta_description:160, seo_meta_keywords:300,
-  overview_label:30, overview_impact:100, overview_description:600,
+  overview_label:30, overview_impact:100, overview_description:600, overview_media_alt:150,
   kb_label:30, kb_impact:100, kb_description:300,
   fa_label:30, fa_impact:100, fa_description:300,
   cs_label:30, cs_impact:100,

@@ -34,6 +34,7 @@ const CHAR_LIMIT_FIELDS = [
   { section: "Overview",            key: "overview_label",        label: "Label",                default: 30  },
   { section: "Overview",            key: "overview_impact",       label: "Impact Statement",     default: 100 },
   { section: "Overview",            key: "overview_description",  label: "Description",          default: 600 },
+  { section: "Overview",            key: "overview_media_alt",    label: "Media Alt Text",       default: 150 },
   { section: "Key Benefits",        key: "kb_label",              label: "Label",                default: 30  },
   { section: "Key Benefits",        key: "kb_impact",             label: "Impact Statement",     default: 100 },
   { section: "Key Benefits",        key: "kb_description",        label: "Description",          default: 300 },

@@ -30,7 +30,7 @@ import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview
 const EMPTY_SEO = { seo_page_location:"", seo_meta_title:"", seo_meta_description:"", seo_meta_keywords:"" };
 
 const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image_ref:null };
-const EMPTY_OVERVIEW = { overview_label:"OVERVIEW", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_ref:null };
+const EMPTY_OVERVIEW = { overview_label:"OVERVIEW", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_ref:null, overview_media_alt:"" };
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint, charLimit, disabled, readOnly, style: fieldStyle }) => {
   const limit = charLimit || null;
@@ -145,7 +145,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         setPageType(data.page_type || "");
         setSeoData({ seo_page_location: data.seo_page_location||"", seo_meta_title: data.seo_meta_title||"", seo_meta_description: data.seo_meta_description||"", seo_meta_keywords: data.seo_meta_keywords||"" });
         setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image_ref: data.banner_image_ref||null });
-        setOverview({ overview_label: "OVERVIEW", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null });
+        setOverview({ overview_label: "OVERVIEW", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null, overview_media_alt: data.overview_media_alt||"" });
         if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: "KEY BENEFITS", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
         if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: "FEATURES", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
         if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: "CUSTOMER STORIES", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
@@ -254,6 +254,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       overview_media_url:   overview.overview_media_url,
       overview_media_type:  overview.overview_media_type,
       overview_media_ref:   overview.overview_media_ref,
+      overview_media_alt:   overview.overview_media_alt,
     } : {}),
     // Key Benefits
     ...(!naMap["key_benefits"] ? {
@@ -1225,6 +1226,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                         </div>
                       </div>
                       <ImageField label="Media / Image" value={overview.overview_media_ref} onChange={v => updOverview("overview_media_ref", v)} fieldKey="overview_media" requestId={draftId || "draft"} hideDescription />
+                      {overview.overview_media_type !== "video" && (
+                        <Field label="Alt Text" required charLimit={CHAR_LIMITS.overview_media_alt} value={overview.overview_media_alt} onChange={v => updOverview("overview_media_alt", v)}
+                          placeholder="Describe what this image shows, for screen readers"
+                          hint="Required for accessibility — not needed for purely decorative images, but this one is content, so describe what it shows." />
+                      )}
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>

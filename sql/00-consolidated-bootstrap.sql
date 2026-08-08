@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS public.requests (
   overview_media_type          TEXT,
   overview_media_note          TEXT,
   overview_media_ref           JSONB,
+  overview_media_alt           TEXT, -- accessibility alt text; only meaningful when overview_media_type is image/diagram
 
   -- assignment
   assigned_to                 UUID REFERENCES public.users(id),

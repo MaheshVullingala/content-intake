@@ -88,7 +88,7 @@ function ListView({ items = [], onChange, requestId = "draft" }) {
 
 // ── Tabs View ──────────────────────────────────────────────────
 function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
-  const addTab    = () => { if (items.length >= 10) return; onChange([...items, { id: `tab-${Date.now()}`, title: "", description: "", image_ref: null, cta_label: "", cta_link: "" }]); };
+  const addTab    = () => { if (items.length >= 10) return; onChange([...items, { id: `tab-${Date.now()}`, title: "", description: "", image_ref: null, image_alt: "", cta_label: "", cta_link: "" }]); };
   const updateTab = (id, field, val) => onChange(items.map(t => t.id === id ? { ...t, [field]: val } : t));
   const removeTab = (id) => onChange(items.filter(t => t.id !== id));
   const moveTab   = (idx, dir) => {
@@ -149,6 +149,9 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
                 fieldKey={`features-apps_tab-${idx + 1}_image`}
                 requestId={requestId}
               />
+              <Field label="Alt Text" required charLimit={150} value={tab.image_alt} onChange={v => updateTab(tab.id, "image_alt", v)}
+                placeholder="Describe what this image shows, for screen readers"
+                hint="Required for accessibility — describe what the image shows." />
             </div>
 
             <div style={{ paddingTop: 12, borderTop: "1px solid #F3F3F3", marginTop: 4 }}>

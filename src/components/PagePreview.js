@@ -28,6 +28,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   const overview_media_url   = getDesignImage("overview_media", attachments) || "";
   const overview_media_placeholder = getImagePlaceholder(overview_media_ref);
   const overview_media_type  = req.overview_media_type  || "image";
+  const overview_media_alt   = req.overview_media_alt   || "";
   const kb_label       = req.kb_label       || "";
   const kb_impact      = req.kb_impact      || "";
   const kb_description = req.kb_description || "";
@@ -193,7 +194,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
               <div className="overview-media-wrap">
                 {overview_media_type === "video"
                   ? <div className="overview-media-video">▶ Video: {overview_media_url}</div>
-                  : <img src={overview_media_url} alt="Overview media" className="overview-media-img"
+                  : <img src={overview_media_url} alt={overview_media_alt || "Overview media"} className="overview-media-img"
                       onError={e => { e.target.style.display = "none"; }} />
                 }
               </div>

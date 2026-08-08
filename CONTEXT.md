@@ -1715,3 +1715,11 @@ you don't have to hand-fill the whole form on every test pass.
 - Image fields are left empty (`image_ref: null`) — there's no fake file to
   upload, so cards/banners will show their empty-image placeholder, which is
   expected and fine for testing text/layout.
+
+## Accessibility: alt text for Overview and Features/Applications images (2026-08-08)
+
+Scoped per explicit direction: only Overview's media and Features/Applications tab images get an alt text field. Background images (banner, promo) and icon descriptions (Key Benefits card icons, Training & Support icons) are already treated as presentational — `banner-bg-img` already renders with `alt=""` in `PagePreview.js` — and are intentionally excluded.
+
+- `overview_media_alt` — new `requests` table column (`sql/17-overview-media-alt.sql`, applied live + added to `sql/00-consolidated-bootstrap.sql`). Only shown/relevant when `overview_media_type` is `image` or `diagram`, hidden for `video` (video needs captions/transcript, not alt text — different accessibility mechanism). Wired through `NewRequest.js` (state, load-draft, buildPayload) and rendered as the real `alt` attribute on the Overview `<img>` in `PagePreview.js` (previously hardcoded to the generic string `"Overview media"`). Added to `CHAR_LIMITS` (150) and the admin Char Limits panel (`AdminPanel.js`'s `CHAR_LIMIT_FIELDS`) so it's tunable like every other field.
+- Features/Applications tab images — no schema migration needed, since tabs already live in the `fa_items` JSONB array. Added `image_alt` as a new key on each tab object (`FeaturesApps.js`'s `TabsView`, both horizontal and vertical orientation), shown right under the tab's `ImageField`. `FeaturesAppsPreview.js`'s tab `<img>` now uses `image_alt` with the tab title as a fallback for tabs created before this change. Char limit (150) is hardcoded locally, matching how this component's other per-tab limits (title 50, description 200) already work — `FeaturesApps.js` doesn't receive `CHAR_LIMITS`/`useCharLimits` at all today, a pre-existing gap not addressed here.
+- Both fields are marked visually required (asterisk + hint) but **not** hard-enforced in `isValid()` — kept as "add the field" scope, not the broader pre-flight-check hard-block work discussed separately. Existing drafts/published requests with no alt text simply show an empty field; nothing breaks.

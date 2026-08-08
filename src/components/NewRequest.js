@@ -6,6 +6,7 @@ import { PCBLoader } from "@/components/PCBLoader";
 import { PAGE_TYPES, getSectionsForPageType, CHAR_LIMITS as DEFAULT_CHAR_LIMITS } from "@/lib/constants";
 import { useCharLimits } from "@/lib/charLimits";
 import { generateTestData } from "@/lib/testData";
+import { runPreflightChecks } from "@/lib/preflightCheck";
 import PagePreview from "@/components/PagePreview";
 import AIAssistant from "@/components/AIAssistant";
 import SectionAIAssist from "@/components/SectionAIAssist";
@@ -532,6 +533,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       setError("Please provide a reason for High/Urgent priority before submitting.");
       return;
     }
+    const preflightIssues = runPreflightChecks(buildPayload("draft"));
+    if (preflightIssues.length > 0) {
+      setError(`Pre-flight check found ${preflightIssues.length} issue${preflightIssues.length > 1 ? "s" : ""} — see the Pre-flight Check panel above and fix ${preflightIssues.length > 1 ? "them" : "it"} before submitting.`);
+      return;
+    }
     setSaving(true);
     setError("");
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -727,7 +733,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
         {/* Right: Save as Draft + Preview & Submit */}
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          {step === 2 && pageType && (
+          {step === 2 && pageType && process.env.NODE_ENV !== "production" && (
             <button type="button" onClick={fillTestData} title="Fill every section with placeholder Lorem Ipsum content — for testing only, nothing is saved until you click Save/Submit"
               style={{
                 background: "#fff", color: "#856404",
@@ -1247,11 +1253,37 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
 
       {/* ── Step 3: Preview & Submit ── */}
-      {step === 3 && (
+      {step === 3 && (() => {
+        const preflightIssues = runPreflightChecks(buildPayload("draft"));
+        return (
         <>
           <div style={{ marginBottom: 20 }}>
             <p className="text-xs text-uppercase text-muted mb-8">Full Page Preview</p>
             <PagePreview req={previewData} activeSection={activeSection} />
+          </div>
+
+          {/* Pre-flight check */}
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, marginBottom: 14 }}>Pre-flight Check</h3>
+            {preflightIssues.length === 0 ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#2a7a4b", fontWeight: 500 }}>
+                ✓ No issues found
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {preflightIssues.map((issue, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#fef2f2", border: "1px solid #c0392b33", borderRadius: 8, padding: "0.65rem 0.9rem" }}>
+                    <div style={{ fontSize: 13, color: "#181313" }}>⚠ {issue.message}</div>
+                    {issue.section && (
+                      <button type="button" onClick={() => { setStep(2); handleSectionChange(issue.section); }}
+                        style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, fontWeight: 500, color: "#181313", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "'Rubik',sans-serif" }}>
+                        Fix →
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Section summary */}
@@ -1294,7 +1326,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             </button>
           </div>
         </>
-      )}
+        );
+      })()}
 
       {/* ── Floating AI Assistant ── */}
       {step === 2 && (

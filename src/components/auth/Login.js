@@ -1,12 +1,47 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { OKTA_ENABLED, OKTA_SSO_DOMAIN } from "@/lib/authConfig";
 
 export default function Login({ onSwitch }) {
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
+  const [ssoLoading, setSsoLoading] = useState(false);
+  const [ssoError,   setSsoError]   = useState("");
+
+  // Admin-controlled kill switch for password login (AdminPanel → Settings),
+  // read via a narrow RPC since there's no session yet on this screen.
+  // Guardrail: if Okta isn't configured at all, ignore the DB flag entirely
+  // and keep password login visible — otherwise a stale/mistaken toggle
+  // could lock everyone out with no way back in. Starts `true` so the form
+  // doesn't flash empty while the RPC is in flight.
+  const [passwordLoginEnabled, setPasswordLoginEnabled] = useState(true);
+
+  useEffect(() => {
+    if (!OKTA_ENABLED) return; // guardrail — never bother checking, always allow
+    let cancelled = false;
+    supabase.rpc("get_password_login_enabled").then(({ data, error }) => {
+      if (!cancelled && !error && data === false) setPasswordLoginEnabled(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleOktaLogin = async () => {
+    setSsoLoading(true);
+    setSsoError("");
+    try {
+      const { data, error } = await supabase.auth.signInWithSSO({ domain: OKTA_SSO_DOMAIN });
+      if (error) { setSsoError(error.message); setSsoLoading(false); return; }
+      if (data?.url) { window.location.href = data.url; return; }
+      setSsoError("Okta sign-in isn't configured yet — contact an admin.");
+      setSsoLoading(false);
+    } catch (e) {
+      setSsoError("Couldn't reach the Okta sign-in page — please try again.");
+      setSsoLoading(false);
+    }
+  };
 
   const clearStaleTokens = () => {
     try {
@@ -46,50 +81,70 @@ export default function Login({ onSwitch }) {
     }
   };
 
+  const showPassword = !OKTA_ENABLED || passwordLoginEnabled;
+
   return (
-    <form className="login-form" onSubmit={handleLogin}>
+    <div className="login-form">
 
       <p className="login-eyebrow">Welcome</p>
       <h2 className="login-heading">Sign in to your account</h2>
 
-      {error && <div className="login-error">{error}</div>}
+      {OKTA_ENABLED && (
+        <>
+          {ssoError && <div className="login-error">{ssoError}</div>}
+          <button type="button" className="login-submit" onClick={handleOktaLogin} disabled={ssoLoading} style={{ marginBottom: showPassword ? 18 : 0 }}>
+            {ssoLoading ? "Redirecting..." : "Sign in with Okta »»"}
+          </button>
+          {showPassword && (
+            <div className="login-divider">
+              <span className="login-divider-text">or sign in with email</span>
+            </div>
+          )}
+        </>
+      )}
 
-      <div className="login-field">
-        <label className="login-label">Email</label>
-        <input
-          className="login-input"
-          type="email" value={email} onChange={e => setEmail(e.target.value)}
-          required placeholder="you@company.com" maxLength={254} autoComplete="off"
-        />
-      </div>
+      {showPassword && (
+        <form onSubmit={handleLogin}>
+          {error && <div className="login-error">{error}</div>}
 
-      <div className="login-field-last">
-        <label className="login-label">Password</label>
-        <input
-          className="login-input"
-          type="password" value={password} onChange={e => setPassword(e.target.value)}
-          required placeholder="••••••••" minLength={8} autoComplete="off"
-        />
-      </div>
+          <div className="login-field">
+            <label className="login-label">Email</label>
+            <input
+              className="login-input"
+              type="email" value={email} onChange={e => setEmail(e.target.value)}
+              required placeholder="you@company.com" maxLength={254} autoComplete="off"
+            />
+          </div>
 
-      <div className="login-forgot-row">
-        <button type="button" className="login-forgot-btn" onClick={() => onSwitch("forgot")}>
-          Forgot Password ?
-        </button>
-      </div>
+          <div className="login-field-last">
+            <label className="login-label">Password</label>
+            <input
+              className="login-input"
+              type="password" value={password} onChange={e => setPassword(e.target.value)}
+              required placeholder="••••••••" minLength={8} autoComplete="off"
+            />
+          </div>
 
-      <button type="submit" className="login-submit" disabled={loading}>
-        {loading ? "Signing in..." : "Login »»"}
-      </button>
+          <div className="login-forgot-row">
+            <button type="button" className="login-forgot-btn" onClick={() => onSwitch("forgot")}>
+              Forgot Password ?
+            </button>
+          </div>
 
-      <div className="login-divider">
-        <span className="login-divider-text">Don't have an account?</span>
-      </div>
+          <button type="submit" className="login-submit" disabled={loading}>
+            {loading ? "Signing in..." : "Login »»"}
+          </button>
 
-      <button type="button" className="login-register-btn" onClick={() => onSwitch("register")}>
-        Create an account
-      </button>
+          <div className="login-divider">
+            <span className="login-divider-text">Don't have an account?</span>
+          </div>
 
-    </form>
+          <button type="button" className="login-register-btn" onClick={() => onSwitch("register")}>
+            Create an account
+          </button>
+        </form>
+      )}
+
+    </div>
   );
 }

@@ -245,7 +245,8 @@ CREATE TABLE IF NOT EXISTS public.settings (
   timeout_mins                  INTEGER DEFAULT 5,
   updated_at                    TIMESTAMPTZ DEFAULT now(),
   updated_by                    TEXT,
-  email_notifications_enabled   BOOLEAN DEFAULT false
+  email_notifications_enabled   BOOLEAN DEFAULT false,
+  password_login_enabled        BOOLEAN DEFAULT true
 );
 
 -- ── tasks ────────────────────────────────────────────────────────────
@@ -446,6 +447,28 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.link_auth_id_by_email() TO authenticated;
 
+-- Narrow, safe RLS bypass so the (unauthenticated) Login screen can check
+-- whether an admin has turned off password login, without needing broad
+-- anon SELECT access to the rest of settings (timeout_mins,
+-- email_notifications_enabled, etc., which are not this page's business).
+-- Defaults to TRUE (fail open) if the settings row doesn't exist yet, so
+-- a fresh/uninitialized deployment never accidentally hides the only
+-- working login method. See CONTEXT.md "Okta SSO: dual login" — the
+-- actual lockout guardrail (ignore this flag entirely if Okta isn't
+-- configured) lives in application code (src/lib/authConfig.js), not
+-- here, since Postgres has no visibility into whether Okta/SAML is
+-- actually wired up.
+CREATE OR REPLACE FUNCTION public.get_password_login_enabled()
+RETURNS BOOLEAN
+LANGUAGE sql SECURITY DEFINER STABLE AS $$
+  SELECT COALESCE(
+    (SELECT password_login_enabled FROM public.settings WHERE id = 'global'),
+    true
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_password_login_enabled() TO anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.check_web_team_unlock(p_request_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$
@@ -473,14 +496,33 @@ $$;
 -- (editorial/brand/seo/design/web) and admin still always fall through to
 -- 'pending' and require a human to assign. Strict allowlist of exactly
 -- one literal value — never trust raw_user_meta_data for anything more
--- privileged. On Okta/SSO migration, this is also what lets a first-time
--- SSO login create the shell row automatically — see src/lib/supabase.js
--- getUserProfile() for the matching auth_id-then-email fallback that
--- links it to any pre-existing row.
+-- privileged.
+--
+-- Okta/SSO admin-provisioning case: an admin can create a public.users
+-- row ahead of time (auth_id IS NULL, role already assigned) before the
+-- person has ever logged in. If we blindly INSERT here, that person's
+-- first Okta login creates a SECOND row keyed on the new auth_id, and
+-- getUserProfile()'s auth_id lookup finds that new 'pending' row and
+-- never falls through to check email — the admin's pre-assigned role is
+-- silently orphaned forever. So: check for an existing auth_id-IS-NULL
+-- row matching this email first and link it (UPDATE), only falling back
+-- to INSERT for a genuinely new person. See sql/18-fix-handle-new-user-
+-- email-link.sql.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE
+  linked_id uuid;
 BEGIN
+  UPDATE public.users
+  SET auth_id = NEW.id
+  WHERE auth_id IS NULL AND lower(email) = lower(NEW.email)
+  RETURNING id INTO linked_id;
+
+  IF linked_id IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
   INSERT INTO public.users (auth_id, email, name, department, role, can_assign, created_at)
   VALUES (
     NEW.id,

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { getStatus, ROLE_META, STATUS_FLOW, AUDIT_ACTIONS } from "@/lib/constants";
+import { OKTA_ENABLED } from "@/lib/authConfig";
 
 const csvEscape = (val) => {
   const s = String(val ?? "");
@@ -151,13 +152,18 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
   const [localTimeout,  setLocalTimeout]  = useState(timeoutMins);
   const [emailEnabled,      setEmailEnabled]      = useState(false);
   const [savingEmailToggle, setSavingEmailToggle] = useState(false);
+  const [passwordLoginEnabled,      setPasswordLoginEnabled]      = useState(true);
+  const [savingPasswordToggle,      setSavingPasswordToggle]      = useState(false);
 
   // Loaded independently of timeoutMins (which page.js already fetches
   // elsewhere) — this is the only place that needs to know the flag, so
   // no reason to thread it through as a prop.
   useEffect(() => {
-    supabase.from("settings").select("email_notifications_enabled").eq("id", "global").maybeSingle()
-      .then(({ data }) => setEmailEnabled(!!data?.email_notifications_enabled));
+    supabase.from("settings").select("email_notifications_enabled, password_login_enabled").eq("id", "global").maybeSingle()
+      .then(({ data }) => {
+        setEmailEnabled(!!data?.email_notifications_enabled);
+        setPasswordLoginEnabled(data?.password_login_enabled !== false);
+      });
   }, []);
 
   // ── Audit log tab ──────────────────────────────────────────────────────
@@ -643,6 +649,45 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                 }}
                 style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.7rem 1.6rem", fontSize: 14, fontWeight: 500, cursor: savingEmailToggle ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: savingEmailToggle ? 0.7 : 1 }}>
                 {savingEmailToggle ? "Saving..." : "Save Setting"}
+              </button>
+            </div>
+          )}
+
+          {tab === "settings" && (
+            <div className="card" style={{ maxWidth: 480, marginTop: 20 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Login Settings</h3>
+              <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 20, lineHeight: 1.6 }}>
+                Turn off email/password login once Okta SSO is verified working,
+                so it's the only way in. {!OKTA_ENABLED && "Disabled here until Okta is configured (NEXT_PUBLIC_OKTA_ENABLED) — otherwise this could lock everyone out with no way back in."}
+              </p>
+
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: OKTA_ENABLED ? "pointer" : "not-allowed", marginBottom: 20, opacity: OKTA_ENABLED ? 1 : 0.5 }}>
+                <input
+                  type="checkbox"
+                  checked={passwordLoginEnabled}
+                  disabled={!OKTA_ENABLED}
+                  onChange={e => setPasswordLoginEnabled(e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: OKTA_ENABLED ? "pointer" : "not-allowed" }}
+                />
+                <span style={{ fontSize: 13, color: "#181313" }}>
+                  Allow email/password login
+                </span>
+              </label>
+
+              <button
+                disabled={savingPasswordToggle || !OKTA_ENABLED}
+                onClick={async () => {
+                  setSavingPasswordToggle(true);
+                  const { error } = await supabase.from("settings").upsert(
+                    { id: "global", password_login_enabled: passwordLoginEnabled, updated_by: user.email },
+                    { onConflict: "id" }
+                  );
+                  setMsg(error ? "Failed to save login setting." : `Password login ${passwordLoginEnabled ? "enabled" : "disabled"}.`);
+                  setTimeout(() => setMsg(""), 3000);
+                  setSavingPasswordToggle(false);
+                }}
+                style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.7rem 1.6rem", fontSize: 14, fontWeight: 500, cursor: (savingPasswordToggle || !OKTA_ENABLED) ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: (savingPasswordToggle || !OKTA_ENABLED) ? 0.5 : 1 }}>
+                {savingPasswordToggle ? "Saving..." : "Save Setting"}
               </button>
             </div>
           )}

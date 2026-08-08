@@ -45,6 +45,20 @@ needed for 5-minute granularity). On the self-hosted VM, wire an
 equivalent system cron / systemd timer hitting the same URL with
 `curl -H "Authorization: Bearer $CRON_SECRET" https://.../api/notifications/send-pending`.
 
+Optional — Okta SSO (`src/lib/authConfig.js`). Login and password login
+run side by side; Okta is additive, not a replacement, until an admin
+explicitly turns password login off (AdminPanel → Settings, backed by
+`settings.password_login_enabled`). Requires self-hosted Supabase Auth
+(GoTrue) to have Okta configured as a SAML identity provider first —
+SSO is not available on the Supabase Cloud Free plan, and the paid-plan
+SSO add-on is unnecessary once self-hosted (GoTrue's SAML support is
+free/built-in). Setting these before that configuration exists just
+shows a broken "Sign in with Okta" button:
+```
+NEXT_PUBLIC_OKTA_ENABLED=       # "true" to show the Okta button on the login screen
+NEXT_PUBLIC_OKTA_SSO_DOMAIN=    # domain used for supabase.auth.signInWithSSO({ domain }) — must match the domain registered against the Okta SAML connection, e.g. cadence.com
+```
+
 ## Architecture
 
 Single-page Next.js 14 app (App Router). The entire UI lives in `src/app/page.js`, which manages auth state and renders one of four views (`dashboard`, `new`, `edit`, `detail`, `admin`) based on a `view` state variable — there is no client-side routing. Navigation is done by calling `go(viewName, optionalId)`.

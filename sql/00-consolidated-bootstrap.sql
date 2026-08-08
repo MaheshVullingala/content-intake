@@ -469,6 +469,60 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_password_login_enabled() TO anon, authenticated;
 
+-- "Invite User": lets an admin pre-provision a public.users row (email +
+-- role + department, auth_id left NULL) before the person has ever
+-- logged in. public.users has no INSERT policy at all (the only other
+-- writer is handle_new_user()), so this has to be a SECURITY DEFINER RPC
+-- rather than a client .insert() — narrow and self-checking: verifies
+-- the caller is an admin, validates the email domain and role
+-- server-side, and refuses to duplicate an existing row. See
+-- sql/20-invite-user.sql.
+CREATE OR REPLACE FUNCTION public.invite_user(
+  p_email      TEXT,
+  p_name       TEXT,
+  p_department TEXT,
+  p_role       TEXT,
+  p_can_assign BOOLEAN DEFAULT false
+)
+RETURNS public.users
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE
+  v_email TEXT := lower(trim(p_email));
+  v_row   public.users;
+BEGIN
+  IF get_user_role() <> 'admin' THEN
+    RAISE EXCEPTION 'Only admins can invite users.' USING ERRCODE = '42501';
+  END IF;
+
+  IF v_email IS NULL OR v_email = '' OR v_email NOT LIKE '%@cadence.com' THEN
+    RAISE EXCEPTION 'Invites are limited to @cadence.com email addresses.' USING ERRCODE = 'P0001';
+  END IF;
+
+  IF p_role NOT IN ('stakeholder','editorial_qa','brand_team','seo_team','design_qa','web_team','admin') THEN
+    RAISE EXCEPTION 'Invalid role: %', p_role USING ERRCODE = 'P0001';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.users WHERE lower(email) = v_email) THEN
+    RAISE EXCEPTION 'A user with this email already exists.' USING ERRCODE = 'P0001';
+  END IF;
+
+  INSERT INTO public.users (email, name, department, role, can_assign, created_at)
+  VALUES (
+    v_email,
+    COALESCE(NULLIF(trim(p_name), ''), split_part(v_email, '@', 1)),
+    COALESCE(p_department, ''),
+    p_role,
+    COALESCE(p_can_assign, false),
+    NOW()
+  )
+  RETURNING * INTO v_row;
+
+  RETURN v_row;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.invite_user(TEXT, TEXT, TEXT, TEXT, BOOLEAN) TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.check_web_team_unlock(p_request_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql SECURITY DEFINER STABLE AS $$

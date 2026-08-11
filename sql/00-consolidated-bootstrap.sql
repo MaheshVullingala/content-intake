@@ -492,7 +492,7 @@ DECLARE
   v_email TEXT := lower(trim(p_email));
   v_row   public.users;
 BEGIN
-  IF get_user_role() <> 'admin' THEN
+  IF get_user_role() NOT IN ('admin', 'super_admin') THEN
     RAISE EXCEPTION 'Only admins can invite users.' USING ERRCODE = '42501';
   END IF;
 
@@ -625,7 +625,7 @@ CREATE POLICY users_select ON public.users
 
 DROP POLICY IF EXISTS users_update ON public.users;
 CREATE POLICY users_update ON public.users
-  FOR UPDATE USING (auth_id = auth.uid() OR get_user_role() = 'admin');
+  FOR UPDATE USING (auth_id = auth.uid() OR get_user_role() IN ('admin', 'super_admin'));
 
 -- ── requests ─────────────────────────────────────────────────────────
 DROP POLICY IF EXISTS requests_select ON public.requests;
@@ -662,7 +662,7 @@ CREATE POLICY comments_select ON public.comments
       SELECT 1 FROM public.requests r
       WHERE r.id = comments.request_id
         AND (
-          get_user_role() = 'admin'
+          get_user_role() IN ('admin', 'super_admin')
           OR (get_user_role() = 'stakeholder' AND r.created_by = get_user_id())
           OR get_user_role() IN ('editorial_qa','design_qa','web_team','brand_team','seo_team')
         )
@@ -678,13 +678,13 @@ CREATE POLICY comments_insert ON public.comments
 
 DROP POLICY IF EXISTS comments_delete ON public.comments;
 CREATE POLICY comments_delete ON public.comments
-  FOR DELETE USING (get_user_role() = 'admin' OR user_id = get_user_id());
+  FOR DELETE USING (get_user_role() IN ('admin', 'super_admin') OR user_id = get_user_id());
 
 -- ── attachments ──────────────────────────────────────────────────────
 DROP POLICY IF EXISTS attachments_select ON public.attachments;
 CREATE POLICY attachments_select ON public.attachments
   FOR SELECT USING (
-    get_user_role() = 'admin'
+    get_user_role() IN ('admin', 'super_admin')
     OR EXISTS (
       SELECT 1 FROM public.requests r
       WHERE r.id = attachments.request_id
@@ -701,7 +701,7 @@ CREATE POLICY attachments_insert ON public.attachments
 
 DROP POLICY IF EXISTS attachments_delete ON public.attachments;
 CREATE POLICY attachments_delete ON public.attachments
-  FOR DELETE USING (get_user_role() = 'admin' OR user_id = get_user_id());
+  FOR DELETE USING (get_user_role() IN ('admin', 'super_admin') OR user_id = get_user_id());
 
 -- ── status_history ───────────────────────────────────────────────────
 -- NOTE: production has BOTH an old pair (history_select/history_insert)
@@ -726,7 +726,7 @@ CREATE POLICY settings_select ON public.settings
 
 DROP POLICY IF EXISTS settings_update ON public.settings;
 CREATE POLICY settings_update ON public.settings
-  FOR ALL USING (get_user_role() = 'admin');
+  FOR ALL USING (get_user_role() IN ('admin', 'super_admin'));
 
 -- ── tasks ────────────────────────────────────────────────────────────
 DROP POLICY IF EXISTS tasks_select ON public.tasks;

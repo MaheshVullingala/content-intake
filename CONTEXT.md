@@ -1797,3 +1797,14 @@ With Fill Test Data now allowed in production for QA (see above), the placeholde
 - `src/lib/preflightCheck.js` — `runPreflightChecks(payload, { checkPlaceholders = true } = {})`. When `false`, skips `findPlaceholderIssues()` entirely. **Deliberately does not touch `findCtaMismatches()`** — that check catches real mistakes (a CTA with a label but no link), not test content, so there's no scenario where turning it off is the right call; it always runs regardless of this flag.
 - `NewRequest.js` — combined into the same settings fetch as `testDataEnabled` (one query now returns both `test_data_enabled` and `placeholder_check_enabled`, no longer gated to production-only since this check runs in every environment). Both `runPreflightChecks()` call sites (the step-3 display and `submit()`'s hard block) now pass `{ checkPlaceholders: placeholderCheckEnabled }`. When off, the Pre-flight Check card shows an amber "temporary QA setting" note so it's not silently confusing why Lorem Ipsum content isn't being flagged.
 - `AdminPanel.js` — new "Placeholder Content Check" toggle in Settings, same pattern as the other two, explicit in the copy that the CTA-mismatch check is unaffected.
+
+## super_admin RLS parity fix (2026-08-11)
+
+Found while debugging a "Failed to save" error on the new placeholder-check toggle: the account being used, `superadmin@gmail.com`, has `role = 'super_admin'` — and `settings_update` only checked for the literal role `'admin'`, so the write was correctly (if confusingly) rejected by RLS. Checked the rest of the schema and found `super_admin` is treated as strictly higher-privileged than `admin` everywhere else (`requests_insert`/`update`/`delete`, `tasks_insert`/`update`, `audit_log_select` all already do `IN ('admin', 'super_admin')`) — these six were the exceptions:
+
+- `users_update`, `comments_select`, `comments_delete`, `attachments_select`, `attachments_delete`, `settings_update` — all changed from `get_user_role() = 'admin'` to `get_user_role() IN ('admin', 'super_admin')`.
+- `invite_user()` RPC (sql/20) had the same literal-`'admin'`-only check — fixed to match.
+
+Applied live (`sql/23-super-admin-parity.sql`, verified against `pg_policies` afterward) and folded into `sql/00-consolidated-bootstrap.sql`.
+
+Also: `maheshvullingalabusiness@gmail.com` was briefly (and mistakenly) set to `role = 'admin'` while diagnosing this, before it came out that `superadmin@gmail.com` is the actual account in use — reverted back to `stakeholder`.

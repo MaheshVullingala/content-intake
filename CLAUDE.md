@@ -39,10 +39,16 @@ SMTP_FROM=                       # e.g. "Content Intake Portal <noreply@cadence.
 CRON_SECRET=                     # shared secret checked by /api/notifications/send-pending; set before it's reachable from outside your own scheduler
 NEXT_PUBLIC_APP_URL=             # e.g. https://content-intake-delta.vercel.app — used to build links in emails
 ```
-On Vercel, `vercel.json` already schedules the sweep every 5 minutes
-(note: Vercel's Hobby plan limits cron to once/day — Pro or self-hosted
-needed for 5-minute granularity). On the self-hosted VM, wire an
-equivalent system cron / systemd timer hitting the same URL with
+On Vercel, `vercel.json` schedules the sweep once daily at 9am UTC
+(`0 9 * * *`) — Hobby plan hard-rejects anything more frequent than
+daily, and the every-5-minutes schedule this was originally set to
+(`*/5 * * * *`, added in v160) silently blocked *every* deployment on
+this plan for three weeks (2026-07-19 through 2026-08-11) — Vercel
+refused each one at the cron-validation step before it ever built,
+which looked like a broken GitHub webhook until the actual cause was
+found. Bump to 5-minute granularity only after upgrading to Pro or
+moving to the self-hosted VM, where an equivalent system cron / systemd
+timer can hit the same URL directly:
 `curl -H "Authorization: Bearer $CRON_SECRET" https://.../api/notifications/send-pending`.
 
 Optional — Okta SSO (`src/lib/authConfig.js`). Login and password login

@@ -105,11 +105,25 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   // the button doesn't flicker in/out during dev while this loads — the
   // NODE_ENV check already covers dev regardless of this flag's value.
   const [testDataEnabled, setTestDataEnabled] = useState(true);
+
+  // Placeholder/Lorem-Ipsum detection is one of the two pre-flight checks
+  // (src/lib/preflightCheck.js) — normally always on, but an admin can
+  // temporarily turn it off (AdminPanel → Settings) when doing QA runs
+  // with Fill Test Data content that's meant to actually go through
+  // Submit, not just preview. The CTA-mismatch check is unaffected by
+  // this flag — that one catches real mistakes, not test content, so
+  // there's no reason to ever want it off. Defaults to `true` (fail
+  // toward stricter behavior while this loads).
+  const [placeholderCheckEnabled, setPlaceholderCheckEnabled] = useState(true);
+
   useEffect(() => {
-    if (process.env.NODE_ENV !== "production") return; // irrelevant outside prod
     let cancelled = false;
-    supabase.from("settings").select("test_data_enabled").eq("id", "global").maybeSingle()
-      .then(({ data }) => { if (!cancelled) setTestDataEnabled(data?.test_data_enabled !== false); });
+    supabase.from("settings").select("test_data_enabled, placeholder_check_enabled").eq("id", "global").maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setTestDataEnabled(data?.test_data_enabled !== false);
+        setPlaceholderCheckEnabled(data?.placeholder_check_enabled !== false);
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -548,7 +562,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       setError("Please provide a reason for High/Urgent priority before submitting.");
       return;
     }
-    const preflightIssues = runPreflightChecks(buildPayload("draft"));
+    const preflightIssues = runPreflightChecks(buildPayload("draft"), { checkPlaceholders: placeholderCheckEnabled });
     if (preflightIssues.length > 0) {
       setError(`Pre-flight check found ${preflightIssues.length} issue${preflightIssues.length > 1 ? "s" : ""} — see the Pre-flight Check panel above and fix ${preflightIssues.length > 1 ? "them" : "it"} before submitting.`);
       return;
@@ -1269,7 +1283,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
       {/* ── Step 3: Preview & Submit ── */}
       {step === 3 && (() => {
-        const preflightIssues = runPreflightChecks(buildPayload("draft"));
+        const preflightIssues = runPreflightChecks(buildPayload("draft"), { checkPlaceholders: placeholderCheckEnabled });
         return (
         <>
           <div style={{ marginBottom: 20 }}>
@@ -1280,6 +1294,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           {/* Pre-flight check */}
           <div className="card" style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, marginBottom: 14 }}>Pre-flight Check</h3>
+            {!placeholderCheckEnabled && (
+              <div style={{ fontSize: 11, color: "#d97706", background: "#fffbeb", border: "1px solid #f59e0b44", borderRadius: 6, padding: "0.4rem 0.7rem", marginBottom: 10 }}>
+                ⚠ Placeholder/Lorem Ipsum checking is turned off (AdminPanel → Settings) — temporary QA setting.
+              </div>
+            )}
             {preflightIssues.length === 0 ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#2a7a4b", fontWeight: 500 }}>
                 ✓ No issues found

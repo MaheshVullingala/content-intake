@@ -1788,3 +1788,12 @@ Actual cause, found via a manual "Create Deployment" attempt in the Vercel dashb
 Fix: `vercel.json`'s schedule changed to `0 9 * * *` (once daily, 9am UTC) — Hobby-plan compatible. `CLAUDE.md`'s env var section updated to document why and to flag reverting to 5-minute granularity once on Pro or the self-hosted VM (self-hosted has no such platform restriction — a system cron/systemd timer can hit the endpoint at any interval).
 
 Lesson for next time this happens: if deployments stop appearing after a specific commit, check that commit's diff for anything `vercel.json`-related before assuming a Git/webhook problem — Vercel fails cron-schedule violations silently at the validation step rather than surfacing a clear error in the deployment list.
+
+## Admin toggle for the placeholder pre-flight check (2026-08-11)
+
+With Fill Test Data now allowed in production for QA (see above), the placeholder-text pre-flight check started doing exactly what it's designed to do — blocking Submit on Lorem Ipsum content — which got in the way of a QA pass that wants to push test content all the way through the real workflow, not just preview it. Same pattern as the other two toggles: admin-controlled, defaults to the strict/normal behavior, meant to be flipped back on once that testing is done.
+
+- `settings.placeholder_check_enabled BOOLEAN DEFAULT true` (`sql/22-placeholder-check-toggle.sql` + `sql/00-consolidated-bootstrap.sql`).
+- `src/lib/preflightCheck.js` — `runPreflightChecks(payload, { checkPlaceholders = true } = {})`. When `false`, skips `findPlaceholderIssues()` entirely. **Deliberately does not touch `findCtaMismatches()`** — that check catches real mistakes (a CTA with a label but no link), not test content, so there's no scenario where turning it off is the right call; it always runs regardless of this flag.
+- `NewRequest.js` — combined into the same settings fetch as `testDataEnabled` (one query now returns both `test_data_enabled` and `placeholder_check_enabled`, no longer gated to production-only since this check runs in every environment). Both `runPreflightChecks()` call sites (the step-3 display and `submit()`'s hard block) now pass `{ checkPlaceholders: placeholderCheckEnabled }`. When off, the Pre-flight Check card shows an amber "temporary QA setting" note so it's not silently confusing why Lorem Ipsum content isn't being flagged.
+- `AdminPanel.js` — new "Placeholder Content Check" toggle in Settings, same pattern as the other two, explicit in the copy that the CTA-mismatch check is unaffected.

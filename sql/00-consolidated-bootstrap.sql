@@ -247,7 +247,8 @@ CREATE TABLE IF NOT EXISTS public.settings (
   updated_by                    TEXT,
   email_notifications_enabled   BOOLEAN DEFAULT false,
   password_login_enabled        BOOLEAN DEFAULT true,
-  test_data_enabled             BOOLEAN DEFAULT true
+  test_data_enabled             BOOLEAN DEFAULT true,
+  placeholder_check_enabled     BOOLEAN DEFAULT true
 );
 
 -- ── tasks ────────────────────────────────────────────────────────────

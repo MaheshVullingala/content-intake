@@ -144,7 +144,15 @@ function findCtaMismatches(payload) {
  * same shape buildPayload() produces). Returns a flat list of issues —
  * empty array means clean. Every issue here is blocking in v1; a future
  * advisory tier (e.g. broken-link checking) would add a `severity` field.
+ *
+ * `checkPlaceholders` (default true) lets an admin temporarily turn off
+ * just the Lorem-Ipsum check (AdminPanel → Settings, settings.
+ * placeholder_check_enabled) — e.g. for a QA pass that deliberately pushes
+ * Fill Test Data content through Submit rather than stopping at preview.
+ * The CTA-mismatch check always runs regardless — it catches real
+ * mistakes, not test content, so there's no scenario where turning it off
+ * is the right call.
  */
-export function runPreflightChecks(payload) {
-  return [...findPlaceholderIssues(payload), ...findCtaMismatches(payload)];
+export function runPreflightChecks(payload, { checkPlaceholders = true } = {}) {
+  return [...(checkPlaceholders ? findPlaceholderIssues(payload) : []), ...findCtaMismatches(payload)];
 }

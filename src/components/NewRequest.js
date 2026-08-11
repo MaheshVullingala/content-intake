@@ -98,6 +98,21 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const [showReturnPanel, setShowReturnPanel] = useState(true);
   const isSavingRef = useRef(false); // Prevent concurrent saves
 
+  // Fill Test Data is dead-code-eliminated from production builds by
+  // default (NODE_ENV check below), but an admin can temporarily force it
+  // back on in production via AdminPanel → Settings, e.g. for QA on a
+  // live-configured deployment before real launch. Defaults to `true` so
+  // the button doesn't flicker in/out during dev while this loads — the
+  // NODE_ENV check already covers dev regardless of this flag's value.
+  const [testDataEnabled, setTestDataEnabled] = useState(true);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") return; // irrelevant outside prod
+    let cancelled = false;
+    supabase.from("settings").select("test_data_enabled").eq("id", "global").maybeSingle()
+      .then(({ data }) => { if (!cancelled) setTestDataEnabled(data?.test_data_enabled !== false); });
+    return () => { cancelled = true; };
+  }, []);
+
   // Auto-scroll preview to the active section — scroll WITHIN the preview container only
   useEffect(() => {
     if (!previewRef.current) return;
@@ -733,7 +748,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
         {/* Right: Save as Draft + Preview & Submit */}
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          {step === 2 && pageType && process.env.NODE_ENV !== "production" && (
+          {step === 2 && pageType && (process.env.NODE_ENV !== "production" || testDataEnabled) && (
             <button type="button" onClick={fillTestData} title="Fill every section with placeholder Lorem Ipsum content — for testing only, nothing is saved until you click Save/Submit"
               style={{
                 background: "#fff", color: "#856404",

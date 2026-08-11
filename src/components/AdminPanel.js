@@ -159,6 +159,8 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
   const [savingEmailToggle, setSavingEmailToggle] = useState(false);
   const [passwordLoginEnabled,      setPasswordLoginEnabled]      = useState(true);
   const [savingPasswordToggle,      setSavingPasswordToggle]      = useState(false);
+  const [testDataEnabled,           setTestDataEnabled]           = useState(true);
+  const [savingTestDataToggle,      setSavingTestDataToggle]      = useState(false);
 
   // ── Invite User modal ──────────────────────────────────────────────────
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -170,10 +172,11 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
   // elsewhere) — this is the only place that needs to know the flag, so
   // no reason to thread it through as a prop.
   useEffect(() => {
-    supabase.from("settings").select("email_notifications_enabled, password_login_enabled").eq("id", "global").maybeSingle()
+    supabase.from("settings").select("email_notifications_enabled, password_login_enabled, test_data_enabled").eq("id", "global").maybeSingle()
       .then(({ data }) => {
         setEmailEnabled(!!data?.email_notifications_enabled);
         setPasswordLoginEnabled(data?.password_login_enabled !== false);
+        setTestDataEnabled(data?.test_data_enabled !== false);
       });
   }, []);
 
@@ -759,6 +762,46 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                 }}
                 style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.7rem 1.6rem", fontSize: 14, fontWeight: 500, cursor: (savingPasswordToggle || !OKTA_ENABLED) ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: (savingPasswordToggle || !OKTA_ENABLED) ? 0.5 : 1 }}>
                 {savingPasswordToggle ? "Saving..." : "Save Setting"}
+              </button>
+            </div>
+          )}
+
+          {tab === "settings" && (
+            <div className="card" style={{ maxWidth: 480, marginTop: 20 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Fill Test Data Button</h3>
+              <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 20, lineHeight: 1.6 }}>
+                The 🎲 Fill Test Data button (New Request → step 2) is normally stripped out of production builds automatically.
+                Turn this on to temporarily keep it available in production too — e.g. for QA on a live-configured deployment.
+                Remember to turn it back off once that testing is done. Note this doesn't weaken the pre-flight check —
+                Submit is still blocked if placeholder text is present, regardless of this setting.
+              </p>
+
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", marginBottom: 20 }}>
+                <input
+                  type="checkbox"
+                  checked={testDataEnabled}
+                  onChange={e => setTestDataEnabled(e.target.checked)}
+                  style={{ width: 16, height: 16, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 13, color: "#181313" }}>
+                  Allow Fill Test Data button in production
+                </span>
+              </label>
+
+              <button
+                disabled={savingTestDataToggle}
+                onClick={async () => {
+                  setSavingTestDataToggle(true);
+                  const { error } = await supabase.from("settings").upsert(
+                    { id: "global", test_data_enabled: testDataEnabled, updated_by: user.email },
+                    { onConflict: "id" }
+                  );
+                  setMsg(error ? "Failed to save test data setting." : `Fill Test Data button ${testDataEnabled ? "enabled" : "disabled"} in production.`);
+                  setTimeout(() => setMsg(""), 3000);
+                  setSavingTestDataToggle(false);
+                }}
+                style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.7rem 1.6rem", fontSize: 14, fontWeight: 500, cursor: savingTestDataToggle ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: savingTestDataToggle ? 0.7 : 1 }}>
+                {savingTestDataToggle ? "Saving..." : "Save Setting"}
               </button>
             </div>
           )}

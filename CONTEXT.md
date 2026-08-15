@@ -1808,3 +1808,9 @@ Found while debugging a "Failed to save" error on the new placeholder-check togg
 Applied live (`sql/23-super-admin-parity.sql`, verified against `pg_policies` afterward) and folded into `sql/00-consolidated-bootstrap.sql`.
 
 Also: `maheshvullingalabusiness@gmail.com` was briefly (and mistakenly) set to `role = 'admin'` while diagnosing this, before it came out that `superadmin@gmail.com` is the actual account in use — reverted back to `stakeholder`.
+
+## Dashboard status filter dropdown was stale (2026-08-11)
+
+Reported as "the All Statuses dropdown is not updated." Root cause: the dropdown's options came only from `STATUS_FLOW` (`constants.js`) — the original six-status linear workflow (Draft, Editorial QA, Design QA, Pending Approval, Web Team, Published). But every request in the live DB now runs on the parallel-team workflow, where real progress lives in a separate `overall_status` column (`in_progress`, `pending_admin`, `pending_stakeholder`, `pending_web`, `published`) — confirmed via a direct query: 100% of current requests have `status = 'draft'` regardless of their actual stage, with `overall_status` carrying the real state. `Dashboard.js`'s filter logic already correctly checks `r.overall_status || r.status`, so the bug was purely that the dropdown never had options for any `overall_status` value — selecting "Editorial QA" or "Design QA" always returned zero results, and there was no way to filter by "Pending Admin Review" or "Web Team Active" at all even though that's what almost every request's real state actually is.
+
+Fix: `Dashboard.js`'s status `<select>` now also lists `OVERALL_STATUS_META` (already imported from `taskUtils.js` for other rendering in this file) options, skipping `published` to avoid a duplicate entry since it's already in `STATUS_FLOW`. No changes needed to the filter logic itself.

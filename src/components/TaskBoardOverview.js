@@ -104,15 +104,21 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
         field_name: task.team_role,
       });
 
-      // Notify design_team that brand assets are ready (they depend on them)
+      // Notify design_team that brand assets are ready (they depend on them).
+      // Genuinely fire-and-forget — not awaited at all. Previously the
+      // designUsers SELECT here WAS awaited (only the notifications INSERT
+      // after it wasn't), which put a 3rd sequential network round-trip in
+      // the critical path of every "approve brand images" click, on top of
+      // the task update and request update above. That's almost certainly
+      // why this specific action was slow/timing out more than other
+      // approvals — the comment already said "must not block approval" but
+      // the code didn't actually match that until now.
       if (approveField === "stakeholder_approved_brand") {
-        try {
+        (async () => {
           const { data: designUsers } = await supabase
             .from("users").select("id").eq("role", "design_team");
           if (designUsers?.length) {
-            // Fire and forget — never let a notification failure (e.g. RLS 403)
-            // block or delay the approval flow.
-            supabase.from("notifications").insert(
+            await supabase.from("notifications").insert(
               designUsers.map(u => ({
                 user_id:    u.id,
                 type:       "approval_granted",
@@ -121,9 +127,9 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                 request_id: req.id,
                 action_url: `/requests/${req.id}`,
               }))
-            ).then(() => {}).catch(() => {});
+            );
           }
-        } catch { /* notification failure must not block approval */ }
+        })().catch(() => { /* notification failure must not block approval */ });
       }
     } catch (e) { console.error("Approve error:", e); setError(e.message || "Error."); }
     finally     { setSaving(null); }

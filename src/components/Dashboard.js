@@ -54,7 +54,20 @@ export default function Dashboard({ go, user }) {
   // ── Fetch ───────────────────────────────────────────────────────────────────
   const fetchRequests = async ({ fromSave = false } = {}) => {
     setLoading(true);
-    const hardTimeout = setTimeout(() => setLoading(false), 10000);
+    // Safety net against a truly hung request, not a normal-case timer —
+    // this function can make up to ~5 sequential Supabase round-trips
+    // (main query, tasks, task-progress, pending-changes, then the
+    // now-parallelized comments+team-members pair), each individually
+    // subject to supabase.js's own 10s fetch abort. This used to be set
+    // to 10s too, which meant it could fire WHILE the real chain was
+    // still legitimately running (e.g. after a Supabase Free-tier cold
+    // start) — loading would flip to false with `requests` still at its
+    // initial empty array, showing a false "No requests yet" empty state
+    // that then silently corrected itself once the real fetch finally
+    // landed. 30s gives the real chain room to finish first in the
+    // conditions that actually trigger it, while still bailing out of a
+    // genuinely stuck spinner eventually.
+    const hardTimeout = setTimeout(() => setLoading(false), 30000);
     try {
       if (fromSave) await new Promise(r => setTimeout(r, 1000));
 
@@ -129,27 +142,32 @@ export default function Dashboard({ go, user }) {
 
       setRequests(rows);
 
-      // Fetch return comments
-      if (rows.length > 0) {
-        const ids = rows.map(r => r.id);
-        const { data: rc } = await supabase
-          .from("comments").select("request_id, user_role, created_at")
-          .in("request_id", ids).eq("is_return", true)
-          .order("created_at", { ascending: false });
-        const counts = {};
-        (rc || []).forEach(c => {
-          if (!counts[c.request_id]) counts[c.request_id] = { count: 0, lastRole: c.user_role };
-          counts[c.request_id].count += 1;
-        });
-        setReturnCounts(counts);
-      }
-
-      // Fetch team members (same role) for lead assignment
-      if (isLead) {
-        const { data: tm } = await supabase.from("users").select("id, name")
-          .eq("role", user.role).neq("id", user.id);
-        setTeamMembers(tm || []);
-      }
+      // Return comments and team members are independent of each other —
+      // was two sequential awaits, now run together. Every extra
+      // sequential round-trip in this function is a step closer to the
+      // hardTimeout below firing before this genuinely finishes.
+      await Promise.all([
+        (async () => {
+          if (rows.length === 0) return;
+          const ids = rows.map(r => r.id);
+          const { data: rc } = await supabase
+            .from("comments").select("request_id, user_role, created_at")
+            .in("request_id", ids).eq("is_return", true)
+            .order("created_at", { ascending: false });
+          const counts = {};
+          (rc || []).forEach(c => {
+            if (!counts[c.request_id]) counts[c.request_id] = { count: 0, lastRole: c.user_role };
+            counts[c.request_id].count += 1;
+          });
+          setReturnCounts(counts);
+        })(),
+        (async () => {
+          if (!isLead) return;
+          const { data: tm } = await supabase.from("users").select("id, name")
+            .eq("role", user.role).neq("id", user.id);
+          setTeamMembers(tm || []);
+        })(),
+      ]);
     } catch(e) {
       console.error("Dashboard exception:", e);
     } finally {

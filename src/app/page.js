@@ -39,18 +39,28 @@ export default function App() {
           try {
             const p = await Promise.race([
               getUserProfile(),
-              new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 8000))
+              new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 15000))
             ]);
             if (p) { setUser(p); }
             else {
+              // getUserProfile() itself completed and found nothing — a
+              // real "no matching profile" case, not just slowness. Safe
+              // to actually sign out here.
               setUser(null);
               clearSupabaseStorage();
               await supabase.auth.signOut().catch(() => {});
             }
           } catch(e) {
+            // The race's own timeout branch, not an auth failure — the
+            // profile fetch was just slow (e.g. Supabase cold start after
+            // idle). Treating that the same as an invalid session used to
+            // force a real signOut() here, logging people out of a
+            // perfectly valid session just because one request was slow.
+            // Show the login screen for now, but leave the actual session
+            // token alone — a retry/refresh gets a fresh INITIAL_SESSION
+            // and, if the network behaves this time, logs them back in
+            // without ever having actually been signed out.
             setUser(null);
-            clearSupabaseStorage();
-            await supabase.auth.signOut().catch(() => {});
           }
         } else { setUser(null); }
         setLoading(false);
@@ -59,13 +69,14 @@ export default function App() {
         try {
           const p = await Promise.race([
             getUserProfile(),
-            new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 8000))
+            new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 15000))
           ]);
           if (p) setUser(prev => { if (!prev) { setView("dashboard"); setReqId(null); } return p; });
+          else setUser(null); // real "no profile found", not a timeout — see INITIAL_SESSION above
         } catch(e) {
-          // Timeout on SIGNED_IN — clear and let user retry
-          clearSupabaseStorage();
-          await supabase.auth.signOut().catch(() => {});
+          // Timeout only — same reasoning as INITIAL_SESSION: don't sign
+          // out or clear storage over mere slowness, just fall back to
+          // showing the login screen.
           setUser(null);
         }
         setLoading(false);

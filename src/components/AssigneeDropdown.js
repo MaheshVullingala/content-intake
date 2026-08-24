@@ -18,7 +18,15 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
       .then(({ data }) => setMembers(data || []));
   }, [task.team_role]);
 
-  if (!members.length) return null;
+  const isAssignedToMe = task.assigned_to === user.id;
+
+  // Some teams (e.g. brand_team/seo_team) don't have real accounts yet —
+  // every task for them has been worked by an admin/super_admin
+  // impersonating that role for testing. `members` is fetched by real
+  // users.role, so an impersonating admin never appears in it. Don't hide
+  // the whole control in that case — the acting lead can still always
+  // assign the task to themselves; just skip the "hand it to a teammate"
+  // dropdown when there's no real teammate list to offer.
 
   const notify = (userId, title, message) => {
     supabase.from("notifications").insert({
@@ -39,8 +47,12 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
       .update({ assigned_to: uid || null })
       .eq("id", task.id);
     if (!error) {
-      const newMember = members.find(m => m.id === uid);
-      const oldMember = members.find(m => m.id === oldAssigneeId);
+      // Fall back to the acting `user` for self-assignment — matters when
+      // they're not in `members` (e.g. impersonating a role with no real
+      // accounts yet), so the audit log/notification still get a real name
+      // instead of "Unassigned".
+      const newMember = members.find(m => m.id === uid) ?? (uid === user.id ? user : null);
+      const oldMember = members.find(m => m.id === oldAssigneeId) ?? (oldAssigneeId === user.id ? user : null);
 
       if (uid) {
         notify(uid, "Task Assigned",
@@ -84,18 +96,51 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
     applyAssignment(reassignTarget, reason.trim());
   };
 
+  // Quick self-assign — same reassign-with-reason rule applies if it's
+  // already assigned to someone else. Only rendered for leads/super_admin
+  // (this whole component is gated that way by its caller), so this is
+  // deliberately not exposed to regular team members.
+  const handleAssignSelf = () => {
+    if (isAssignedToMe || saving || reassignTarget !== null) return;
+    if (task.assigned_to) setReassignTarget(user.id);
+    else applyAssignment(user.id);
+  };
+
   return (
     <div className="field-wrap" style={{ marginTop: 10 }}>
       <label className="field-label">Assigned to</label>
-      <select
-        className="select"
-        value={task.assigned_to || ""}
-        onChange={handleChange}
-        disabled={saving || reassignTarget !== null}
-      >
-        <option value="">— Unassigned —</option>
-        {members.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-      </select>
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {members.length > 0 && (
+          <select
+            className="select"
+            style={{ flex: 1 }}
+            value={task.assigned_to || ""}
+            onChange={handleChange}
+            disabled={saving || reassignTarget !== null}
+          >
+            <option value="">— Unassigned —</option>
+            {members.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+        )}
+        {!isAssignedToMe && (
+          <button
+            type="button"
+            className="btn-ghost"
+            style={{ fontSize: 12, padding: "6px 10px", whiteSpace: "nowrap" }}
+            onClick={handleAssignSelf}
+            disabled={saving || reassignTarget !== null}
+          >
+            👤 Assign to me
+          </button>
+        )}
+      </div>
+
+      {members.length === 0 && (
+        <p className="field-hint" style={{ marginTop: 4 }}>
+          No other {task.team_role.replace("_", " ")} accounts yet — you can still assign this to yourself.
+        </p>
+      )}
 
       {reassignTarget !== null && (
         <div style={{

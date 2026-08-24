@@ -42,11 +42,17 @@ export default function BrandFilesPanel({ requestId, supabase }) {
     setLoading(true);
     supabase
       .from("task_attachments")
-      .select("*, users!uploaded_by(role)")
+      .select("*, tasks!task_id(team_role)")
       .eq("request_id", requestId)
       .then(({ data }) => {
         if (cancelled) return;
-        setFiles((data || []).filter(f => f.users?.role === "brand_team"));
+        // Filter by the task's team_role, not the uploader's current
+        // users.role — an admin/super_admin can upload on brand team's
+        // behalf (or while impersonating brand_team for testing), which
+        // leaves uploaded_by pointing at their own account. task_id always
+        // points at the brand_team task itself (see TaskPanel.js myTask,
+        // resolved via tasks.team_role), so that's the reliable signal.
+        setFiles((data || []).filter(f => f.tasks?.team_role === "brand_team"));
         setLoading(false);
       });
     return () => { cancelled = true; };

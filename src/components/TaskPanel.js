@@ -127,7 +127,8 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
 
   const isLocked          = myTask.status === "locked";
   const isCompleted       = myTask.status === "completed";
-  const canStart          = myTask.status === "pending";
+  const canStart          = myTask.status === "pending" && !!myTask.assigned_to;
+  const needsAssignment   = myTask.status === "pending" && !myTask.assigned_to;
   const isActive          = ["in_progress","needs_info","waiting_for_brand","pending_action"].includes(myTask.status);
   const isWaitingBrand    = myTask.status === "waiting_for_brand";
   const isPendingApproval = myTask.status === "pending_approval";
@@ -582,6 +583,19 @@ Return this exact format:
         {isLocked && (
           <div className="alert alert-info mt-8">
             🔒 Locked until all parallel teams complete their work.
+          </div>
+        )}
+
+        {/* A task must be assigned (to a lead or whoever a lead picks,
+            including themselves) before anyone can start it — see
+            AssigneeDropdown's "Assign to me" shortcut. Leads/super_admin
+            see the dropdown above and can fix this themselves; regular
+            members have to wait on a lead to assign it. */}
+        {needsAssignment && (
+          <div className="alert alert-info mt-8">
+            {(user.can_assign || user.role === "super_admin")
+              ? "☝️ Assign this task before starting — pick a name above, or use \"Assign to me.\""
+              : "⏳ Waiting for a lead to assign this task before it can be started."}
           </div>
         )}
 

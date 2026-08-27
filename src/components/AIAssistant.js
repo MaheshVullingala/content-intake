@@ -30,19 +30,26 @@ const SECTION_CONFIGS = {
 // ── Product Brief Form ────────────────────────────────────────────────────────
 function ProductBriefForm({ brief, setBrief, onSave }) {
   const upd = (k, v) => setBrief(p => ({ ...p, [k]: v }));
+  // Collapsed from 9 fields to 3 (+ optional Proof Points): Summary,
+  // Features, Audience, USP, Page Goal, and Key Message were all really
+  // just "describe the product," artificially split into separate boxes.
+  // Product Name and Category stay separate because they're used close to
+  // verbatim, not something worth having the model infer from prose.
+  // Proof Points stays separate and structurally isolated on purpose — see
+  // formatBrief() in aiPrompts.js: when it's empty the model is told not
+  // to invent any numbers/certifications at all, and when it's filled
+  // those are the ONLY numbers it's allowed to cite. Folding it into the
+  // free-text "about" field would make it impossible for the model (or a
+  // downstream check) to reliably tell "verified fact" apart from
+  // "aspirational marketing color" in the same paragraph.
   const fields = [
-    ["productName",  "Product Name *",              "e.g. Xcelium Logic Simulator",                                           false],
-    ["category",     "Product Category *",           "e.g. EDA Software, IP, PCB Design, Verification",                       false],
-    ["summary",      "What does this product do? *", "Brief 1-2 sentence description...",                                      true],
-    ["features",     "Key Features (one per line) *","Mixed-signal simulation\nParallel processing\nUVM support...",         true],
-    ["audience",     "Target Audience *",            "e.g. SoC architects, verification engineers, chip designers",            false],
-    ["usp",          "Unique Selling Point *",       "e.g. 3x faster simulation with lower memory footprint",                  true],
+    ["productName",  "Product Name *",     "e.g. Xcelium Logic Simulator",                     false],
+    ["category",     "Product Category *", "e.g. EDA Software, IP, PCB Design, Verification",  false],
+    ["about",        "Tell us about this product *", "What it does, key features, target audience, what makes it different, and anything you want emphasized (page goal, key message)...", true],
     ["proofPoints",  "Verified Proof Points (optional)", "Real numbers/certifications you can vouch for, e.g. '3x faster regression vs v20.1, ISO 26262 ASIL D certified'. Leave blank if you don't have one — AI will describe capabilities without inventing a number.", true],
-    ["pageGoal",     "Page Goal (optional)",         "e.g. Drive demo requests, promote new release, replace legacy page",     false],
-    ["keyMessage",   "Key Message (optional)",       "e.g. Only simulator with native ISO 26262 fault injection built-in",     false],
   ];
 
-  const isComplete = brief.productName && brief.category && brief.summary && brief.features && brief.audience && brief.usp;
+  const isComplete = brief.productName && brief.category && brief.about;
 
   return (
     <div style={{ padding: "1.25rem" }}>
@@ -170,7 +177,7 @@ function SectionPicker({ brief, setBrief, availableSections, onGenerate, onEditB
 }
 
 // ── Main Floating AI Assistant ────────────────────────────────────────────────
-const EMPTY_BRIEF = { productName: "", category: "", summary: "", features: "", audience: "", usp: "", proofPoints: "", pageGoal: "", keyMessage: "" };
+const EMPTY_BRIEF = { productName: "", category: "", about: "", proofPoints: "" };
 
 export default function AIAssistant({ availableSections = [], onGenerate }) {
   const [open,        setOpen]       = useState(false);

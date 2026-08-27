@@ -195,11 +195,22 @@ const SECTION_SCHEMAS = {
 export const SUPPORTED_SECTIONS = Object.keys(SECTION_SCHEMAS);
 
 // brief is the structured "product brief" AIAssistant.js collects once
-// per session (mode: "brief"). proofPoints is deliberately kept separate
-// from usp — usp is allowed to be a general marketing claim, proofPoints
+// per session (mode: "brief"). Collapsed from 9 fields down to 3 (+
+// optional Proof Points) — see AIAssistant.js's ProductBriefForm comment
+// for why. `about` is a free-text field the stakeholder uses to describe
+// what the product does, its features, audience, and differentiator, all
+// together — the model is expected to synthesize section-specific content
+// out of it, same as it already had to across the old separate fields.
+//
+// proofPoints is still deliberately kept separate and out of `about` —
+// `about` is allowed to contain general marketing claims, proofPoints
 // must be a real, verifiable number/certification the stakeholder is
 // vouching for. When it's empty, the model is told explicitly not to
 // invent one rather than silently staying quiet about the omission.
+// Keeping it a distinct field (rather than folding it into `about`) is
+// what makes that instruction enforceable — there's no reliable way to
+// tell "verified fact" apart from "aspirational color" inside one
+// freeform paragraph.
 function formatBrief(brief) {
   const b = brief || {};
   const proof = (b.proofPoints || "").trim()
@@ -208,12 +219,9 @@ function formatBrief(brief) {
 
   return `Product Name: ${b.productName || ""}
 Category: ${b.category || ""}
-What it does: ${b.summary || ""}
-Key Features / Capabilities:
-${b.features || ""}
-Target Audience: ${b.audience || ""}
-Unique Selling Point / Key Differentiator: ${b.usp || ""}
-${proof}${b.pageGoal ? `\nPage Goal: ${b.pageGoal}` : ""}${b.keyMessage ? `\nKey Message: ${b.keyMessage}` : ""}
+About This Product (what it does, key features, target audience, differentiator, and any page goal/key message the stakeholder wants emphasized):
+${b.about || ""}
+${proof}
 
 IMPORTANT: Generate content that sounds like it belongs on cadence.com — authoritative, technical, benefit-led. Use the product name exactly as given. Only reference specific engineering outcomes/numbers that were explicitly provided above.`;
 }

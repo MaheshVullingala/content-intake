@@ -10,35 +10,33 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     detectSessionInUrl: true,
     storageKey:         "cip-auth",
     storage:            typeof window !== "undefined" ? window.localStorage : undefined,
-    // Actually serialize concurrent calls (token refresh in particular)
-    // via the browser's native Web Locks API — the same mechanism
-    // Supabase's own SDK uses internally for this option.
+    // No custom `lock` here on purpose — let the SDK pick its own default.
     //
-    // This used to be `async (name, acquireTimeout, fn) => fn()` — a
-    // no-op that runs every call immediately with zero serialization,
-    // despite the option existing specifically to prevent concurrent
-    // calls. Refresh tokens are single-use: any two things that trigger
-    // a refresh close together (AI Assist's getAccessToken(), a
-    // background poll, two quick clicks) could both fire at once, one
-    // gets rejected by the auth server, and the SDK treats that as
-    // TOKEN_REFRESH_FAILED — logging the user out mid-action, not for
-    // being idle. That's the "logged out while clicking a button / using
-    // AI Assist" symptom, not the separate idle-timeout behavior.
-    lock: typeof window !== "undefined"
-      ? async (name, acquireTimeout, fn) => {
-          if (typeof navigator === "undefined" || !navigator.locks) return fn(); // no Web Locks support — best effort, unsynchronized
-          const opts = {};
-          if (acquireTimeout === 0) {
-            opts.ifAvailable = true;
-          } else if (acquireTimeout > 0 && typeof AbortSignal !== "undefined" && AbortSignal.timeout) {
-            opts.signal = AbortSignal.timeout(acquireTimeout);
-          } // acquireTimeout === -1 (or unsupported) — wait indefinitely, navigator.locks' default
-          return navigator.locks.request(name, opts, (lock) => {
-            if (opts.ifAvailable && !lock) throw new Error("Lock not available");
-            return fn();
-          });
-        }
-      : undefined,
+    // History: this used to be `async (name, acquireTimeout, fn) => fn()` —
+    // a no-op with zero serialization, despite the option existing
+    // specifically to prevent concurrent token-refresh attempts. Refresh
+    // tokens are single-use, so two things refreshing close together (AI
+    // Assist's getAccessToken(), a background poll, two quick clicks)
+    // could both fire at once, one gets rejected by the auth server, and
+    // the SDK treated that as TOKEN_REFRESH_FAILED — logging the user out
+    // mid-action, not for being idle.
+    //
+    // The fix was NOT to hand-roll a Web Locks wrapper here — a first
+    // attempt at that did, and it broke worse: when a lock wasn't
+    // immediately available it threw a plain `Error`, but GoTrueClient's
+    // internal refresh-tick code specifically checks for its own
+    // `NavigatorLockAcquireTimeoutError` (via `e.isAcquireTimeout`) to
+    // know "someone else already holds this lock, skip quietly." A plain
+    // Error doesn't match that check, so it fell through as a real
+    // failure — TOKEN_REFRESH_FAILED again, now triggered by the exact
+    // thing meant to fix it (e.g. "Generate All Sections" firing several
+    // getAccessToken() calls back-to-back). See node_modules/@supabase/
+    // auth-js/src/lib/locks.ts (navigatorLock) and GoTrueClient.ts
+    // (constructor, ~line 381-387): when `persistSession` is true (it is,
+    // above) and `navigator.locks` exists, the SDK already defaults to
+    // its own battle-tested `navigatorLock` — same Web Locks API
+    // mechanism, correct typed-error handling, orphaned-lock recovery
+    // (steal) included. Omitting `lock` gets that for free.
   },
   global: {
     // Abort requests that hang longer than 25s. Was 10s, which was the

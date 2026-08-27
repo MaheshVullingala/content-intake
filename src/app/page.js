@@ -19,7 +19,14 @@ export default function App() {
   const [reqId,       setReqId]       = useState(null);
   const [navParams,   setNavParams]   = useState({});
   const [authMode,    setAuthMode]    = useState("login");
-  const [timeoutMins, setTimeoutMins] = useState(5); // default, overridden from DB
+  // 60, not 5 — this is a fallback for the brief window before the DB
+  // value loads (or if that fetch ever fails), and it's also what any
+  // component that captures this prop into its own useState (see
+  // AdminPanel's localTimeout) falls back to if it renders before the
+  // fetch below resolves. 5 minutes as that fallback was aggressive
+  // enough to force-logout someone mid-form and, via that same staleness
+  // path, get silently written back to the DB as the real setting.
+  const [timeoutMins, setTimeoutMins] = useState(60);
   const [idleWarning, setIdleWarning] = useState(false);
   const [countdown,   setCountdown]   = useState(WARNING_SECS);
 

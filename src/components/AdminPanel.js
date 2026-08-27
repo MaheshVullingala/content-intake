@@ -173,13 +173,24 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
   // Loaded independently of timeoutMins (which page.js already fetches
   // elsewhere) — this is the only place that needs to know the flag, so
   // no reason to thread it through as a prop.
+  //
+  // timeout_mins is included here too even though it *also* arrives as a
+  // prop — `useState(timeoutMins)` on mount only ever captures whatever
+  // that prop happened to be at the exact moment this component first
+  // rendered, and never re-syncs if it changes afterward (e.g. someone
+  // else updates the setting, or this panel was mounted before page.js's
+  // own fetch had resolved). That staleness previously caused clicking
+  // Save here — even without touching the dropdown — to silently write
+  // back an old value and clobber a real change made elsewhere. Fetching
+  // it fresh whenever this panel mounts closes that gap.
   useEffect(() => {
-    supabase.from("settings").select("email_notifications_enabled, password_login_enabled, test_data_enabled, placeholder_check_enabled").eq("id", "global").maybeSingle()
+    supabase.from("settings").select("email_notifications_enabled, password_login_enabled, test_data_enabled, placeholder_check_enabled, timeout_mins").eq("id", "global").maybeSingle()
       .then(({ data }) => {
         setEmailEnabled(!!data?.email_notifications_enabled);
         setPasswordLoginEnabled(data?.password_login_enabled !== false);
         setTestDataEnabled(data?.test_data_enabled !== false);
         setPlaceholderCheckEnabled(data?.placeholder_check_enabled !== false);
+        if (data?.timeout_mins) setLocalTimeout(data.timeout_mins);
       });
   }, []);
 

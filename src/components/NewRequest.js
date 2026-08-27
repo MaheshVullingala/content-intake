@@ -366,10 +366,19 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
   // saveDraft: pass navigate=true to go to dashboard after saving
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const saveDraft = useCallback(async (navigate = false) => {
+  const saveDraft = useCallback(async (navigate = false, isAutoSave = false) => {
     if (isSavingRef.current) return; // Prevent concurrent saves
-    if (!pageType) { setError("Please select a page type first."); return; }
-    if (!banner.page_title) { setError("Please enter a page title before saving."); return; }
+    // pageType is required at the DB level (page_type NOT NULL) — nothing
+    // meaningful exists to save before it's picked in Step 1 anyway, so
+    // it's safe to no-op here even for auto-save.
+    if (!pageType) { if (!isAutoSave) setError("Please select a page type first."); return; }
+    // page_title is only a client-side UX guard for the manual Save Draft
+    // button (DB column is nullable) — auto-save runs right before a
+    // forced idle-timeout logout, so it must never block on this or
+    // everything typed in every other section gets silently lost the
+    // moment someone works out of order (e.g. fills Key Benefits before
+    // circling back to the Banner title).
+    if (!isAutoSave && !banner.page_title) { setError("Please enter a page title before saving."); return; }
 
     isSavingRef.current = true;
     setSaving(true);
@@ -452,7 +461,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
   // Register saveDraft into parent ref so auto-logout can trigger it
   useEffect(() => {
-    if (saveDraftRef) saveDraftRef.current = () => saveDraft(false);
+    if (saveDraftRef) saveDraftRef.current = () => saveDraft(false, true);
     return () => { if (saveDraftRef) saveDraftRef.current = null; };
   }, [saveDraftRef, saveDraft]);
 

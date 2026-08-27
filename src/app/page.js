@@ -77,29 +77,55 @@ export default function App() {
         setLoading(false);
       }
       if (event === "SIGNED_IN") {
+        // Supabase refires SIGNED_IN any time it re-validates an existing
+        // session, not just on a fresh login — most commonly when this tab
+        // regains visibility after being backgrounded (switching to another
+        // browser tab and back). See GoTrueClient's _onVisibilityChanged ->
+        // _recoverAndRefresh(), which calls _notifyAllSubscribers('SIGNED_IN', ...)
+        // even when no refresh was needed, purely because the tab became
+        // visible again.
+        //
+        // The bug: every SIGNED_IN, including that redundant refire, used to
+        // kick off a fresh getUserProfile() fetch with only a 15s timeout,
+        // and on timeout unconditionally did setUser(null) — logging out an
+        // already-signed-in user just because the refetch was slow. And
+        // right after a tab regains focus is exactly when a fetch is most
+        // likely to be slow (the browser is re-establishing connections
+        // after being backgrounded), so this was disproportionately likely
+        // to fire during normal "switch tabs and come back" usage — e.g.
+        // while AI Assist is open and someone tabs away to copy some
+        // reference text, then tabs back.
+        //
+        // Fix: only let this event actually clear the user if we didn't
+        // already have one. A slow or failed refetch for an already-signed-in
+        // user just means we keep showing their existing (still valid)
+        // profile instead of wiping it — same "don't sign out over mere
+        // slowness" intent as INITIAL_SESSION above, but actually enforced
+        // here instead of only in the comment.
         try {
           const p = await Promise.race([
             getUserProfile(),
-            new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 15000))
+            new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 25000))
           ]);
-          if (p) setUser(prev => { if (!prev) { setView("dashboard"); setReqId(null); } return p; });
-          else setUser(null); // real "no profile found", not a timeout — see INITIAL_SESSION above
+          setUser(prev => {
+            if (p) { if (!prev) { setView("dashboard"); setReqId(null); } return p; }
+            // real "no profile found" (not a timeout) — only meaningful for
+            // a genuinely fresh sign-in; don't clobber an existing session.
+            return prev ?? null;
+          });
         } catch(e) {
-          // Timeout only — same reasoning as INITIAL_SESSION: don't sign
-          // out or clear storage over mere slowness, just fall back to
-          // showing the login screen.
-          setUser(null);
+          // Timeout/transient error on a redundant refetch — never clobber
+          // an already-signed-in user over this.
+          setUser(prev => prev ?? null);
         }
         setLoading(false);
       }
+      // SIGNED_OUT is the real event Supabase fires when a refresh
+      // genuinely fails (invalid/already-used/expired refresh token) or on
+      // an explicit signOut() — there is no "TOKEN_REFRESH_FAILED" event in
+      // this SDK, so a handler for it here would just be dead code.
       if (event === "SIGNED_OUT") { setUser(null); setView("dashboard"); setLoading(false); }
       if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") setLoading(false);
-      if (event === "TOKEN_REFRESH_FAILED") {
-        // Token refresh failed — clear storage and force re-login
-        setUser(null);
-        clearSupabaseStorage();
-        setLoading(false);
-      }
     });
 
     const sessionCheck = setInterval(async () => {

@@ -1,17 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ROLE_OPTIONS } from "@/lib/constants";
 import NotificationBell from "@/components/NotificationBell";
 
-export default function Navbar({ go, view, user, supabase, logout, onLogout, onNavigate }) {
-  const [loggingOut,          setLoggingOut]          = useState(false);
-  const [dropdownOpen,        setDropdownOpen]        = useState(false);
-  const [currentImpersonated, setCurrentImpersonated] = useState(null);
-
-  useEffect(() => {
-    try { setCurrentImpersonated(localStorage.getItem("cip-impersonated-role")); }
-    catch {}
-  }, []);
+export default function Navbar({ go, view, user, supabase, logout, onLogout, onNavigate, impersonatedRole, onSwitchRole }) {
+  const [loggingOut,   setLoggingOut]   = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -24,7 +18,7 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
 
   const isAdmin        = ["admin", "super_admin"].includes(user.role);
   const isSuperAdmin   = user.role === "super_admin";
-  const activeRole     = currentImpersonated || "super_admin";
+  const activeRole     = impersonatedRole || "super_admin";
   const activeLabel    = ROLE_OPTIONS.find(r => r.value === activeRole)?.label ?? "Super Admin";
 
   return (
@@ -135,14 +129,7 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
                         key={r.value}
                         onClick={() => {
                           setDropdownOpen(false);
-                          try {
-                            if (r.value === "super_admin") {
-                              localStorage.removeItem("cip-impersonated-role");
-                            } else {
-                              localStorage.setItem("cip-impersonated-role", r.value);
-                            }
-                          } catch {}
-                          window.location.reload();
+                          onSwitchRole?.(r.value === "super_admin" ? null : r.value);
                         }}
                         style={{
                           display: "block", width: "100%", textAlign: "left",

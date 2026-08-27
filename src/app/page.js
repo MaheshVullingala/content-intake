@@ -166,6 +166,27 @@ export default function App() {
     } catch {}
   }, []);
 
+  // Switch the "View as" role. This used to be a window.location.reload()
+  // in Navbar.js — but a hard reload tears down the whole app and re-runs
+  // the entire Supabase auth handshake from scratch (fresh INITIAL_SESSION,
+  // full getUserProfile() refetch, up to a 25s timeout window — see the
+  // auth useEffect above). On a slow connection or a cold-started backend,
+  // that window is long enough that the UI shows the login/loading screen
+  // before the refetch resolves, which looks exactly like being logged
+  // out even though the real session token was never touched. Switching
+  // roles is purely a client-side display flag — it never needed to touch
+  // auth at all. The `key={effectiveUser.role}` on <main> below forces a
+  // full remount of the current view when the role changes, so no
+  // component keeps stale role-dependent state around — the same safety
+  // a reload gave, without re-running auth.
+  const switchImpersonatedRole = (roleValue) => {
+    try {
+      if (!roleValue) localStorage.removeItem("cip-impersonated-role");
+      else localStorage.setItem("cip-impersonated-role", roleValue);
+    } catch {}
+    setImpersonatedRole(roleValue);
+  };
+
   // ── Fetch timeout setting from DB when user logs in ───────────────────────
   useEffect(() => {
     if (!user) return;
@@ -300,7 +321,7 @@ export default function App() {
   return (
     <div className="app-shell">
       {/* Navbar always gets the real user so the role switcher is always visible */}
-      <Navbar go={go} view={view} user={user} supabase={supabase} logout={logout} onNavigate={(dest) => { if ((view === "new" || view === "edit") && dest !== view) setPendingNav(dest); else go(dest); }} />
+      <Navbar go={go} view={view} user={user} supabase={supabase} logout={logout} onNavigate={(dest) => { if ((view === "new" || view === "edit") && dest !== view) setPendingNav(dest); else go(dest); }} impersonatedRole={impersonatedRole} onSwitchRole={switchImpersonatedRole} />
 
       {/* Impersonation banner */}
       {user?.role === "super_admin" && impersonatedRole && (
@@ -314,10 +335,7 @@ export default function App() {
             ⚡ Viewing as: <strong>{impersonatedLabel}</strong>
           </span>
           <button
-            onClick={() => {
-              try { localStorage.removeItem("cip-impersonated-role"); } catch {}
-              window.location.reload();
-            }}
+            onClick={() => switchImpersonatedRole(null)}
             style={{
               background: "none",
               border: "1px solid #3ec5cb55",
@@ -346,7 +364,7 @@ export default function App() {
         </div>
       )}
 
-      <main className="app-main">
+      <main className="app-main" key={effectiveUser.role}>
         {view === "dashboard" && <Dashboard go={go} user={effectiveUser} />}
         {view === "new"       && <NewRequest go={go} user={effectiveUser} saveDraftRef={saveDraftRef} pendingNav={pendingNav} onClearPendingNav={() => setPendingNav(null)} />}
         {view === "edit"      && <NewRequest go={go} user={effectiveUser} draftId={reqId} saveDraftRef={saveDraftRef} pendingNav={pendingNav} onClearPendingNav={() => setPendingNav(null)} />}

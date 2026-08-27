@@ -62,7 +62,11 @@ export default function Login({ onSwitch }) {
     try {
       const { error } = await Promise.race([
         supabase.auth.signInWithPassword({ email, password }),
-        new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 12000))
+        // 30s — comfortably above the 25s fetch-level abort in supabase.js,
+        // so a cold-started project gets a real chance to answer before
+        // this backstop fires. Was 12s, which fired before a slow first
+        // request could ever complete.
+        new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 30000))
       ]);
       if (error) {
         // If login itself times out or fails, clear again and show message

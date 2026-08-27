@@ -39,7 +39,11 @@ export default function App() {
           try {
             const p = await Promise.race([
               getUserProfile(),
-              new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 15000))
+              // 25s — matches the fetch-level abort ceiling in supabase.js,
+              // so a slow-but-alive backend (e.g. a cold-started project)
+              // gets a fair chance to answer before this falls back to
+              // showing the login screen. Was 15s.
+              new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 25000))
             ]);
             if (p) { setUser(p); }
             else {

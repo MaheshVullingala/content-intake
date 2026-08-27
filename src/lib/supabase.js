@@ -16,10 +16,14 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
                           : undefined,
   },
   global: {
-    // Abort requests that hang longer than 10s
+    // Abort requests that hang longer than 25s. Was 10s, which was the
+    // real bottleneck behind login timeouts — a free-tier Supabase project
+    // cold-starting after inactivity can take longer than 10s to answer
+    // the very first request, and this abort fired before the 12s
+    // Promise.race in Login.js/LoginAnimated.js ever got a chance to.
     fetch: (url, options = {}) => {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 10000);
+      const timer = setTimeout(() => controller.abort(), 25000);
       return fetch(url, { ...options, signal: controller.signal })
         .finally(() => clearTimeout(timer));
     },

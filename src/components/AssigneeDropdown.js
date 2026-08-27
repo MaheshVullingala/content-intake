@@ -9,6 +9,10 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
   // uid pending confirmation via the reason box, or null when idle
   const [reassignTarget, setReassignTarget] = useState(null);
   const [reason,         setReason]         = useState("");
+  // Dropdown is hidden by default once a task has an assignee — clicking
+  // "Reassign" reveals it. Keeps the resting state a clear status readout
+  // ("Assigned to: X") instead of a <select> that still looks pickable.
+  const [editing,        setEditing]        = useState(false);
 
   // v1 users table uses `name`, not `full_name`. No is_active column
   // exists on users — do not filter on it.
@@ -77,6 +81,7 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
     setSaving(false);
     setReassignTarget(null);
     setReason("");
+    setEditing(false);
   };
 
   const handleChange = (e) => {
@@ -106,35 +111,92 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
     else applyAssignment(user.id);
   };
 
+  const assignedName = task.assigned_to
+    ? (members.find(m => m.id === task.assigned_to)?.name ?? (task.assigned_to === user.id ? user.name : "Unknown"))
+    : null;
+  const showDropdown = editing || (members.length > 0 && !task.assigned_to);
+
   return (
     <div className="field-wrap" style={{ marginTop: 10 }}>
       <label className="field-label">Assigned to</label>
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        {members.length > 0 && (
-          <select
-            className="select"
-            style={{ flex: 1 }}
-            value={task.assigned_to || ""}
-            onChange={handleChange}
-            disabled={saving || reassignTarget !== null}
-          >
-            <option value="">— Unassigned —</option>
-            {members.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-          </select>
-        )}
-        {!isAssignedToMe && (
-          <button
-            type="button"
-            className="btn-ghost"
-            style={{ fontSize: 12, padding: "6px 10px", whiteSpace: "nowrap" }}
-            onClick={handleAssignSelf}
-            disabled={saving || reassignTarget !== null}
-          >
-            👤 Assign to me
-          </button>
-        )}
-      </div>
+      {!showDropdown && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            fontSize: 13, fontWeight: 500, padding: "5px 12px", borderRadius: 999,
+            background: assignedName ? "rgba(62,197,203,0.12)" : "var(--color-ghost)",
+            color: assignedName ? "#0f766e" : "var(--color-silver)",
+            border: `1px solid ${assignedName ? "rgba(62,197,203,0.35)" : "var(--color-border)"}`,
+          }}>
+            {assignedName ? `✓ Assigned to: ${assignedName}` : "— Unassigned —"}
+          </span>
+
+          {members.length > 0 && (
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: 12, padding: "5px 10px", whiteSpace: "nowrap" }}
+              onClick={() => setEditing(true)}
+              disabled={saving}
+            >
+              {assignedName ? "Reassign" : "Assign"}
+            </button>
+          )}
+
+          {!isAssignedToMe && (
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: 12, padding: "5px 10px", whiteSpace: "nowrap" }}
+              onClick={handleAssignSelf}
+              disabled={saving || reassignTarget !== null}
+            >
+              👤 Assign to me
+            </button>
+          )}
+        </div>
+      )}
+
+      {showDropdown && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {members.length > 0 && (
+            <select
+              className="select"
+              style={{ flex: 1 }}
+              value={task.assigned_to || ""}
+              onChange={handleChange}
+              disabled={saving || reassignTarget !== null}
+              autoFocus
+            >
+              <option value="">— Unassigned —</option>
+              {members.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          )}
+          {!isAssignedToMe && (
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: 12, padding: "6px 10px", whiteSpace: "nowrap" }}
+              onClick={handleAssignSelf}
+              disabled={saving || reassignTarget !== null}
+            >
+              👤 Assign to me
+            </button>
+          )}
+          {task.assigned_to && (
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: 12, padding: "6px 10px", whiteSpace: "nowrap" }}
+              onClick={() => setEditing(false)}
+              disabled={saving || reassignTarget !== null}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      )}
 
       {members.length === 0 && (
         <p className="field-hint" style={{ marginTop: 4 }}>

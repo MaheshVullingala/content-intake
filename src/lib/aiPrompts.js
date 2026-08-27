@@ -114,11 +114,28 @@ const SECTION_SCHEMAS = {
 }`,
   },
   features_apps: {
-    context: "features section header for a Cadence product page",
+    // This section supports 4 layouts (list, horizontal tabs, vertical
+    // tabs, table — see VIEW_TYPES in FeaturesApps.js), but only "list"
+    // is something AI output can ever be complete for: tabs require a
+    // Design-QA-supplied image + required alt text per tab, and table
+    // needs a bespoke column structure (spec-sheet comparison) the model
+    // has no basis to invent. Asking the model to fill in tabs/table would
+    // just produce content that looks generated but is missing required
+    // fields. So AI Assist always targets "list" here; a stakeholder who
+    // wants tabs or a table switches the view type manually and either
+    // writes those items themselves or asks AI Assist per-field there.
+    context: "features section header and content for a Cadence product page",
     fields: `{
   "fa_label": "max 30 chars - e.g. FEATURES, CAPABILITIES",
   "fa_impact": "max 100 chars - compelling section headline",
-  "fa_description": "max 300 chars - brief intro to features"
+  "fa_description": "max 300 chars - brief intro to features",
+  "fa_view_type": "always the exact string \\"list\\"",
+  "fa_items": [
+    { "text": "max 200 chars - one specific feature or capability, concrete and outcome-focused, no leading bullet/dash" },
+    { "text": "..." },
+    { "text": "..." },
+    { "text": "..." }
+  ]
 }`,
   },
   customer_stories: {

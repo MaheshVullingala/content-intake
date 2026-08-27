@@ -650,7 +650,15 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       const { kb_cards, ...rest } = data;
       setKbData(p => ({ ...p, ...rest, ...(kb_cards ? { kb_cards: kb_cards.map((c, i) => ({ ...c, id: `kb-ai-${i}-${Date.now()}` })) } : {}) }));
     }
-    else if (sectionKey === "features_apps")    setFaData(p    => ({ ...p, ...data }));
+    else if (sectionKey === "features_apps") {
+      // Mirrors the key_benefits pattern above: fa_items needs a stable
+      // `id` per item (ListView matches/updates/reorders items by id —
+      // see FeaturesApps.js), but the model has no reason to know that
+      // internal shape, so ids are injected here after generation rather
+      // than asked for in the prompt.
+      const { fa_items, ...rest } = data;
+      setFaData(p => ({ ...p, ...rest, ...(fa_items ? { fa_items: fa_items.map((it, i) => ({ ...it, id: `li-ai-${i}-${Date.now()}` })) } : {}) }));
+    }
     else if (sectionKey === "customer_stories") setCsData(p    => ({ ...p, ...data }));
     else if (sectionKey === "promo_section")    setPromoData(p => ({ ...p, ...data }));
     else if (sectionKey === "related_content")  setRcData(p    => ({ ...p, ...data }));
@@ -1116,7 +1124,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => setFaData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("features_apps")} className={`btn-na${naMap["features_apps"] ? " active" : ""}`}>{naMap["features_apps"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
+                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => { const { fa_items, ...rest } = d; setFaData(p => ({ ...p, ...rest, ...(fa_items ? { fa_items: fa_items.map((it,i) => ({ ...it, id:`li-ai-${i}-${Date.now()}` })) } : {}) })); }} />} naButton={<button onClick={() => toggleNA("features_apps")} className={`btn-na${naMap["features_apps"] ? " active" : ""}`}>{naMap["features_apps"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>

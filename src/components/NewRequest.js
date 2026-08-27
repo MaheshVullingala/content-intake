@@ -15,6 +15,8 @@ import KeyBenefits from "@/components/sections/KeyBenefits";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 import FeaturesApps from "@/components/sections/FeaturesApps";
 import FeaturesAppsPreview from "@/components/sections/FeaturesAppsPreview";
+import Applications from "@/components/sections/Applications";
+import ApplicationsPreview from "@/components/sections/ApplicationsPreview";
 import CustomerStories from "@/components/sections/CustomerStories";
 import CustomerStoriesPreview from "@/components/sections/CustomerStoriesPreview";
 import PromoSection from "@/components/sections/PromoSection";
@@ -84,6 +86,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const [loadingDraft,  setLoadingDraft] = useState(!!draftId);
   const [kbData,        setKbData]       = useState({ kb_label:"KEY BENEFITS", kb_impact:"", kb_description:"", kb_cards:[] });
   const [faData,        setFaData]       = useState({ fa_label:"FEATURES", fa_impact:"", fa_description:"", fa_view_type:"", fa_items:[], fa_columns:[], fa_rows:[] });
+  const [appData,       setAppData]      = useState({ app_label:"APPLICATIONS", app_impact:"", app_description:"", app_view_type:"", app_items:[] });
   const [csData,        setCsData]       = useState({ cs_label:"CUSTOMER STORIES", cs_impact:"", cs_items:[] });
   const [promoData,     setPromoData]    = useState({ promo_bg_image:"", promo_bg_note:"", promo_label:"", promo_title:"", promo_description:"", promo_btn_label:"", promo_btn_link:"" });
   const [rcData,        setRcData]       = useState({ rc_label:"RELATED CONTENT", rc_impact:"", rc_cards:[] });
@@ -178,6 +181,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         setOverview({ overview_label: "OVERVIEW", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null, overview_media_alt: data.overview_media_alt||"" });
         if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: "KEY BENEFITS", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
         if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: "FEATURES", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
+        if (data.app_impact || data.app_view_type) setAppData({ app_label: "APPLICATIONS", app_impact: data.app_impact||"", app_description: data.app_description||"", app_view_type: data.app_view_type||"", app_items: parseJSONB(data.app_items,[]) });
         if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: "CUSTOMER STORIES", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
         if (data.promo_title) setPromoData({ promo_bg_image: data.promo_bg_image||"", promo_bg_note: data.promo_bg_note||"", promo_label: data.promo_label||"", promo_title: data.promo_title||"", promo_description: data.promo_description||"", promo_btn_label: data.promo_btn_label||"", promo_btn_link: data.promo_btn_link||"" });
         if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: "RELATED CONTENT", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
@@ -221,6 +225,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     if (t.overview)  setOverview(p  => ({ ...p, ...t.overview }));
     if (t.kbData)    setKbData(p    => ({ ...p, ...t.kbData }));
     if (t.faData)    setFaData(p    => ({ ...p, ...t.faData }));
+    if (t.appData)   setAppData(p   => ({ ...p, ...t.appData }));
     if (t.csData)    setCsData(p    => ({ ...p, ...t.csData }));
     if (t.promoData) setPromoData(p => ({ ...p, ...t.promoData }));
     if (t.rcData)    setRcData(p    => ({ ...p, ...t.rcData }));
@@ -253,6 +258,10 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     const fa = sections.find(s => s.key === "features_apps");
     if (fa && fa.required && !naMap["features_apps"]) {
       if (!faData.fa_impact || !faData.fa_view_type) return false;
+    }
+    const app = sections.find(s => s.key === "applications");
+    if (app && app.required && !naMap["applications"]) {
+      if (!appData.app_impact || !appData.app_view_type) return false;
     }
     return true;
   };
@@ -293,7 +302,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       kb_description: kbData.kb_description,
       kb_cards:       kbData.kb_cards,
     } : {}),
-    // Features / Applications
+    // Features
     ...(!naMap["features_apps"] ? {
       fa_label:       faData.fa_label,
       fa_impact:      faData.fa_impact,
@@ -302,6 +311,14 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       fa_items:       faData.fa_items,
       fa_columns:     faData.fa_columns,
       fa_rows:        faData.fa_rows,
+    } : {}),
+    // Applications
+    ...(!naMap["applications"] ? {
+      app_label:       appData.app_label,
+      app_impact:      appData.app_impact,
+      app_description: appData.app_description,
+      app_view_type:   appData.app_view_type,
+      app_items:       appData.app_items,
     } : {}),
     // Customer Stories
     ...(!naMap["customer_stories"] ? {
@@ -457,7 +474,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       setSaving(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftId, draftDbId, step, pageType, seoData, banner, overview, kbData, faData, csData, promoData, rcData, resData, rpData, tsData, naMap, user]);
+  }, [draftId, draftDbId, step, pageType, seoData, banner, overview, kbData, faData, appData, csData, promoData, rcData, resData, rpData, tsData, naMap, user]);
 
   // Register saveDraft into parent ref so auto-logout can trigger it
   useEffect(() => {
@@ -546,8 +563,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       // Key Benefits — any card has an image_ref
       design_flag_kb: (kbData.kb_cards || []).some(c => hasRef(c.image_ref)),
 
-      // Features / Apps — any item has an image_ref
+      // Features — any item has an image_ref
       design_flag_fa: (faData.fa_items || []).some(i => hasRef(i.image_ref)),
+
+      // Applications — any item has an image_ref
+      design_flag_app: (appData.app_items || []).some(i => hasRef(i.image_ref)),
 
       // Customer Stories — any item has a logo_ref
       design_flag_cs: (csData.cs_items || []).some(i => hasRef(i.logo_ref)),
@@ -632,7 +652,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   };
 
   // Merged data for unified preview
-  const previewData = { ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData };
+  const previewData = { ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData };
   const steps = ["Select Page Type", "Fill Sections", "Preview & Submit"];
 
   if (loadingDraft) return (
@@ -658,6 +678,14 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       // than asked for in the prompt.
       const { fa_items, ...rest } = data;
       setFaData(p => ({ ...p, ...rest, ...(fa_items ? { fa_items: fa_items.map((it, i) => ({ ...it, id: `li-ai-${i}-${Date.now()}` })) } : {}) }));
+    }
+    else if (sectionKey === "applications") {
+      // Same id-injection pattern as features_apps above — app_items needs
+      // a stable client-side `id` per tab (TabsView matches/updates/
+      // reorders by id — see Applications.js) that the model isn't asked
+      // to produce.
+      const { app_items, ...rest } = data;
+      setAppData(p => ({ ...p, ...rest, ...(app_items ? { app_items: app_items.map((it, i) => ({ ...it, id: `app-tab-ai-${i}-${Date.now()}` })) } : {}) }));
     }
     else if (sectionKey === "customer_stories") setCsData(p    => ({ ...p, ...data }));
     else if (sectionKey === "promo_section")    setPromoData(p => ({ ...p, ...data }));
@@ -957,6 +985,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ? (isNA || (!!kbData.kb_impact && kbData.kb_cards.length > 0 && kbData.kb_cards.every(c => c.title && c.description)))
                 : s.key === "features_apps"
                 ? (isNA || (!!faData.fa_impact && !!faData.fa_view_type))
+                : s.key === "applications"
+                ? (isNA || (!!appData.app_impact && !!appData.app_view_type))
                 : s.key === "customer_stories"
                 ? (isNA || (!!csData.cs_impact && csData.cs_items.length > 0))
                 : s.key === "promo_section"
@@ -1103,7 +1133,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1111,14 +1141,14 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             </>
             )}
 
-            {/* Features / Applications */}
+            {/* Features */}
             {activeSection === "features_apps" && (
               <>
               <div>
                 {naMap["features_apps"] ? (
                   <div className="na-placeholder">
                     <div className="icon">—</div>
-                    <div className="text">Features / Applications marked as Not Applicable</div>
+                    <div className="text">Features marked as Not Applicable</div>
                     <button onClick={() => toggleNA("features_apps")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
@@ -1128,7 +1158,32 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+            )}
+
+            {/* Applications */}
+            {activeSection === "applications" && (
+              <>
+              <div>
+                {naMap["applications"] ? (
+                  <div className="na-placeholder">
+                    <div className="icon">—</div>
+                    <div className="text">Applications marked as Not Applicable</div>
+                    <button onClick={() => toggleNA("applications")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+                      <Applications data={appData} onChange={setAppData} isNA={false} onToggleNA={() => toggleNA("applications")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="applications" currentContent={appData.app_impact} onAccept={(d) => { const { app_items, ...rest } = d; setAppData(p => ({ ...p, ...rest, ...(app_items ? { app_items: app_items.map((it,i) => ({ ...it, id:`app-tab-ai-${i}-${Date.now()}` })) } : {}) })); }} />} naButton={<button onClick={() => toggleNA("applications")} className={`btn-na${naMap["applications"] ? " active" : ""}`}>{naMap["applications"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
+                    </div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                      <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1145,7 +1200,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1161,7 +1216,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("promo_section")} className={`btn-na${naMap["promo_section"] ? " active" : ""}`}>{naMap["promo_section"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1177,7 +1232,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("related_content")} className={`btn-na${naMap["related_content"] ? " active" : ""}`}>{naMap["related_content"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1192,7 +1247,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} requestId={draftId || "draft"} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1210,7 +1265,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1230,7 +1285,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1387,6 +1442,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             "seo_meta", "banner", "overview",
             ...(sections.some(s => s.key === "key_benefits")     ? ["key_benefits"]     : []),
             ...(sections.some(s => s.key === "features_apps")    ? ["features_apps"]    : []),
+            ...(sections.some(s => s.key === "applications")     ? ["applications"]     : []),
             ...(sections.some(s => s.key === "customer_stories") ? ["customer_stories"] : []),
             ...(sections.some(s => s.key === "promo_section")    ? ["promo_section"]    : []),
             ...(sections.some(s => s.key === "related_content")  ? ["related_content"]  : []),

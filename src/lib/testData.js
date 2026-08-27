@@ -106,6 +106,24 @@ export function generateTestData(pageType, sectionKeys = [], limits = {}) {
     };
   }
 
+  if (has("applications")) {
+    out.appData = {
+      app_label:       "APPLICATIONS",
+      app_impact:      gen(limits, "app_impact", 100, () => sentence(6, 10)),
+      app_description: gen(limits, "app_description", 300, () => paragraph(2, 3)),
+      app_view_type:   "tabs_horizontal",
+      app_items: Array.from({ length: 3 }, () => ({
+        id:          testId("app-tab"),
+        title:       truncate(title(2, 4), 50),
+        description: truncate(sentence(8, 14), 200),
+        image_ref:   null,
+        image_alt:   "",
+        cta_label:   "",
+        cta_link:    "",
+      })),
+    };
+  }
+
   if (has("customer_stories")) {
     out.csData = {
       cs_label:  "CUSTOMER STORIES",

@@ -316,6 +316,12 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
   const safeData = { ...data, fa_columns: safeColumns, fa_rows: safeRows, fa_items: safeItems };
   const upd = (key, val) => onChange({ ...safeData, [key]: val });
 
+  // Horizontal/Vertical Tabs moved to the separate Applications section
+  // (src/components/sections/Applications.js). Kept out of this picker so
+  // new content goes to the right place, but the render block below still
+  // handles fa_view_type === "tabs_horizontal"/"tabs_vertical" so any
+  // existing request saved under the old combined section still displays
+  // and can be edited — no data migration was done for existing rows.
   const VIEW_TYPES = [
     {
       key:   "list",
@@ -323,20 +329,6 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
       icon:  "✓",
       desc:  "Checkmark bullet list",
       when:  "Best for: 4–8 short feature highlights. Simple, scannable. No images needed.",
-    },
-    {
-      key:   "tabs_horizontal",
-      label: "Horizontal Tabs",
-      icon:  "▭",
-      desc:  "Tabs across the top",
-      when:  "Best for: 3–6 distinct features/applications each needing a title, description and image. Users click to explore.",
-    },
-    {
-      key:   "tabs_vertical",
-      label: "Vertical Tabs",
-      icon:  "▯",
-      desc:  "Tabs on the left side",
-      when:  "Best for: same as Horizontal Tabs but with longer tab labels or more items (up to 10). Works well for application categories.",
     },
     {
       key:   "table",
@@ -350,7 +342,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
   if (isNA) return (
     <div className="na-placeholder">
       <div className="icon">—</div>
-      <div className="text">Features / Applications section marked as Not Applicable</div>
+      <div className="text">Features section marked as Not Applicable</div>
       <button type="button" onClick={onToggleNA} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
     </div>
   );
@@ -361,7 +353,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-header">
           <div>
-            <h3>Features / Applications — Header</h3>
+            <h3>Features — Header</h3>
             <p>Common fields for all view types</p>
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>

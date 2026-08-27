@@ -30,7 +30,17 @@ export function getImageFields(req = {}) {
     if (Array.isArray(faItems)) {
       faItems.forEach((item, i) => {
         if (!item) return;
-        fields.push({ fieldId: `fa_item_${i + 1}_image`, section: "Features / Applications", label: `Tab ${i + 1} Image`, ref: item?.image_ref || null });
+        fields.push({ fieldId: `fa_item_${i + 1}_image`, section: "Features", label: `Tab ${i + 1} Image`, ref: item?.image_ref || null });
+      });
+    }
+  }
+
+  if (["tabs_horizontal", "tabs_vertical"].includes(req.app_view_type)) {
+    const appItems = parse(req.app_items, []);
+    if (Array.isArray(appItems)) {
+      appItems.forEach((item, i) => {
+        if (!item) return;
+        fields.push({ fieldId: `app_item_${i + 1}_image`, section: "Applications", label: `Tab ${i + 1} Image`, ref: item?.image_ref || null });
       });
     }
   }

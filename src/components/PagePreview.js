@@ -3,6 +3,7 @@ import { useState } from "react";
 import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
 import FeaturesAppsPreview from "@/components/sections/FeaturesAppsPreview";
+import ApplicationsPreview from "@/components/sections/ApplicationsPreview";
 import CustomerStoriesPreview from "@/components/sections/CustomerStoriesPreview";
 import PromoSectionPreview from "@/components/sections/PromoSectionPreview";
 import RelatedContentPreview from "@/components/sections/RelatedContentPreview";
@@ -40,6 +41,11 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   const fa_items       = p(req.fa_items,   []);
   const fa_columns     = p(req.fa_columns, []);
   const fa_rows        = p(req.fa_rows,    []);
+  const app_label       = req.app_label       || "";
+  const app_impact      = req.app_impact      || "";
+  const app_description = req.app_description || "";
+  const app_view_type   = req.app_view_type   || "";
+  const app_items       = p(req.app_items, []);
   const cs_label  = req.cs_label  || "";
   const cs_impact = req.cs_impact || "";
   const cs_items  = p(req.cs_items, []);
@@ -71,6 +77,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
     overview_label, overview_impact, overview_description, overview_media_url, overview_media_type,
     kb_label, kb_impact, kb_description, kb_cards,
     fa_label, fa_impact, fa_description, fa_view_type, fa_items, fa_columns, fa_rows,
+    app_label, app_impact, app_description, app_view_type, app_items,
     cs_label, cs_impact, cs_items,
     promo_title, promo_btn_label,
     rc_label, rc_impact, rc_cards,
@@ -123,6 +130,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   const hasOverview         = overview_impact || overview_description || activeSection === "overview";
   const hasKeyBenefits      = kb_impact || kb_cards.length > 0 || activeSection === "key_benefits";
   const hasFeatures         = fa_impact || fa_items.length > 0 || fa_columns.length > 0 || activeSection === "features_apps";
+  const hasApplications     = app_impact || app_items.length > 0 || activeSection === "applications";
   const hasCustomerStories  = cs_impact || cs_items.length > 0 || activeSection === "customer_stories";
   const hasPromo            = promo_title || promo_btn_label || activeSection === "promo_section";
   const hasRelatedContent   = rc_impact || rc_cards.length > 0 || activeSection === "related_content";
@@ -223,11 +231,19 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
         </>
       )}
 
-      {/* Features / Applications */}
+      {/* Features */}
       {hasFeatures && (
         <>
           <div className="preview-section-divider" />
           <div data-section="features_apps" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("features_apps")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="features_apps" /><HighlightBanner sectionKey="features_apps" /><FeaturesAppsPreview data={parsedReq} attachments={attachments} /></div>
+        </>
+      )}
+
+      {/* Applications */}
+      {hasApplications && (
+        <>
+          <div className="preview-section-divider" />
+          <div data-section="applications" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("applications")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="applications" /><HighlightBanner sectionKey="applications" /><ApplicationsPreview data={parsedReq} attachments={attachments} /></div>
         </>
       )}
 
@@ -288,6 +304,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
             hasOverview ? "Overview" : null,
             hasKeyBenefits ? "Key Benefits" : null,
             hasFeatures ? "Features" : null,
+            hasApplications ? "Applications" : null,
             hasCustomerStories ? "Stories" : null,
             hasPromo ? "Promo" : null,
             hasRelatedContent ? "Related" : null,

@@ -38,7 +38,8 @@ const QUESTION_SECTIONS = [
   { key: "banner",            label: "Banner" },
   { key: "overview",          label: "Overview" },
   { key: "key_benefits",      label: "Key Benefits" },
-  { key: "features_apps",     label: "Features / Applications" },
+  { key: "features_apps",     label: "Features" },
+  { key: "applications",      label: "Applications" },
   { key: "customer_stories",  label: "Customer Stories" },
   { key: "promo_section",     label: "Promo Section" },
   { key: "related_content",   label: "Related Content" },
@@ -58,6 +59,13 @@ const parseKbTitles = (kb_cards) => {
 const parseFaTitles = (fa_items) => {
   try {
     const items = Array.isArray(fa_items) ? fa_items : JSON.parse(fa_items || "[]");
+    return items.map(i => i.title).filter(Boolean).join(", ");
+  } catch { return ""; }
+};
+
+const parseAppTitles = (app_items) => {
+  try {
+    const items = Array.isArray(app_items) ? app_items : JSON.parse(app_items || "[]");
     return items.map(i => i.title).filter(Boolean).join(", ");
   } catch { return ""; }
 };
@@ -172,6 +180,7 @@ Generate SEO metadata for this page:
 - Overview: ${req.overview_impact || ""}. ${req.overview_description || ""}
 - Key Benefits: ${parseKbTitles(req.kb_cards)}
 - Features: ${parseFaTitles(req.fa_items)}
+- Applications: ${parseAppTitles(req.app_items)}
 
 Rules:
 - Meta title: 50-70 chars, include "| Cadence" at end

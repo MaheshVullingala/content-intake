@@ -88,6 +88,7 @@ export const CHAR_LIMITS = {
   overview_label:30, overview_impact:100, overview_description:600, overview_media_alt:150,
   kb_label:30, kb_impact:100, kb_description:300,
   fa_label:30, fa_impact:100, fa_description:300,
+  app_label:30, app_impact:100, app_description:300,
   cs_label:30, cs_impact:100,
   promo_label:30, promo_title:120, promo_description:300, promo_btn_label:30, promo_btn_link:300,
   rc_label:30, rc_impact:100,
@@ -143,9 +144,20 @@ export const SECTIONS = {
     },
   },
   features_apps: {
-    label: "Features / Applications",
+    label: "Features",
     icon: "🔧",
-    description: "List, tabs or table view of features or applications",
+    description: "List or table view of product features",
+    pageTypes: {
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: null },
+      "On-demand Webinar": { required: null },
+    },
+  },
+  applications: {
+    label: "Applications",
+    icon: "🧩",
+    description: "Horizontal or vertical tabs covering how the product applies to different use cases",
     pageTypes: {
       "Product":           { required: false },
       "Solutions":         { required: false },

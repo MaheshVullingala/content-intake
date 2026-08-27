@@ -33,6 +33,7 @@ const SECTION_PREFIXES = [
   ["seo_", "seo_meta"],
   ["kb_", "key_benefits"],
   ["fa_", "features_apps"],
+  ["app_", "applications"],
   ["cs_", "customer_stories"],
   ["promo_", "promo_section"],
   ["rc_", "related_content"],
@@ -54,13 +55,15 @@ const FIELD_LABELS = {
   overview_impact: "Overview Impact Statement", overview_description: "Overview Description",
   overview_media_alt: "Overview Media Alt Text",
   kb_impact: "Key Benefits Impact Statement", kb_description: "Key Benefits Description",
-  fa_impact: "Features/Applications Impact Statement", fa_description: "Features/Applications Description",
+  fa_impact: "Features Impact Statement", fa_description: "Features Description",
+  app_impact: "Applications Impact Statement", app_description: "Applications Description",
   cs_impact: "Customer Stories Impact Statement",
   promo_title: "Promo Title", promo_description: "Promo Description",
   rc_impact: "Related Content Impact Statement",
   rp_impact: "Related Products Impact Statement", rp_description: "Related Products Description",
   seo_meta_title: "SEO Meta Title", seo_meta_description: "SEO Meta Description",
-  kb_cards: "Key Benefits Cards", fa_items: "Features/Applications Items", fa_columns: "Features/Applications Table Columns", fa_rows: "Features/Applications Table Rows",
+  kb_cards: "Key Benefits Cards", fa_items: "Features Items", fa_columns: "Features Table Columns", fa_rows: "Features Table Rows",
+  app_items: "Applications Items",
   cs_items: "Customer Stories", rc_cards: "Related Content Cards", rp_cards: "Related Products Cards",
   res_video_carousel: "Resources Video Carousel", res_mixed_carousel: "Resources Mixed Media Carousel",
   res_resources: "Resources Cards", res_news: "Resources News Links", res_blogs: "Resources Blog Links",
@@ -128,7 +131,13 @@ function findCtaMismatches(payload) {
 
   if (payload.fa_view_type === "tabs_horizontal" || payload.fa_view_type === "tabs_vertical") {
     (payload.fa_items || []).forEach((tab, i) => {
-      checkPair(tab.cta_label, tab.cta_link, "features_apps", `Features/Applications Tab ${i + 1}${tab.title ? ` (${tab.title})` : ""}`);
+      checkPair(tab.cta_label, tab.cta_link, "features_apps", `Features Tab ${i + 1}${tab.title ? ` (${tab.title})` : ""}`);
+    });
+  }
+
+  if (payload.app_view_type === "tabs_horizontal" || payload.app_view_type === "tabs_vertical") {
+    (payload.app_items || []).forEach((tab, i) => {
+      checkPair(tab.cta_label, tab.cta_link, "applications", `Applications Tab ${i + 1}${tab.title ? ` (${tab.title})` : ""}`);
     });
   }
 

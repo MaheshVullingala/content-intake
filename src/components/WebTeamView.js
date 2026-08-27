@@ -38,6 +38,7 @@ const CHECKS = [
   { label: "Overview",         ok: r => !!r.overview_impact },
   { label: "Key Benefits",     ok: r => parseJson(r.kb_cards).length > 0 || !!r.kb_impact },
   { label: "Features",         ok: r => !!r.fa_impact },
+  { label: "Applications",     ok: r => !!r.app_impact },
   { label: "Customer Stories", ok: r => parseJson(r.cs_items).length > 0 || !!r.cs_impact },
   { label: "Promo Section",    ok: r => !!r.promo_title },
   { label: "Related Content",  ok: r => parseJson(r.rc_cards).length > 0 || !!r.rc_impact },
@@ -208,6 +209,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
   // ── Parse JSONB arrays ──────────────────────────────────────────────────
   const kbCards = parseJson(req.kb_cards);
   const faItems = parseJson(req.fa_items);
+  const appItems = parseJson(req.app_items);
   const csItems = parseJson(req.cs_items);
   const rcCards = parseJson(req.rc_cards);
   const rpCards = parseJson(req.rp_cards);
@@ -303,7 +305,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Features ─────────────────────────────────────────────────── */}
       {(req.fa_impact || faItems.length > 0) && (<>
-        <SectionHead>🔧 Features / Applications</SectionHead>
+        <SectionHead>🔧 Features</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact"      value={req.fa_impact}      copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Description" value={req.fa_description} copiedKey={copiedKey} onCopy={copy} />
@@ -312,6 +314,22 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
             <div key={i}>
               <FieldRow label={`Item ${i+1} Title`} value={c.title}       copiedKey={copiedKey} onCopy={copy} />
               <FieldRow label={`Item ${i+1} Desc`}  value={c.description} copiedKey={copiedKey} onCopy={copy} />
+            </div>
+          ))}
+        </div>
+      </>)}
+
+      {/* ── Applications ─────────────────────────────────────────────── */}
+      {(req.app_impact || appItems.length > 0) && (<>
+        <SectionHead>🧩 Applications</SectionHead>
+        <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+          <FieldRow label="Impact"      value={req.app_impact}      copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="Description" value={req.app_description} copiedKey={copiedKey} onCopy={copy} />
+          <FieldRow label="View Type"   value={req.app_view_type}   copiedKey={copiedKey} onCopy={copy} />
+          {appItems.map((c, i) => (
+            <div key={i}>
+              <FieldRow label={`Tab ${i+1} Title`} value={c.title}       copiedKey={copiedKey} onCopy={copy} />
+              <FieldRow label={`Tab ${i+1} Desc`}  value={c.description} copiedKey={copiedKey} onCopy={copy} />
             </div>
           ))}
         </div>

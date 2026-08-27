@@ -138,6 +138,28 @@ const SECTION_SCHEMAS = {
   ]
 }`,
   },
+  applications: {
+    // Applications is tabs-only (horizontal or vertical — see VIEW_TYPES
+    // in Applications.js), so unlike features_apps there's no "safe"
+    // layout to default to that skips images: every tab needs a
+    // Design-QA-supplied image + required alt text. AI Assist still
+    // targets "tabs_horizontal" here (the more common default) and
+    // generates title/description per tab — image_ref/image_alt are left
+    // for the stakeholder/Design QA to fill in after, same as the
+    // existing tabs pattern in features_apps's TabsView.
+    context: "applications section header and content for a Cadence product page",
+    fields: `{
+  "app_label": "max 30 chars - e.g. APPLICATIONS, USE CASES",
+  "app_impact": "max 100 chars - compelling section headline",
+  "app_description": "max 300 chars - brief intro to the applications/use cases",
+  "app_view_type": "always the exact string \\"tabs_horizontal\\"",
+  "app_items": [
+    { "title": "max 50 chars - name of the application or use case", "description": "max 200 chars - what this application is and the engineering outcome it delivers" },
+    { "title": "...", "description": "..." },
+    { "title": "...", "description": "..." }
+  ]
+}`,
+  },
   customer_stories: {
     context: "customer stories section header for a Cadence product page",
     fields: `{

@@ -50,13 +50,22 @@ export const SECTION_CONFIG = {
     arrayField: { key: "kb_cards", itemLabel: "Benefit", itemFields: ["title", "description"] },
   },
   features_apps: {
-    title: "Features / Applications",
+    title: "Features",
     fields: [
       { key: "fa_label",       label: "Label" },
       { key: "fa_impact",      label: "Impact Statement", multiline: true },
       { key: "fa_description", label: "Description",      multiline: true },
     ],
     custom: "features_apps", // handled by the dedicated fa_* renderer below, not the generic arrayField path
+  },
+  applications: {
+    title: "Applications",
+    fields: [
+      { key: "app_label",       label: "Label" },
+      { key: "app_impact",      label: "Impact Statement", multiline: true },
+      { key: "app_description", label: "Description",      multiline: true },
+    ],
+    custom: "applications", // handled by the dedicated app_* renderer below — tabs-only, no list/table branch needed
   },
   customer_stories: {
     title: "Customer Stories",
@@ -182,6 +191,7 @@ export default function EditSectionModal({
   const [faItems,   setFaItems]   = useState([]);
   const [faColumns, setFaColumns] = useState([]);
   const [faRows,    setFaRows]    = useState([]);
+  const [appItems,  setAppItems]  = useState([]);
   const [saving,    setSaving]    = useState(false);
   const [error,     setError]     = useState("");
 
@@ -200,6 +210,9 @@ export default function EditSectionModal({
       setFaItems(parseJSON(data.fa_items));
       setFaColumns(parseJSON(data.fa_columns));
       setFaRows(parseJSON(data.fa_rows));
+    }
+    if (config.custom === "applications") {
+      setAppItems(parseJSON(data.app_items));
     }
     setError("");
   }, [pickedSection]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -276,13 +289,17 @@ export default function EditSectionModal({
   const updateFaItem         = (idx, key, v) => setFaItems(prev => prev.map((it, i) => i === idx ? { ...it, [key]: v } : it));
   const updateFaColumnHeader = (idx, v)      => setFaColumns(prev => prev.map((c, i) => i === idx ? { ...c, header: v } : c));
   const updateFaCell         = (rowIdx, colId, v) => setFaRows(prev => prev.map((r, i) => i === rowIdx ? { ...r, [colId]: v } : r));
+  const updateAppItem        = (idx, key, v) => setAppItems(prev => prev.map((it, i) => i === idx ? { ...it, [key]: v } : it));
 
   const hasArrayItems = config.arrayField && items.length > 0;
   const isFeaturesApps = config.custom === "features_apps";
   const faViewType     = data.fa_view_type || "";
   const faIsTable       = faViewType === "table";
   const faHasContent    = isFeaturesApps && (faIsTable ? faColumns.length > 0 : faItems.length > 0);
-  const isEmpty = visible.length === 0 && !hasArrayItems && !faHasContent;
+  const isApplications  = config.custom === "applications";
+  const appViewType     = data.app_view_type || "";
+  const appHasContent   = isApplications && appItems.length > 0;
+  const isEmpty = visible.length === 0 && !hasArrayItems && !faHasContent && !appHasContent;
 
   const handleSave = async () => {
     setSaving(true);
@@ -292,6 +309,9 @@ export default function EditSectionModal({
     if (isFeaturesApps) {
       if (faIsTable) { payload.fa_columns = faColumns; payload.fa_rows = faRows; }
       else            { payload.fa_items = faItems; }
+    }
+    if (isApplications) {
+      payload.app_items = appItems;
     }
 
     if (deferApply) {
@@ -450,6 +470,28 @@ export default function EditSectionModal({
                   </table>
                 </div>
               )}
+            </div>
+          )}
+
+          {appHasContent && (
+            <div style={{ marginTop: visible.length ? 8 : 0 }}>
+              <div className="text-xs text-uppercase text-muted" style={{ marginBottom: 10 }}>
+                View Type: <strong style={{ color: "var(--color-night)" }}>{VIEW_TYPE_LABELS[appViewType] || appViewType}</strong>
+                <span style={{ marginLeft: 6, fontWeight: 400, textTransform: "none" }}>(fixed — can't be changed here)</span>
+              </div>
+
+              {appItems.map((item, idx) => (
+                <div key={item.id || idx} style={{
+                  border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)",
+                  padding: "0.9rem 1rem", background: "var(--color-ghost)", marginBottom: 10,
+                }}>
+                  <div className="text-xs text-uppercase text-muted" style={{ marginBottom: 8, fontWeight: 600 }}>Tab {idx + 1}</div>
+                  <EditField label="Title"       value={item.title || ""}       onChange={v => updateAppItem(idx, "title", v)} />
+                  <EditField label="Description" value={item.description || ""} onChange={v => updateAppItem(idx, "description", v)} multiline />
+                  <EditField label="CTA Label"   value={item.cta_label || ""}   onChange={v => updateAppItem(idx, "cta_label", v)} />
+                  <EditField label="CTA Link"    value={item.cta_link || ""}    onChange={v => updateAppItem(idx, "cta_link", v)} />
+                </div>
+              ))}
             </div>
           )}
 

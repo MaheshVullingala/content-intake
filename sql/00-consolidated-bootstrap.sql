@@ -106,6 +106,13 @@ CREATE TABLE IF NOT EXISTS public.requests (
   fa_columns                  JSONB DEFAULT '[]'::jsonb,
   fa_rows                     JSONB DEFAULT '[]'::jsonb,
 
+  -- applications (split from features_apps — see sql/24-applications-section.sql)
+  app_label                   TEXT,
+  app_impact                  TEXT,
+  app_description              TEXT,
+  app_view_type                TEXT,
+  app_items                   JSONB DEFAULT '[]'::jsonb,
+
   -- customer_stories
   cs_label                    TEXT,
   cs_impact                   TEXT,
@@ -174,6 +181,7 @@ CREATE TABLE IF NOT EXISTS public.requests (
   design_flag_overview         BOOLEAN DEFAULT false,
   design_flag_kb               BOOLEAN DEFAULT false,
   design_flag_fa               BOOLEAN DEFAULT false,
+  design_flag_app              BOOLEAN DEFAULT false,
   design_flag_cs               BOOLEAN DEFAULT false,
   design_flag_rc               BOOLEAN DEFAULT false,
   design_flag_promo            BOOLEAN DEFAULT false,

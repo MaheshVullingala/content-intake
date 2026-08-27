@@ -124,13 +124,6 @@
   z-index: 0;
 }
 
-.banner-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, rgba(24,19,19,0.92) 38%, rgba(24,19,19,0.55));
-  z-index: 1;
-}
-
 .banner-placeholder-badge {
   position: absolute;
   top: 12px;
@@ -173,11 +166,11 @@
   margin-bottom: 12px;
 }
 
-.banner-title             { color: var(--color-smoke); font-weight: 500; font-size: 26px; margin-bottom: 8px; line-height: 1.25; }
-.banner-title.placeholder { color: var(--color-dim); font-style: italic; font-weight: 400; }
+.banner-title             { color: var(--color-smoke); font-weight: 500; font-size: 26px; margin-bottom: 8px; line-height: 1.25; text-shadow: 0 1px 4px rgba(0,0,0,0.55); }
+.banner-title.placeholder { color: var(--color-dim); font-style: italic; font-weight: 400; text-shadow: none; }
 
-.banner-subtitle             { color: var(--color-silver); font-size: var(--text-base); margin-bottom: 18px; line-height: 1.6; }
-.banner-subtitle.placeholder { color: var(--color-dim); }
+.banner-subtitle             { color: var(--color-silver); font-size: var(--text-base); margin-bottom: 18px; line-height: 1.6; text-shadow: 0 1px 4px rgba(0,0,0,0.55); }
+.banner-subtitle.placeholder { color: var(--color-dim); text-shadow: none; }
 
 .banner-ctas          { display: flex; gap: 10px; flex-wrap: wrap; }
 .banner-cta-primary   { background: var(--color-smoke); color: var(--color-night); border-radius: 5px; padding: 7px 16px; font-size: var(--text-sm); font-weight: 500; }

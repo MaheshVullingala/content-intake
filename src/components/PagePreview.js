@@ -159,8 +159,6 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
           className="banner-bg-img"
           onError={e => { e.currentTarget.style.display = "none"; }}
         />
-        {/* Dark overlay */}
-        <div className="banner-overlay" />
         <div className="banner-inner">
           <HighlightBanner sectionKey="banner" />
           <span className="banner-tag">{pageType}</span>

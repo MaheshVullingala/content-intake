@@ -12,7 +12,7 @@ export default function PromoSectionPreview({ data = {}, attachments = [] }) {
     <div style={{
       
       background: promo_bg_image
-        ? `linear-gradient(to right, rgba(0,0,0,0.75) 50%, rgba(0,0,0,0.4)), url('${promo_bg_image}') center/cover`
+        ? `url('${promo_bg_image}') center/cover`
         : "linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)",
       width: "100%", boxSizing: "border-box",
       fontFamily: "'Rubik', sans-serif",
@@ -21,12 +21,12 @@ export default function PromoSectionPreview({ data = {}, attachments = [] }) {
         {/* Left content */}
         <div style={{ flex: 1 }}>
           {promo_label && (
-            <div style={{ fontSize: 10, fontWeight: 600, color: "#B5B5B5", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: "#B5B5B5", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12, textShadow: promo_bg_image ? "0 1px 4px rgba(0,0,0,0.65)" : "none" }}>
               {promo_label}
             </div>
           )}
           {promo_title ? (
-            <h2 style={{ fontSize: 22, fontWeight: 400, color: "#F3F3F3", lineHeight: 1.4, margin: 0, wordBreak: "break-word" }}>
+            <h2 style={{ fontSize: 22, fontWeight: 400, color: "#F3F3F3", lineHeight: 1.4, margin: 0, wordBreak: "break-word", textShadow: promo_bg_image ? "0 1px 4px rgba(0,0,0,0.65)" : "none" }}>
               {promo_title}
             </h2>
           ) : (
@@ -35,7 +35,7 @@ export default function PromoSectionPreview({ data = {}, attachments = [] }) {
             </h2>
           )}
           {promo_description && (
-            <p style={{ fontSize: 13, color: "#B5B5B5", marginTop: 10, lineHeight: 1.6 }}>{promo_description}</p>
+            <p style={{ fontSize: 13, color: "#B5B5B5", marginTop: 10, lineHeight: 1.6, textShadow: promo_bg_image ? "0 1px 4px rgba(0,0,0,0.65)" : "none" }}>{promo_description}</p>
           )}
           {!promo_bg_image && promo_bg_placeholder && (
             <div style={{ marginTop: 10, display: "inline-block", background: "rgba(255,255,255,0.08)", border: "1px dashed rgba(255,255,255,0.3)", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5" }}>

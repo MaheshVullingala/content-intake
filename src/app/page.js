@@ -128,13 +128,34 @@ export default function App() {
       if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") setLoading(false);
     });
 
-    const sessionCheck = setInterval(async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) setUser(prev => { if (prev) supabase.auth.signOut(); return prev; });
-    }, 5 * 60 * 1000);
+    // There used to be a 5-minute setInterval here that called
+    // supabase.auth.getSession() and, if it came back null, called the
+    // real, destructive, server-revoking supabase.auth.signOut() — logging
+    // the user out for real. It's removed now, not just fixed, because it
+    // was fundamentally unsound: getSession() collapses two very different
+    // situations into the same "null" result — (a) the session is
+    // genuinely gone, and (b) the session is fine in storage but a
+    // just-in-time refresh attempt hit a transient/retryable error (a wifi
+    // blip, VPN reconnect, laptop wake). See __loadSession() in
+    // node_modules/@supabase/auth-js: on ANY refresh error, retryable or
+    // not, it returns { session: null }, even though the real session and
+    // refresh token are untouched in storage and still valid. That poll
+    // was calling signOut() on case (b) roughly as often as it hit a
+    // network hiccup — a real logout over nothing, every ~5 minutes of
+    // exposure.
+    //
+    // It also added no real coverage: a genuine session death already
+    // fires a real SIGNED_OUT event through onAuthStateChange above, which
+    // already clears `user` — that's the single source of truth for "is
+    // this user actually logged out," and it's the only place that should
+    // ever be. If a similar periodic safety-net check is wanted again in
+    // the future, it must never call signOut()/clear `user` off a bare
+    // getSession() read; at most it should compare against a debounced
+    // multi-read-agreement, or better, trust the SDK's own auto-refresh +
+    // visibility-driven recovery (see supabase.js) to self-correct.
 
     const timeout = setTimeout(() => setLoading(false), 8000);
-    return () => { subscription.unsubscribe(); clearInterval(sessionCheck); clearTimeout(timeout); };
+    return () => { subscription.unsubscribe(); clearTimeout(timeout); };
   }, []);
 
   // ── Read impersonated role from localStorage ─────────────────────────────

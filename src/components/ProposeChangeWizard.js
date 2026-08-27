@@ -126,6 +126,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
   const [overview,  setOverview]  = useState(EMPTY_OVERVIEW);
   const [kbData,    setKbData]    = useState({ kb_label:"KEY BENEFITS", kb_impact:"", kb_description:"", kb_cards:[] });
   const [faData,    setFaData]    = useState({ fa_label:"FEATURES", fa_impact:"", fa_description:"", fa_view_type:"", fa_items:[], fa_columns:[], fa_rows:[] });
+  const [appData,   setAppData]   = useState({ app_label:"APPLICATIONS", app_impact:"", app_description:"", app_view_type:"", app_items:[] });
   const [csData,    setCsData]    = useState({ cs_label:"CUSTOMER STORIES", cs_impact:"", cs_items:[] });
   const [promoData, setPromoData] = useState({ promo_bg_image_ref:null, promo_label:"", promo_title:"", promo_description:"", promo_btn_label:"", promo_btn_link:"" });
   const [rcData,    setRcData]    = useState({ rc_label:"RELATED CONTENT", rc_impact:"", rc_cards:[] });
@@ -156,6 +157,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
     });
     setKbData({ kb_label: "KEY BENEFITS", kb_impact: req.kb_impact||"", kb_description: req.kb_description||"", kb_cards: parseJSONB(req.kb_cards,[]) });
     setFaData({ fa_label: "FEATURES", fa_impact: req.fa_impact||"", fa_description: req.fa_description||"", fa_view_type: req.fa_view_type||"", fa_items: parseJSONB(req.fa_items,[]), fa_columns: parseJSONB(req.fa_columns,[]), fa_rows: parseJSONB(req.fa_rows,[]) });
+    setAppData({ app_label: "APPLICATIONS", app_impact: req.app_impact||"", app_description: req.app_description||"", app_view_type: req.app_view_type||"", app_items: parseJSONB(req.app_items,[]) });
     setCsData({ cs_label: "CUSTOMER STORIES", cs_impact: req.cs_impact||"", cs_items: parseJSONB(req.cs_items,[]) });
     setPromoData({ promo_bg_image_ref: req.promo_bg_image_ref||null, promo_label: req.promo_label||"", promo_title: req.promo_title||"", promo_description: req.promo_description||"", promo_btn_label: req.promo_btn_label||"", promo_btn_link: req.promo_btn_link||"" });
     setRcData({ rc_label: "RELATED CONTENT", rc_impact: req.rc_impact||"", rc_cards: parseJSONB(req.rc_cards,[]) });
@@ -172,7 +174,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
   }, [req.id]);
 
   const sections = req.page_type ? getSectionsForPageType(req.page_type) : [];
-  const mergedPreview = { ...banner, ...overview, ...seoData, ...kbData, ...faData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData };
+  const mergedPreview = { ...banner, ...overview, ...seoData, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData };
 
   const buildChangedFields = () => {
     const original = originalRef.current || {};
@@ -274,6 +276,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
   const COMPONENT_SECTIONS = {
     key_benefits:     { Component: KeyBenefits,     data: kbData,    onChange: setKbData    },
     features_apps:    { Component: FeaturesApps,    data: faData,    onChange: setFaData    },
+    applications:     { Component: Applications,    data: appData,   onChange: setAppData   },
     customer_stories: { Component: CustomerStories, data: csData,    onChange: setCsData    },
     promo_section:    { Component: PromoSection,    data: promoData, onChange: setPromoData },
     related_content:  { Component: RelatedContent,  data: rcData,    onChange: setRcData    },

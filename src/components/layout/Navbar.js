@@ -90,19 +90,19 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
             <button
               onClick={() => setDropdownOpen(v => !v)}
               style={{
-                background: currentImpersonated ? "rgba(62,197,203,0.12)" : "none",
-                border: `1px solid ${currentImpersonated ? "#3ec5cb55" : "#1e4f8a"}`,
+                background: impersonatedRole ? "rgba(62,197,203,0.12)" : "none",
+                border: `1px solid ${impersonatedRole ? "#3ec5cb55" : "#1e4f8a"}`,
                 borderRadius: 7,
                 padding: "0.3rem 0.75rem",
                 fontSize: 12,
-                color: currentImpersonated ? "#3ec5cb" : "#94a3b8",
+                color: impersonatedRole ? "#3ec5cb" : "#94a3b8",
                 cursor: "pointer",
                 fontFamily: "'Rubik', sans-serif",
                 display: "flex", alignItems: "center", gap: 6,
                 transition: "all 0.15s",
               }}
             >
-              ⚡ View as: <strong style={{ color: currentImpersonated ? "#3ec5cb" : "#f1f5f9" }}>{activeLabel}</strong>
+              ⚡ View as: <strong style={{ color: impersonatedRole ? "#3ec5cb" : "#f1f5f9" }}>{activeLabel}</strong>
               <span style={{ fontSize: 9, opacity: 0.6 }}>▼</span>
             </button>
 

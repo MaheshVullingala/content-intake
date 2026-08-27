@@ -10,10 +10,35 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     detectSessionInUrl: true,
     storageKey:         "cip-auth",
     storage:            typeof window !== "undefined" ? window.localStorage : undefined,
-    // Prevent multiple simultaneous token refresh calls — root cause of timeout
-    lock:               typeof window !== "undefined"
-                          ? async (name, acquireTimeout, fn) => fn()
-                          : undefined,
+    // Actually serialize concurrent calls (token refresh in particular)
+    // via the browser's native Web Locks API — the same mechanism
+    // Supabase's own SDK uses internally for this option.
+    //
+    // This used to be `async (name, acquireTimeout, fn) => fn()` — a
+    // no-op that runs every call immediately with zero serialization,
+    // despite the option existing specifically to prevent concurrent
+    // calls. Refresh tokens are single-use: any two things that trigger
+    // a refresh close together (AI Assist's getAccessToken(), a
+    // background poll, two quick clicks) could both fire at once, one
+    // gets rejected by the auth server, and the SDK treats that as
+    // TOKEN_REFRESH_FAILED — logging the user out mid-action, not for
+    // being idle. That's the "logged out while clicking a button / using
+    // AI Assist" symptom, not the separate idle-timeout behavior.
+    lock: typeof window !== "undefined"
+      ? async (name, acquireTimeout, fn) => {
+          if (typeof navigator === "undefined" || !navigator.locks) return fn(); // no Web Locks support — best effort, unsynchronized
+          const opts = {};
+          if (acquireTimeout === 0) {
+            opts.ifAvailable = true;
+          } else if (acquireTimeout > 0 && typeof AbortSignal !== "undefined" && AbortSignal.timeout) {
+            opts.signal = AbortSignal.timeout(acquireTimeout);
+          } // acquireTimeout === -1 (or unsupported) — wait indefinitely, navigator.locks' default
+          return navigator.locks.request(name, opts, (lock) => {
+            if (opts.ifAvailable && !lock) throw new Error("Lock not available");
+            return fn();
+          });
+        }
+      : undefined,
   },
   global: {
     // Abort requests that hang longer than 25s. Was 10s, which was the

@@ -10,7 +10,6 @@ import ProposeChangeWizard from "@/components/ProposeChangeWizard";
 import PendingChangeCard   from "@/components/PendingChangeCard";
 import JiraTicketCard      from "@/components/JiraTicketCard";
 import WordExportButton    from "@/components/WordExportButton";
-import CommentThread       from "@/components/CommentThread";
 import { OVERALL_STATUS_META, getTasksForRequest, updateTask } from "@/lib/taskUtils";
 
 const TEAM_ROLES = new Set([
@@ -198,7 +197,7 @@ export default function TaskBoard({
         <Header />
         <div style={TWO_COL}>
           <div style={{ overflowY: "auto" }}>
-            <PagePreview req={req} pageType={req.page_type} />
+            <PagePreview req={req} pageType={req.page_type} user={user} supabase={supabase} />
           </div>
           <div style={{ overflowY: "auto",
                         borderLeft: "1px solid var(--color-border)",
@@ -253,6 +252,8 @@ export default function TaskBoard({
                 activeEditSection={editModal?.section}
                 onEditSection={(section) => setEditModal({ section, data: req })}
                 attachments={designAttachments}
+                user={user}
+                supabase={supabase}
               />
             )}
           </div>
@@ -267,9 +268,6 @@ export default function TaskBoard({
               attachments={attachments}
               onRefresh={handleRefresh}
             />
-            {user.role === "editorial_team" && (
-              <CommentThread req={req} user={user} supabase={supabase} />
-            )}
           </div>
         </div>
         {editModal && (
@@ -341,6 +339,8 @@ export default function TaskBoard({
                 activeEditSection={editModal?.section}
                 onEditSection={(section) => setEditModal({ section, data: req })}
                 highlightSection={needsInfoSection}
+                user={user}
+                supabase={supabase}
               />
             </div>
             <div style={{ overflowY: "auto",
@@ -354,7 +354,6 @@ export default function TaskBoard({
                 onRefresh={handleRefresh}
                 singleColumn
               />
-              <CommentThread req={req} user={user} supabase={supabase} />
             </div>
             {editModal && (
               <EditSectionModal
@@ -369,22 +368,29 @@ export default function TaskBoard({
             )}
           </div>
         ) : (
-          <div>
-            {req.overall_status && req.overall_status !== "published" && (
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-                <button className="btn-ghost" onClick={() => setComposingChange(true)}>
-                  ✎ Suggest a Change
-                </button>
-              </div>
-            )}
-            <TaskBoardOverview
-              tasks={localTasks}
-              req={req}
-              user={user}
-              supabase={supabase}
-              onRefresh={handleRefresh}
-            />
-            <CommentThread req={req} user={user} supabase={supabase} />
+          <div style={TWO_COL}>
+            <div style={{ overflowY: "auto" }}>
+              <PagePreview req={req} pageType={req.page_type} attachments={designAttachments} user={user} supabase={supabase} />
+            </div>
+            <div style={{ overflowY: "auto",
+                          borderLeft: "1px solid var(--color-border)",
+                          paddingLeft: "1.5rem" }}>
+              {req.overall_status && req.overall_status !== "published" && (
+                <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+                  <button className="btn-ghost" onClick={() => setComposingChange(true)}>
+                    ✎ Suggest a Change
+                  </button>
+                </div>
+              )}
+              <TaskBoardOverview
+                tasks={localTasks}
+                req={req}
+                user={user}
+                supabase={supabase}
+                onRefresh={handleRefresh}
+                singleColumn
+              />
+            </div>
           </div>
         )}
       </div>
@@ -398,14 +404,13 @@ export default function TaskBoard({
         <Header />
         <div style={TWO_COL}>
           <div style={{ overflowY: "auto" }}>
-            <PagePreview req={req} pageType={req.page_type} attachments={designAttachments} />
+            <PagePreview req={req} pageType={req.page_type} attachments={designAttachments} user={user} supabase={supabase} />
           </div>
           <div style={{ overflowY: "auto",
                         borderLeft: "1px solid var(--color-border)",
                         paddingLeft: "1.5rem" }}>
             <JiraTicketCard req={req} user={user} supabase={supabase} onRefresh={handleRefresh} />
             <WordExportButton req={req} />
-            <CommentThread req={req} user={user} supabase={supabase} />
             {pendingChange && (
               <div style={{ marginBottom: 16 }}>
                 <PendingChangeCard

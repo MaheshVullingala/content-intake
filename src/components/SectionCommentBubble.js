@@ -30,10 +30,11 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
   return (
     <div style={inline
       ? { position: "relative", display: "inline-flex", zIndex: open ? 30 : 10 }
-      // Opposite corner from EditBtn (top-right) on purpose — avoids any
-      // chance of overlap regardless of how wide "✎ Edit"/"✓ Editing"
-      // renders, rather than trying to compute a safe right-offset gap.
-      : { position: "absolute", top: 10, left: 10, zIndex: open ? 30 : 10 }}>
+      // Stacked below EditBtn (same top-right corner) rather than beside
+      // it — button height is fixed regardless of "✎ Edit" vs
+      // "✓ Editing" text length, so a fixed vertical gap is safe in a
+      // way a horizontal one wasn't.
+      : { position: "absolute", top: 48, right: 10, zIndex: open ? 30 : 10 }}>
       <button
         onClick={() => setOpen(v => !v)}
         title={`Discuss ${label}`}
@@ -71,12 +72,7 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
 
       {open && (
         <div style={{
-          position: "absolute", top: 36,
-          // Bubble sits at the section's top-left corner (non-inline) —
-          // anchor the popover to expand rightward from there, not
-          // leftward off the section's own edge. Inline (the "General"
-          // bubble in the browser bar) keeps its original right-anchor.
-          ...(inline ? { right: 0 } : { left: 0 }),
+          position: "absolute", top: 36, right: 0,
           width: 280, maxWidth: "calc(100vw - 40px)",
           background: "#fff", border: "1px solid #E0E0E0", borderRadius: 10,
           boxShadow: "0 8px 24px rgba(0,0,0,0.18)",

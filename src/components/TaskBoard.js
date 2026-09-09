@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import AdminTaskSetup    from "@/components/AdminTaskSetup";
+import AdminReviewGate   from "@/components/AdminReviewGate";
 import TaskBoardOverview from "@/components/TaskBoardOverview";
 import TaskPanel         from "@/components/TaskPanel";
 import PagePreview       from "@/components/PagePreview";
@@ -190,17 +190,22 @@ export default function TaskBoard({
     );
   }
 
-  // ── View 1: Admin + pending_admin → AdminTaskSetup ──────────────────
+  // ── View 1: Admin + pending_admin → review, then AdminReviewGate ─────
+  // Phase 1: no team-selection screen — see AdminReviewGate.js for why.
   if (isAdmin && isPendingAdmin) {
     return (
       <div>
         <Header />
-        <AdminTaskSetup
-          req={req}
-          user={user}
-          supabase={supabase}
-          onTasksCreated={handleRefresh}
-        />
+        <div style={TWO_COL}>
+          <div style={{ overflowY: "auto" }}>
+            <PagePreview req={req} pageType={req.page_type} />
+          </div>
+          <div style={{ overflowY: "auto",
+                        borderLeft: "1px solid var(--color-border)",
+                        paddingLeft: "1.5rem" }}>
+            <AdminReviewGate req={req} user={user} supabase={supabase} onStarted={handleRefresh} />
+          </div>
+        </div>
       </div>
     );
   }

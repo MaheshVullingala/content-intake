@@ -19,7 +19,7 @@ const TEAM_ROLES = new Set([
 // Spec-exact two-column layout
 const TWO_COL = {
   display: "grid",
-  gridTemplateColumns: "60% 40%",
+  gridTemplateColumns: "75% 25%",
   gap: "1.5rem",
   height: "calc(100vh - 120px)",
   overflow: "hidden",

@@ -30,21 +30,25 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
   return (
     <div style={inline
       ? { position: "relative", display: "inline-flex", zIndex: open ? 30 : 10 }
-      : { position: "absolute", top: 10, right: 56, zIndex: open ? 30 : 10 }}>
+      // Opposite corner from EditBtn (top-right) on purpose — avoids any
+      // chance of overlap regardless of how wide "✎ Edit"/"✓ Editing"
+      // renders, rather than trying to compute a safe right-offset gap.
+      : { position: "absolute", top: 10, left: 10, zIndex: open ? 30 : 10 }}>
       <button
         onClick={() => setOpen(v => !v)}
         title={`Discuss ${label}`}
         style={{
           position: "relative",
-          background: open ? "#1b5793" : "#fff",
-          color: open ? "#fff" : "#1b5793",
-          border: `1.5px solid ${open ? "#1b5793" : "#1b579366"}`,
+          background: open ? "#0f766e" : "#3ec5cb",
+          color: "#fff",
+          border: "1.5px solid #0f766e",
           borderRadius: inline ? 20 : "50%",
           width: inline ? "auto" : 30, height: 30,
           padding: inline ? "0 10px" : 0,
           display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
           fontSize: inline ? 12 : 14, fontWeight: inline ? 600 : 400, cursor: "pointer",
           fontFamily: inline ? "'Rubik',sans-serif" : undefined,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.18)",
           opacity: inline || hovered || open || comments.length > 0 ? 1 : 0,
           transition: "opacity 0.15s, background 0.15s",
         }}
@@ -67,7 +71,12 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
 
       {open && (
         <div style={{
-          position: "absolute", top: 36, right: 0,
+          position: "absolute", top: 36,
+          // Bubble sits at the section's top-left corner (non-inline) —
+          // anchor the popover to expand rightward from there, not
+          // leftward off the section's own edge. Inline (the "General"
+          // bubble in the browser bar) keeps its original right-anchor.
+          ...(inline ? { right: 0 } : { left: 0 }),
           width: 280, maxWidth: "calc(100vw - 40px)",
           background: "#fff", border: "1px solid #E0E0E0", borderRadius: 10,
           boxShadow: "0 8px 24px rgba(0,0,0,0.18)",

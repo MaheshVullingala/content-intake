@@ -137,6 +137,9 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   const isCompleted       = myTask.status === "completed";
   const canStart          = myTask.status === "pending" && !!myTask.assigned_to;
   const needsAssignment   = myTask.status === "pending" && !myTask.assigned_to;
+  // Editorial-only self-serve claim: unclaimed, or already claimed by me
+  // (e.g. a lead pre-assigned it) — see "Start Review" button below.
+  const canStartReview    = myTask.status === "pending" && (!myTask.assigned_to || myTask.assigned_to === user.id);
   const isActive          = ["in_progress","needs_info","waiting_for_brand","pending_action"].includes(myTask.status);
   const isWaitingBrand    = myTask.status === "waiting_for_brand";
   const isPendingApproval = myTask.status === "pending_approval";
@@ -152,6 +155,33 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
       return true;
     } catch (e) { setError(e.message || "Update failed."); return false; }
     finally     { setSaving(false); }
+  };
+
+  // Editorial "Start Review": claim (if unclaimed) + move to in_progress
+  // in one write, so a member doesn't have to wait on a lead first. See
+  // canStartReview above and PHASE1-EDITORIAL-REVIEW-PLAN.md.
+  const handleStartReview = async () => {
+    const wasUnclaimed = !myTask.assigned_to;
+    setSaving(true); setError("");
+    try {
+      const { error: err } = await supabase.from("tasks")
+        .update({ assigned_to: user.id, status: "in_progress", updated_at: new Date().toISOString() })
+        .eq("id", myTask.id);
+      if (err) { setError(err.message); return; }
+      if (wasUnclaimed) {
+        logAudit(supabase, user, AUDIT_ACTIONS.TASK_ASSIGNED, "task", myTask.id, {
+          field_name: "assigned_to", old_value: "Unassigned", new_value: user.name,
+        });
+      }
+      logAudit(supabase, user, AUDIT_ACTIONS.REVIEW_STARTED, "task", myTask.id, {
+        field_name: "status", old_value: "pending", new_value: "in_progress",
+      });
+      onRefresh?.();
+    } catch (e) {
+      setError(e.message || "Failed to start review.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleComplete = async () => {
@@ -595,12 +625,27 @@ Return this exact format:
           </div>
         )}
 
-        {/* A task must be assigned (to a lead or whoever a lead picks,
-            including themselves) before anyone can start it — see
-            AssigneeDropdown's "Assign to me" shortcut. Leads/super_admin
-            see the dropdown above and can fix this themselves; regular
-            members have to wait on a lead to assign it. */}
-        {needsAssignment && (
+        {/* Editorial team: self-serve claim. Unlike other teams (which
+            need a lead to assign them via AssigneeDropdown before anyone
+            can start), any editorial_team member can claim an unclaimed
+            review themselves in one click — combines "assign to me" +
+            "start" into a single action, and records who's reviewing
+            for tracking purposes (per explicit ask). Single-owner claim:
+            once assigned_to is set to someone else, this button doesn't
+            show for anyone but that person. */}
+        {user.role === "editorial_team" && canStartReview && (
+          <button className="btn-primary btn-full mt-8" onClick={handleStartReview} disabled={saving}>
+            {saving ? "Starting…" : "▶ Start Review"}
+          </button>
+        )}
+        {user.role === "editorial_team" && myTask.status === "pending" && myTask.assigned_to && myTask.assigned_to !== user.id && (
+          <div className="alert alert-info mt-8">
+            ⏳ {myTask.assignee?.name || "Another editorial team member"} has this review — waiting for them to start.
+          </div>
+        )}
+
+        {/* Every other team: needs a lead to assign before starting. */}
+        {user.role !== "editorial_team" && needsAssignment && (
           <div className="alert alert-info mt-8">
             {(user.can_assign || user.role === "super_admin")
               ? "☝️ Assign this task before starting — pick a name above, or use \"Assign to me.\""
@@ -609,7 +654,7 @@ Return this exact format:
         )}
 
         {/* Start Task — direct update, no syncOverallStatus needed at this transition */}
-        {canStart && (
+        {user.role !== "editorial_team" && canStart && (
           <button
             className="btn-primary btn-full mt-8"
             onClick={async () => {

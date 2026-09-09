@@ -10,6 +10,7 @@ import ProposeChangeWizard from "@/components/ProposeChangeWizard";
 import PendingChangeCard   from "@/components/PendingChangeCard";
 import JiraTicketCard      from "@/components/JiraTicketCard";
 import WordExportButton    from "@/components/WordExportButton";
+import CommentThread       from "@/components/CommentThread";
 import { OVERALL_STATUS_META, getTasksForRequest, updateTask } from "@/lib/taskUtils";
 
 const TEAM_ROLES = new Set([
@@ -252,6 +253,9 @@ export default function TaskBoard({
               attachments={attachments}
               onRefresh={handleRefresh}
             />
+            {user.role === "editorial_team" && (
+              <CommentThread req={req} user={user} supabase={supabase} />
+            )}
           </div>
         </div>
         {editModal && (
@@ -336,6 +340,7 @@ export default function TaskBoard({
                 onRefresh={handleRefresh}
                 singleColumn
               />
+              <CommentThread req={req} user={user} supabase={supabase} />
             </div>
             {editModal && (
               <EditSectionModal
@@ -365,6 +370,7 @@ export default function TaskBoard({
               supabase={supabase}
               onRefresh={handleRefresh}
             />
+            <CommentThread req={req} user={user} supabase={supabase} />
           </div>
         )}
       </div>
@@ -385,6 +391,7 @@ export default function TaskBoard({
                         paddingLeft: "1.5rem" }}>
             <JiraTicketCard req={req} user={user} supabase={supabase} onRefresh={handleRefresh} />
             <WordExportButton req={req} />
+            <CommentThread req={req} user={user} supabase={supabase} />
             {pendingChange && (
               <div style={{ marginBottom: 16 }}>
                 <PendingChangeCard

@@ -128,6 +128,15 @@ export default function TaskBoard({
             {req.page_title || "Untitled Request"}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            {req.request_display_id && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, fontFamily: "monospace",
+                background: "#0f172a", color: "#5eead4",
+                borderRadius: 4, padding: "2px 8px",
+              }}>
+                {req.request_display_id}
+              </span>
+            )}
             <span className="badge badge-light">{req.page_type}</span>
             <span style={{ color: "var(--color-silver)", fontSize: 12 }}>
               by {req.users?.name || "Unknown"}

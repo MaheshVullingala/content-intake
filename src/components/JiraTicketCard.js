@@ -68,8 +68,8 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
         <div>
           <p className="text-xs text-muted" style={{ marginTop: 0 }}>
             Create the ticket in Jira yourself, referencing this request's id
-            (<code style={{ fontSize: 11 }}>{req.id}</code>), then paste the
-            ticket id/link here for tracking.
+            (<code style={{ fontSize: 11, fontWeight: 700 }}>{req.request_display_id || req.id}</code>),
+            then paste the ticket id/link here for tracking.
           </p>
           <div className="field-wrap">
             <label className="field-label">Ticket ID <span className="req">*</span></label>

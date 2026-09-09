@@ -546,6 +546,11 @@ export default function Dashboard({ go, user }) {
                 return (
                   <tr key={req.id} style={{ borderBottom: i < displayRows.length - 1 ? "1px solid #F9F9F9" : "none", background: rowBg, borderLeft: req.priority === "urgent" ? "3px solid #c0392b" : "none" }}>
                     <td style={{ padding: "0.9rem 1rem", fontSize: 14, color: "#181313" }}>
+                      {req.request_display_id && (
+                        <div style={{ fontSize: 10, fontWeight: 700, fontFamily: "monospace", color: "#3ec5cb", marginBottom: 2 }}>
+                          {req.request_display_id}
+                        </div>
+                      )}
                       {req.page_title || <span style={{ color: "#B5B5B5", fontStyle: "italic" }}>Untitled</span>}
                       {req.hasPendingChange && (
                         <span

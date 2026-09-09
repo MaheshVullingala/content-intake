@@ -207,6 +207,10 @@ CREATE TABLE IF NOT EXISTS public.requests (
   jira_created_at              TIMESTAMPTZ,
   jira_created_by              UUID REFERENCES public.users(id),
 
+  -- human-friendly id, e.g. "REQ-00042" (see sql/26-request-display-id.sql)
+  request_number               INTEGER,
+  request_display_id           TEXT,
+
   CONSTRAINT requests_status_check CHECK (
     status = ANY (ARRAY['draft','editorial_qa','design_qa','pending_approval','web_team','published'])
     OR overall_status IS NOT NULL
@@ -617,6 +621,29 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Human-friendly request id (e.g. "REQ-00042"), assigned the moment a
+-- stakeholder actually submits (overall_status becomes non-null) — not
+-- at draft-creation. See sql/26-request-display-id.sql.
+CREATE SEQUENCE IF NOT EXISTS public.requests_request_number_seq START 1;
+GRANT USAGE, SELECT ON SEQUENCE public.requests_request_number_seq TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.assign_request_display_id()
+RETURNS TRIGGER
+LANGUAGE plpgsql SET search_path = public AS $$
+BEGIN
+  IF NEW.request_number IS NULL AND NEW.overall_status IS NOT NULL THEN
+    NEW.request_number := nextval('public.requests_request_number_seq');
+    NEW.request_display_id := 'REQ-' || LPAD(NEW.request_number::text, 5, '0');
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_assign_request_display_id ON public.requests;
+CREATE TRIGGER trg_assign_request_display_id
+  BEFORE INSERT OR UPDATE ON public.requests
+  FOR EACH ROW EXECUTE FUNCTION public.assign_request_display_id();
 
 
 -- ══════════════════════════════════════════════════════════════════════

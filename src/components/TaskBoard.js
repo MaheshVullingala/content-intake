@@ -8,6 +8,8 @@ import WebTeamView       from "@/components/WebTeamView";
 import EditSectionModal  from "@/components/EditSectionModal";
 import ProposeChangeWizard from "@/components/ProposeChangeWizard";
 import PendingChangeCard   from "@/components/PendingChangeCard";
+import JiraTicketCard      from "@/components/JiraTicketCard";
+import WordExportButton    from "@/components/WordExportButton";
 import { OVERALL_STATUS_META, getTasksForRequest, updateTask } from "@/lib/taskUtils";
 
 const TEAM_ROLES = new Set([
@@ -381,6 +383,8 @@ export default function TaskBoard({
           <div style={{ overflowY: "auto",
                         borderLeft: "1px solid var(--color-border)",
                         paddingLeft: "1.5rem" }}>
+            <JiraTicketCard req={req} user={user} supabase={supabase} onRefresh={handleRefresh} />
+            <WordExportButton req={req} />
             {pendingChange && (
               <div style={{ marginBottom: 16 }}>
                 <PendingChangeCard

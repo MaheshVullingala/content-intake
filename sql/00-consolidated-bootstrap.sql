@@ -201,6 +201,12 @@ CREATE TABLE IF NOT EXISTS public.requests (
   due_date                     DATE,
   published_at                 TIMESTAMPTZ,
 
+  -- editorial review workflow (see sql/25-editorial-review-workflow.sql)
+  jira_ticket_id               TEXT,
+  jira_ticket_url              TEXT,
+  jira_created_at              TIMESTAMPTZ,
+  jira_created_by              UUID REFERENCES public.users(id),
+
   CONSTRAINT requests_status_check CHECK (
     status = ANY (ARRAY['draft','editorial_qa','design_qa','pending_approval','web_team','published'])
     OR overall_status IS NOT NULL
@@ -216,7 +222,11 @@ CREATE TABLE IF NOT EXISTS public.comments (
   user_role   TEXT NOT NULL,
   text        TEXT NOT NULL,
   is_return   BOOLEAN DEFAULT false,
-  created_at  TIMESTAMPTZ DEFAULT now()
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  -- editorial review workflow: ties a comment to one section's
+  -- conversation thread; NULL = general/whole-request note
+  -- (see sql/25-editorial-review-workflow.sql)
+  section_key TEXT
 );
 
 -- ── attachments ──────────────────────────────────────────────────────
@@ -663,6 +673,11 @@ CREATE POLICY requests_delete ON public.requests
   );
 
 -- ── comments ─────────────────────────────────────────────────────────
+-- Role list covers both legacy v1 names (editorial_qa, design_qa) and
+-- the v2 names actually used in tasks.team_role (editorial_team,
+-- design_team) — see sql/25-editorial-review-workflow.sql for why:
+-- without editorial_team here, an editorial_team user could not see
+-- comments on their own request at all.
 DROP POLICY IF EXISTS comments_select ON public.comments;
 CREATE POLICY comments_select ON public.comments
   FOR SELECT USING (
@@ -672,16 +687,32 @@ CREATE POLICY comments_select ON public.comments
         AND (
           get_user_role() IN ('admin', 'super_admin')
           OR (get_user_role() = 'stakeholder' AND r.created_by = get_user_id())
-          OR get_user_role() IN ('editorial_qa','design_qa','web_team','brand_team','seo_team')
+          OR get_user_role() IN (
+               'editorial_qa','design_qa','web_team','brand_team','seo_team',
+               'editorial_team','design_team'
+             )
         )
     )
   );
 
+-- Was previously unrestricted beyond "request exists" (no role check).
+-- Tightened to match comments_select's access set.
 DROP POLICY IF EXISTS comments_insert ON public.comments;
 CREATE POLICY comments_insert ON public.comments
   FOR INSERT WITH CHECK (
     user_id = get_user_id()
-    AND EXISTS (SELECT 1 FROM public.requests r WHERE r.id = comments.request_id)
+    AND EXISTS (
+      SELECT 1 FROM public.requests r
+      WHERE r.id = comments.request_id
+        AND (
+          get_user_role() IN ('admin', 'super_admin')
+          OR (get_user_role() = 'stakeholder' AND r.created_by = get_user_id())
+          OR get_user_role() IN (
+               'editorial_qa','design_qa','web_team','brand_team','seo_team',
+               'editorial_team','design_team'
+             )
+        )
+    )
   );
 
 DROP POLICY IF EXISTS comments_delete ON public.comments;

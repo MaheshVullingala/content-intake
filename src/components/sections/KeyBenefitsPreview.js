@@ -1,5 +1,6 @@
 "use client";
 import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
+import { FaPalette, FaRegSquare } from "react-icons/fa";
 
 function getGridCols(count) {
   if (count <= 1) return "1fr";
@@ -50,9 +51,9 @@ export default function KeyBenefitsPreview({ data = {}, attachments = [] }) {
                     <img src={iconUrl} alt={iconPlaceholder || "icon"} style={{ width: "100%", height: "100%", objectFit: "contain" }}
                       onError={e => { e.target.style.display = "none"; }} />
                   ) : iconPlaceholder ? (
-                    <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 4px", lineHeight: 1.3 }}>🎨</span>
+                    <span style={{ fontSize: 10, color: "#B5B5B5", display: "flex" }}><FaPalette /></span>
                   ) : (
-                    <span style={{ fontSize: 18, opacity: 0.3 }}>◻</span>
+                    <span style={{ fontSize: 18, opacity: 0.3, display: "flex" }}><FaRegSquare /></span>
                   )}
                 </div>
                 {iconPlaceholder && (

@@ -2,33 +2,41 @@
 // This keeps taskUtils compatible with v1's auth pattern (supabase is already
 // initialised in the component tree before any of these functions are called).
 
+import {
+  FaPenNib, FaPalette, FaSearch, FaImage, FaGlobe, FaLock, FaHourglassHalf,
+  FaBolt, FaQuestionCircle, FaEye, FaExclamationCircle, FaCheckCircle,
+} from 'react-icons/fa';
 import { PARALLEL_TEAMS } from './constants';
 
 // ─── Team config ─────────────────────────────────────────────────────────────
 // Rich metadata used by AdminTaskSetup and TaskBoard to render team cards.
+// `icon` is a react-icons component reference (was emoji) -- rendered as
+// <team.icon/> in rich JSX contexts. The one plain-text <option> consumer
+// (TaskPanel.js's team picker) can't render a component, so it skips this
+// field entirely rather than trying to stringify it.
 export const TASK_TEAMS = [
   // selfCompletes: true — editorial_team marks its own task complete
   // directly (TaskPanel.js's handleComplete), same as seo_team. No
   // stakeholder approval gate exists for this team today; this flag
   // previously said false, which didn't match the actual behavior.
-  { role: 'editorial_team', label: 'Editorial Team', icon: '✍️',  color: '#2a7a4b', bg: '#ecfdf5', alwaysRequired: true,  webLocked: false, selfCompletes: true },
-  { role: 'brand_team',     label: 'Brand Team',     icon: '🎨',  color: '#d97706', bg: '#fffbeb', alwaysRequired: false, webLocked: false, selfCompletes: false },
-  { role: 'seo_team',       label: 'SEO Team',       icon: '🔍',  color: '#1b5793', bg: '#eff6ff', alwaysRequired: true,  webLocked: false, selfCompletes: true  },
-  { role: 'design_team',    label: 'Design Team',    icon: '🖼️', color: '#ea580c', bg: '#fff7ed', alwaysRequired: true,  webLocked: false, selfCompletes: false },
-  { role: 'web_team',       label: 'Web Team',       icon: '🌐',  color: '#0f2744', bg: '#F5F5F5', alwaysRequired: true,  webLocked: true,  selfCompletes: true  },
+  { role: 'editorial_team', label: 'Editorial Team', icon: FaPenNib, color: '#2a7a4b', bg: '#ecfdf5', alwaysRequired: true,  webLocked: false, selfCompletes: true },
+  { role: 'brand_team',     label: 'Brand Team',     icon: FaPalette, color: '#d97706', bg: '#fffbeb', alwaysRequired: false, webLocked: false, selfCompletes: false },
+  { role: 'seo_team',       label: 'SEO Team',       icon: FaSearch,  color: '#1b5793', bg: '#eff6ff', alwaysRequired: true,  webLocked: false, selfCompletes: true  },
+  { role: 'design_team',    label: 'Design Team',    icon: FaImage,   color: '#ea580c', bg: '#fff7ed', alwaysRequired: true,  webLocked: false, selfCompletes: false },
+  { role: 'web_team',       label: 'Web Team',       icon: FaGlobe,   color: '#0f2744', bg: '#F5F5F5', alwaysRequired: true,  webLocked: true,  selfCompletes: true  },
 ];
 
 // ─── Status / overall-status metadata ────────────────────────────────────────
 // Kept here for components that import from taskUtils rather than constants.
 export const TASK_STATUS_META = {
-  locked:            { label: 'Locked',           color: '#B5B5B5', bg: '#F9F9F9', icon: '🔒' },
-  pending:           { label: 'Pending',           color: '#646464', bg: '#F3F3F3', icon: '⏳' },
-  in_progress:       { label: 'In Progress',       color: '#1b5793', bg: '#eff6ff', icon: '⚡' },
-  waiting_for_brand: { label: 'Waiting for Brand', color: '#d97706', bg: '#fffbeb', icon: '🎨' },
-  needs_info:        { label: 'Needs Info',        color: '#d97706', bg: '#fffbeb', icon: '❓' },
-  pending_approval:  { label: 'Needs Approval',    color: '#9333ea', bg: '#faf5ff', icon: '👁️' },
-  pending_action:    { label: 'Pending Action',    color: '#dc2626', bg: '#fef2f2', icon: '🔴' },
-  completed:         { label: 'Completed',         color: '#2a7a4b', bg: '#ecfdf5', icon: '✅' },
+  locked:            { label: 'Locked',           color: '#B5B5B5', bg: '#F9F9F9', icon: FaLock },
+  pending:           { label: 'Pending',           color: '#646464', bg: '#F3F3F3', icon: FaHourglassHalf },
+  in_progress:       { label: 'In Progress',       color: '#1b5793', bg: '#eff6ff', icon: FaBolt },
+  waiting_for_brand: { label: 'Waiting for Brand', color: '#d97706', bg: '#fffbeb', icon: FaPalette },
+  needs_info:        { label: 'Needs Info',        color: '#d97706', bg: '#fffbeb', icon: FaQuestionCircle },
+  pending_approval:  { label: 'Needs Approval',    color: '#9333ea', bg: '#faf5ff', icon: FaEye },
+  pending_action:    { label: 'Pending Action',    color: '#dc2626', bg: '#fef2f2', icon: FaExclamationCircle },
+  completed:         { label: 'Completed',         color: '#2a7a4b', bg: '#ecfdf5', icon: FaCheckCircle },
 };
 
 export const OVERALL_STATUS_META = {

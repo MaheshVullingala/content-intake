@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { FaPlay, FaArrowRight } from "react-icons/fa";
 
 function CarouselPreview({ data = {} }) {
   const [active, setActive] = useState(0);
@@ -19,7 +20,7 @@ function CarouselPreview({ data = {} }) {
           {visible.map((item, i) => (
             <div key={item.id || i}>
               <div style={{ background: "#F3F3F3", borderRadius: 8, aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, position: "relative", overflow: "hidden" }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>▶</div>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "#181313" }}><FaPlay size={16} /></div>
               </div>
               <p style={{ fontSize: 14, color: "#181313", lineHeight: 1.5, fontWeight: 400 }}>{item.title || "Item title..."}</p>
             </div>
@@ -35,7 +36,7 @@ function CarouselPreview({ data = {} }) {
         )}
       </div>
       <div style={{ textAlign: "right", marginTop: 16 }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: "#B5B5B5" }}>VIEW ALL →</span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: "#B5B5B5", display: "inline-flex", alignItems: "center", gap: 5 }}>VIEW ALL <FaArrowRight size={11} /></span>
       </div>
     </div>
   );
@@ -77,7 +78,7 @@ function ResourceCardsPreview({ data = {} }) {
               )}
             </div>
             <p style={{ fontSize: 14, color: "#181313", fontWeight: 400, lineHeight: 1.4, margin: 0 }}>{data[`r${n}_title`]}</p>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#0078d4" }}>VIEW NOW →</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#0078d4", display: "inline-flex", alignItems: "center", gap: 5 }}>VIEW NOW <FaArrowRight size={10} /></span>
           </div>
         ))}
       </div>
@@ -94,7 +95,7 @@ function NewsBlogsPreview({ news = {}, blogs = {} }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <h3 style={{ fontSize: 18, fontWeight: 400, color: "#181313", margin: 0 }}>{title}</h3>
-        <span style={{ fontSize: 13, color: "#0078d4", fontWeight: 500 }}>VIEW ALL →</span>
+        <span style={{ fontSize: 13, color: "#0078d4", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 5 }}>VIEW ALL <FaArrowRight size={11} /></span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {items.slice(0, 2).map((item, i) => (

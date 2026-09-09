@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { FaMagic } from "react-icons/fa";
 import "@/styles/auth.css";
 
 const clearStaleTokens = () => {
@@ -222,7 +223,7 @@ export default function LoginAnimated({ onSwitch }) {
 
             {/* AI badge */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, background:"linear-gradient(135deg,#1b5793,#3ec5cb)", borderRadius:20, padding:"8px 14px", fontSize:11, fontWeight:500, color:"#fff", margin:"16px 0" }}>
-              <span>✦</span><span>AI Assist — Cadence brand voice</span>
+              <span style={{ display:"flex" }}><FaMagic size={12} /></span><span>AI Assist — Cadence brand voice</span>
             </div>
 
             <div className="login-divider">

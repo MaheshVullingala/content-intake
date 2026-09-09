@@ -1,5 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import {
+  FaImage, FaFileAlt, FaPaperclip, FaTrashAlt, FaHourglassHalf, FaUpload,
+  FaCheckCircle, FaClipboardList, FaLock, FaHandPointUp, FaQuestionCircle,
+  FaPen, FaSearch, FaMagic, FaPalette, FaCheck, FaEye, FaMapMarkedAlt,
+  FaLink, FaExternalLinkAlt, FaGlobe, FaUndo, FaCircle, FaPlay, FaEdit,
+  FaPauseCircle,
+} from "react-icons/fa";
 import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
@@ -15,9 +22,9 @@ function formatBytes(b) {
 
 function fileIcon(name = "") {
   const ext = name.split(".").pop()?.toLowerCase();
-  return ["png","jpg","jpeg","webp","gif"].includes(ext) ? "🖼️"
-       : ext === "pdf"                                   ? "📄"
-       : "📎";
+  return ["png","jpg","jpeg","webp","gif"].includes(ext) ? FaImage
+       : ext === "pdf"                                   ? FaFileAlt
+       : FaPaperclip;
 }
 
 // ── SEO Team fields ──────────────────────────────────────────────────────────
@@ -132,6 +139,8 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
 
   const teamMeta   = TASK_TEAMS.find(t => t.role === user.role);
   const statusMeta = TASK_STATUS_META[myTask.status] || TASK_STATUS_META.pending;
+  const TeamIcon   = teamMeta?.icon ?? FaClipboardList;
+  const StatusIcon = statusMeta.icon;
 
   const isLocked          = myTask.status === "locked";
   const isCompleted       = myTask.status === "completed";
@@ -518,13 +527,13 @@ Return this exact format:
         Uploaded Files
       </div>
       <div className="flex-col gap-4">
-        {myFiles.map(f => (
+        {myFiles.map(f => { const FileIcon = fileIcon(f.file_name); return (
           <div key={f.id} style={{
             display: "flex", alignItems: "center", gap: 8,
             background: "var(--color-ghost)", borderRadius: "var(--radius)",
             padding: "6px 10px",
           }}>
-            <span>{fileIcon(f.file_name)}</span>
+            <span style={{ display: "flex" }}><FileIcon size={13} /></span>
             <span style={{ flex: 1, fontSize: "var(--text-xs)", overflow: "hidden",
                            textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {f.file_name}
@@ -542,13 +551,14 @@ Return this exact format:
                 style={{
                   background: "none", border: "none", cursor: "pointer",
                   color: "#c0392b", fontSize: 13, padding: "0 2px", flexShrink: 0,
+                  display: "flex",
                 }}
               >
-                🗑️
+                <FaTrashAlt size={12} />
               </button>
             )}
           </div>
-        ))}
+        );})}
       </div>
     </div>
   );
@@ -564,7 +574,7 @@ Return this exact format:
       }}
       onClick={() => fileRef.current?.click()}
     >
-      <div style={{ fontSize: 22, marginBottom: 4 }}>{uploading ? "⏳" : "📤"}</div>
+      <div style={{ fontSize: 22, marginBottom: 4, display: "flex", justifyContent: "center" }}>{uploading ? <FaHourglassHalf /> : <FaUpload />}</div>
       <div style={{ fontSize: "var(--text-sm)", color: "var(--color-dim)" }}>
         {uploading ? "Uploading…" : "Click to upload JPEG / PNG"}
       </div>
@@ -581,8 +591,8 @@ Return this exact format:
     <div className="flex-col gap-12">
 
       {publishSuccess && (
-        <div className="alert alert-success">
-          🎉 Page published successfully! The stakeholder has been notified.
+        <div className="alert alert-success" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <FaCheckCircle /> Page published successfully! The stakeholder has been notified.
         </div>
       )}
 
@@ -590,7 +600,7 @@ Return this exact format:
       <div className="card">
         <div className="card-header">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 18 }}>{teamMeta?.icon ?? "📋"}</span>
+            <span style={{ fontSize: 18, display: "flex" }}><TeamIcon /></span>
             <div>
               <h3 style={{ margin: 0 }}>{teamMeta?.label ?? user.role}</h3>
               <p>Your task for this request</p>
@@ -601,8 +611,9 @@ Return this exact format:
             border: `1px solid ${statusMeta.color}33`,
             borderRadius: 20, padding: "3px 10px",
             fontSize: 12, fontWeight: 500,
+            display: "inline-flex", alignItems: "center", gap: 5,
           }}>
-            {statusMeta.icon} {statusMeta.label}
+            <StatusIcon size={11} /> {statusMeta.label}
           </span>
         </div>
 
@@ -620,8 +631,8 @@ Return this exact format:
         )}
 
         {isLocked && (
-          <div className="alert alert-info mt-8">
-            🔒 Locked until all parallel teams complete their work.
+          <div className="alert alert-info mt-8" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <FaLock size={11} /> Locked until all parallel teams complete their work.
           </div>
         )}
 
@@ -634,22 +645,22 @@ Return this exact format:
             once assigned_to is set to someone else, this button doesn't
             show for anyone but that person. */}
         {user.role === "editorial_team" && canStartReview && (
-          <button className="btn-primary btn-full mt-8" onClick={handleStartReview} disabled={saving}>
-            {saving ? "Starting…" : "▶ Start Review"}
+          <button className="btn-primary btn-full mt-8" onClick={handleStartReview} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            {saving ? "Starting…" : <><FaPlay size={10} /> Start Review</>}
           </button>
         )}
         {user.role === "editorial_team" && myTask.status === "pending" && myTask.assigned_to && myTask.assigned_to !== user.id && (
-          <div className="alert alert-info mt-8">
-            ⏳ {myTask.assignee?.name || "Another editorial team member"} has this review — waiting for them to start.
+          <div className="alert alert-info mt-8" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <FaHourglassHalf size={11} /> {myTask.assignee?.name || "Another editorial team member"} has this review — waiting for them to start.
           </div>
         )}
 
         {/* Every other team: needs a lead to assign before starting. */}
         {user.role !== "editorial_team" && needsAssignment && (
-          <div className="alert alert-info mt-8">
+          <div className="alert alert-info mt-8" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {(user.can_assign || user.role === "super_admin")
-              ? "☝️ Assign this task before starting — pick a name above, or use \"Assign to me.\""
-              : "⏳ Waiting for a lead to assign this task before it can be started."}
+              ? <><FaHandPointUp size={11} /> Assign this task before starting — pick a name above, or use "Assign to me."</>
+              : <><FaHourglassHalf size={11} /> Waiting for a lead to assign this task before it can be started.</>}
           </div>
         )}
 
@@ -666,8 +677,9 @@ Return this exact format:
               });
               onRefresh?.();
             }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
           >
-            ▶ Start Task
+            <FaPlay size={10} /> Start Task
           </button>
         )}
 
@@ -681,8 +693,8 @@ Return this exact format:
         <div className="card" style={{ borderColor: "#9333ea", background: "#faf5ff" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
             <div>
-              <div className="text-xs text-uppercase text-muted" style={{ fontWeight: 600, marginBottom: 4 }}>
-                📝 Content Updated
+              <div className="text-xs text-uppercase text-muted" style={{ fontWeight: 600, marginBottom: 4, display: "flex", alignItems: "center", gap: 5 }}>
+                <FaFileAlt size={10} /> Content Updated
               </div>
               <div className="text-sm">{myTask.content_update_note}</div>
             </div>
@@ -739,8 +751,8 @@ Return this exact format:
             </div>
           ) : (
             <div className="alert alert-info mt-8"
-                 style={{ fontSize: "var(--text-xs)" }}>
-              ⏳ Waiting for stakeholder to answer…
+                 style={{ fontSize: "var(--text-xs)", display: "flex", alignItems: "center", gap: 6 }}>
+              <FaHourglassHalf size={10} /> Waiting for stakeholder to answer…
             </div>
           )}
         </div>
@@ -756,8 +768,8 @@ Return this exact format:
           this phase and untouched. */}
       {user.role !== "editorial_team" && (isActive || canStart) && !isLocked && !isCompleted && !isPendingApproval && (
         <div className="card">
-          <h3 style={{ margin: "0 0 6px", fontSize: "var(--text-base)", fontWeight: 600 }}>
-            ❓ Ask Stakeholder
+          <h3 style={{ margin: "0 0 6px", fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <FaQuestionCircle size={13} /> Ask Stakeholder
           </h3>
           <p className="field-hint" style={{ marginBottom: 10 }}>
             Non-blocking — your task stays active while you wait for an answer.
@@ -796,14 +808,14 @@ Return this exact format:
       {/* ── EDITORIAL TEAM ───────────────────────────────────────────── */}
       {user.role === "editorial_team" && (isActive || myTask.status === "needs_info") && (
         <div className="card">
-          <h3 style={{ margin: "0 0 6px", fontSize: "var(--text-base)", fontWeight: 600 }}>
-            ✏️ Content Editing
+          <h3 style={{ margin: "0 0 6px", fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <FaEdit size={13} /> Content Editing
           </h3>
-          <p className="field-hint" style={{ marginBottom: 12 }}>
-            Click "✎ Edit" on any section in the preview to update its content.
+          <p className="field-hint" style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+            Click "<FaPen size={9} /> Edit" on any section in the preview to update its content.
           </p>
-          <button className="btn-primary btn-full" onClick={handleComplete} disabled={saving}>
-            {saving ? "Saving…" : "✅ Mark Content Approved"}
+          <button className="btn-primary btn-full" onClick={handleComplete} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            {saving ? "Saving…" : <><FaCheckCircle size={11} /> Mark Content Approved</>}
           </button>
         </div>
       )}
@@ -811,16 +823,17 @@ Return this exact format:
       {/* ── SEO TEAM ─────────────────────────────────────────────────── */}
       {user.role === "seo_team" && (isActive || myTask.status === "needs_info") && (
         <div className="card">
-          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600 }}>
-            🔍 SEO Metadata
+          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <FaSearch size={13} /> SEO Metadata
           </h3>
 
           <button
             className="btn-ghost btn-full mb-12"
             onClick={handleGenerateSEO}
             disabled={generating}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
           >
-            {generating ? "Generating…" : "✨ Generate SEO with AI"}
+            {generating ? "Generating…" : <><FaMagic size={11} /> Generate SEO with AI</>}
           </button>
 
           {genError && <div className="alert alert-error mb-12">{genError}</div>}
@@ -884,8 +897,9 @@ Return this exact format:
             className="btn-primary btn-full mt-12"
             onClick={handleApproveSEO}
             disabled={saving}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
           >
-            {saving ? "Saving…" : "✅ Approve & Complete"}
+            {saving ? "Saving…" : <><FaCheckCircle size={11} /> Approve & Complete</>}
           </button>
         </div>
       )}
@@ -893,8 +907,8 @@ Return this exact format:
       {/* ── BRAND TEAM ───────────────────────────────────────────────── */}
       {user.role === "brand_team" && (
         <div className="card">
-          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600 }}>
-            🎨 Brand Assets
+          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <FaPalette size={13} /> Brand Assets
           </h3>
           {myTask.status === "in_progress" && myTask.pending_action_note && (
             <div className="alert alert-error mb-12">
@@ -909,10 +923,11 @@ Return this exact format:
                 className="btn-primary btn-full"
                 onClick={handleSubmitApproval}
                 disabled={saving || myFiles.length === 0 || isPendingApproval}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
               >
                 {saving              ? "Submitting…"
-                 : isPendingApproval ? "✓ Awaiting Stakeholder Approval"
-                 :                    "👁️ Submit for Stakeholder Approval"}
+                 : isPendingApproval ? <><FaCheck size={10} /> Awaiting Stakeholder Approval</>
+                 :                    <><FaEye size={11} /> Submit for Stakeholder Approval</>}
               </button>
             </>
           )}
@@ -922,8 +937,8 @@ Return this exact format:
       {/* ── DESIGN TEAM ──────────────────────────────────────────────── */}
       {user.role === "design_team" && (
         <div className="card">
-          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600 }}>
-            🖼️ Design Assets
+          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <FaImage size={13} /> Design Assets
           </h3>
           {myTask.status === "in_progress" && myTask.pending_action_note && (
             <div className="alert alert-error mb-12">
@@ -934,14 +949,14 @@ Return this exact format:
           {isActive && (
             <div style={{ marginBottom: 12 }}>
               {isWaitingBrand ? (
-                <button className="btn-ghost btn-full"
+                <button className="btn-ghost btn-full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                         onClick={handleResumeFromBrand} disabled={saving}>
-                  ▶ Resume — Brand Assets Received
+                  <FaPlay size={10} /> Resume — Brand Assets Received
                 </button>
               ) : (
-                <button className="btn-ghost btn-full"
+                <button className="btn-ghost btn-full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                         onClick={handleWaitForBrand} disabled={saving}>
-                  🎨 Pause — Waiting for Brand Assets
+                  <FaPauseCircle size={11} /> Pause — Waiting for Brand Assets
                 </button>
               )}
             </div>
@@ -958,8 +973,8 @@ Return this exact format:
           live, even on a request with nothing flagged. ────────────────── */}
       {user.role === "design_team" && (
         <div className="card">
-          <h3 style={{ margin: "0 0 4px", fontSize: "var(--text-base)", fontWeight: 600 }}>
-            🗺️ Images to Map
+          <h3 style={{ margin: "0 0 4px", fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <FaMapMarkedAlt size={13} /> Images to Map
           </h3>
           <p className="field-hint" style={{ marginBottom: 12 }}>
             Upload your resized image for each field the stakeholder flagged.
@@ -980,16 +995,16 @@ Return this exact format:
                   <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, marginBottom: 4 }}>
                     {field.section} — {field.label}
                   </div>
-                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-silver)", marginBottom: 8 }}>
-                    {field.ref.type === "description" && <>📝 {field.ref.value}</>}
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--color-silver)", marginBottom: 8, display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+                    {field.ref.type === "description" && <><FaFileAlt size={10} /> {field.ref.value}</>}
                     {field.ref.type === "link" && (
-                      <>🔗 <a href={field.ref.url} target="_blank" rel="noopener noreferrer"
+                      <><FaLink size={10} /> <a href={field.ref.url} target="_blank" rel="noopener noreferrer"
                               style={{ color: "var(--color-primary)" }}>{field.ref.value}</a></>
                     )}
                     {field.ref.type === "attachment" && (
-                      <>📎 Reference image uploaded{field.ref.url && (
+                      <><FaPaperclip size={10} /> Reference image uploaded{field.ref.url && (
                         <> — <a href={field.ref.url} target="_blank" rel="noopener noreferrer"
-                                style={{ color: "var(--color-primary)" }}>View ↗</a></>
+                                style={{ color: "var(--color-primary)", display: "inline-flex", alignItems: "center", gap: 3 }}>View <FaExternalLinkAlt size={9} /></a></>
                       )}</>
                     )}
                   </div>
@@ -998,26 +1013,26 @@ Return this exact format:
                       <img src={mapped.public_url} alt=""
                         style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6,
                                  border: "1px solid var(--color-border)", flexShrink: 0 }} />
-                      <span style={{ flex: 1, fontSize: "var(--text-xs)", color: "var(--color-success)" }}>
-                        ✓ Mapped
+                      <span style={{ flex: 1, fontSize: "var(--text-xs)", color: "var(--color-success)", display: "flex", alignItems: "center", gap: 4 }}>
+                        <FaCheck size={9} /> Mapped
                       </span>
                       <button
                         onClick={() => deleteMappedImage(mapped)}
                         title="Remove mapped image"
                         style={{ background: "none", border: "none", cursor: "pointer",
-                                 color: "#c0392b", fontSize: 13, flexShrink: 0 }}
+                                 color: "#c0392b", fontSize: 13, flexShrink: 0, display: "flex" }}
                       >
-                        🗑️
+                        <FaTrashAlt size={12} />
                       </button>
                     </div>
                   ) : (
                     <button
                       className="btn-ghost"
-                      style={{ width: "100%", justifyContent: "center", fontSize: "var(--text-xs)" }}
+                      style={{ width: "100%", justifyContent: "center", fontSize: "var(--text-xs)", display: "flex", alignItems: "center", gap: 6 }}
                       onClick={() => { setMappingField(field.fieldId); mappedFileRef.current?.click(); }}
                       disabled={uploading}
                     >
-                      {uploading && mappingField === field.fieldId ? "Uploading…" : "📤 Upload Image"}
+                      {uploading && mappingField === field.fieldId ? "Uploading…" : <><FaUpload size={10} /> Upload Image</>}
                     </button>
                   )}
                 </div>
@@ -1041,8 +1056,8 @@ Return this exact format:
               disabled={saving || myFiles.length === 0 || isPendingApproval}
             >
               {saving              ? "Submitting…"
-               : isPendingApproval ? "✓ Awaiting Stakeholder Approval"
-               :                    "👁️ Submit for Stakeholder Approval"}
+               : isPendingApproval ? <><FaCheck size={10} /> Awaiting Stakeholder Approval</>
+               :                    <><FaEye size={11} /> Submit for Stakeholder Approval</>}
             </button>
           )}
         </div>
@@ -1051,19 +1066,19 @@ Return this exact format:
       {/* ── WEB TEAM ─────────────────────────────────────────────────── */}
       {user.role === "web_team" && isActive && (
         <div className="card">
-          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600 }}>
-            🌐 Web Implementation
+          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <FaGlobe size={13} /> Web Implementation
           </h3>
           <CompletenessIndicator req={req} />
           <div className="divider" />
           {/* Request changes */}
           <button
             className="btn-ghost btn-full"
-            style={{ marginBottom: showChanges ? 12 : 8 }}
+            style={{ marginBottom: showChanges ? 12 : 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
             onClick={() => setShowChanges(v => !v)}
             disabled={saving}
           >
-            ↩ Request Changes from a Team
+            <FaUndo size={10} /> Request Changes from a Team
           </button>
           {showChanges && (
             <div style={{
@@ -1074,8 +1089,10 @@ Return this exact format:
                 <label className="field-label">Team</label>
                 <select className="select" value={changeTeam}
                         onChange={e => setChangeTeam(e.target.value)}>
+                  {/* Native <option> can't render a component -- icon
+                      dropped here on purpose, label text only. */}
                   {TASK_TEAMS.filter(t => t.role !== "web_team").map(t => (
-                    <option key={t.role} value={t.role}>{t.icon} {t.label}</option>
+                    <option key={t.role} value={t.role}>{t.label}</option>
                   ))}
                 </select>
               </div>
@@ -1108,8 +1125,8 @@ Return this exact format:
             </div>
           )}
           {/* Publish */}
-          <button className="btn-primary btn-full" onClick={handlePublish} disabled={saving}>
-            {saving ? "Publishing…" : "🌐 Mark as Published"}
+          <button className="btn-primary btn-full" onClick={handlePublish} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            {saving ? "Publishing…" : <><FaGlobe size={11} /> Mark as Published</>}
           </button>
         </div>
       )}
@@ -1157,7 +1174,7 @@ function CompletenessIndicator({ req }) {
             fontSize: "var(--text-xs)",
             color: c.pass ? "var(--color-success)" : "var(--color-silver)",
           }}>
-            <span>{c.pass ? "✓" : "○"}</span>
+            <span style={{ display: "flex" }}>{c.pass ? <FaCheck size={9} /> : <FaCircle size={6} />}</span>
             <span>{c.label}</span>
           </div>
         ))}

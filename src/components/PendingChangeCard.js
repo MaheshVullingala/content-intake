@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { FaEye, FaCheckCircle } from "react-icons/fa";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 
@@ -111,7 +112,7 @@ export default function PendingChangeCard({ change, req, user, supabase, tasks, 
   return (
     <div className="card" style={{ borderColor: "#9333ea", background: "#faf5ff" }}>
       <div className="card-header">
-        <h3 style={{ margin: 0 }}>👁️ Pending Content Change</h3>
+        <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}><FaEye size={14} /> Pending Content Change</h3>
       </div>
       <p className="text-sm" style={{ marginTop: 0 }}>
         <strong>Reason:</strong> {change.reason}
@@ -137,8 +138,8 @@ export default function PendingChangeCard({ change, req, user, supabase, tasks, 
 
       {!rejecting ? (
         <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn-primary" style={{ flex: 1, justifyContent: "center" }} onClick={handleApprove} disabled={saving}>
-            {saving ? "Applying…" : "✅ Approve & Apply"}
+          <button className="btn-primary" style={{ flex: 1, justifyContent: "center", display: "flex", alignItems: "center", gap: 6 }} onClick={handleApprove} disabled={saving}>
+            {saving ? "Applying…" : <><FaCheckCircle size={11} /> Approve & Apply</>}
           </button>
           <button className="btn-ghost" style={{ flex: 1, justifyContent: "center" }} onClick={() => setRejecting(true)} disabled={saving}>
             Reject

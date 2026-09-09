@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FaPaperclip, FaPalette, FaArrowDown } from "react-icons/fa";
 
 function isImageFile(name = "") {
   return ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(
@@ -28,7 +29,7 @@ function Thumb({ file }) {
       />
     );
   }
-  return <span style={{ fontSize: 20, flexShrink: 0 }}>📎</span>;
+  return <span style={{ fontSize: 20, flexShrink: 0, display: "flex" }}><FaPaperclip /></span>;
 }
 
 // Read-only reference list of files brand_team uploaded for this request.
@@ -62,8 +63,8 @@ export default function BrandFilesPanel({ requestId, supabase }) {
 
   return (
     <div className="card" style={{ marginBottom: 12 }}>
-      <div className="text-xs text-uppercase text-muted" style={{ marginBottom: 8, fontWeight: 600 }}>
-        🎨 Brand Team Files <span style={{ fontWeight: 400, textTransform: "none" }}>(reference only)</span>
+      <div className="text-xs text-uppercase text-muted" style={{ marginBottom: 8, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+        <FaPalette size={12} /> Brand Team Files <span style={{ fontWeight: 400, textTransform: "none" }}>(reference only)</span>
       </div>
       <div className="flex-col gap-6">
         {files.map(f => (
@@ -84,7 +85,7 @@ export default function BrandFilesPanel({ requestId, supabase }) {
               href={f.public_url} target="_blank" rel="noopener noreferrer"
               style={{ fontSize: 11, color: "var(--color-primary)", textDecoration: "none", flexShrink: 0 }}
             >
-              ↓ Download
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><FaArrowDown size={9} /> Download</span>
             </a>
           </div>
         ))}

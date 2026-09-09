@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { FaExchangeAlt, FaChevronDown, FaCheck } from "react-icons/fa";
 import { ROLE_OPTIONS } from "@/lib/constants";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -102,8 +103,8 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
                 transition: "all 0.15s",
               }}
             >
-              ⚡ View as: <strong style={{ color: impersonatedRole ? "#3ec5cb" : "#f1f5f9" }}>{activeLabel}</strong>
-              <span style={{ fontSize: 9, opacity: 0.6 }}>▼</span>
+              <FaExchangeAlt size={11} /> View as: <strong style={{ color: impersonatedRole ? "#3ec5cb" : "#f1f5f9" }}>{activeLabel}</strong>
+              <span style={{ fontSize: 9, opacity: 0.6, display: "flex" }}><FaChevronDown /></span>
             </button>
 
             {dropdownOpen && (
@@ -132,7 +133,8 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
                           onSwitchRole?.(r.value === "super_admin" ? null : r.value);
                         }}
                         style={{
-                          display: "block", width: "100%", textAlign: "left",
+                          display: "flex", alignItems: "center", gap: 6,
+                          width: "100%", textAlign: "left",
                           background: isActive ? "rgba(62,197,203,0.1)" : "none",
                           border: "none",
                           padding: "8px 16px",
@@ -155,7 +157,7 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
                           }
                         }}
                       >
-                        {isActive ? "✓ " : "  "}{r.label}
+                        {isActive ? <FaCheck size={10} /> : <span style={{ width: 10, display: "inline-block" }} />}{r.label}
                       </button>
                     );
                   })}

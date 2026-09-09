@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { FaTicketAlt, FaExternalLinkAlt } from "react-icons/fa";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 
@@ -44,15 +45,15 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
   return (
     <div className="card" style={{ marginBottom: 16 }}>
       <div className="card-header">
-        <div><h3 style={{ margin: 0, fontSize: 14 }}>🎫 Jira Ticket</h3></div>
+        <div><h3 style={{ margin: 0, fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}><FaTicketAlt size={12} /> Jira Ticket</h3></div>
       </div>
 
       {!editing && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
           {hasTicket ? (
             ticketUrl
-              ? <a href={ticketUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 500, color: "#3ec5cb" }}>
-                  {req.jira_ticket_id} ↗
+              ? <a href={ticketUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 500, color: "#3ec5cb", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  {req.jira_ticket_id} <FaExternalLinkAlt size={10} />
                 </a>
               : <span style={{ fontSize: 13, fontWeight: 500 }}>{req.jira_ticket_id}</span>
           ) : (

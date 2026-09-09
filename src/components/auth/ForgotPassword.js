@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { FaEnvelope, FaArrowLeft } from "react-icons/fa";
 
 export default function ForgotPassword({ onSwitch }) {
   const [email,   setEmail]   = useState("");
@@ -22,7 +23,7 @@ export default function ForgotPassword({ onSwitch }) {
 
   if (sent) return (
     <div style={{ textAlign: "center", fontFamily: "'Rubik',sans-serif" }}>
-      <div style={{ fontSize: 40, marginBottom: 16 }}>📧</div>
+      <div style={{ fontSize: 40, marginBottom: 16, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaEnvelope /></div>
       <h2 style={{ fontSize: 20, fontWeight: 500, color: "#F3F3F3", marginBottom: 10 }}>Check your email</h2>
       <p style={{ fontSize: 13, color: "#646464", lineHeight: 1.7, marginBottom: 24 }}>
         We sent a password reset link to <strong style={{ color: "#B5B5B5" }}>{email}</strong>.<br />
@@ -62,7 +63,7 @@ export default function ForgotPassword({ onSwitch }) {
       <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#646464", fontFamily: "'Rubik',sans-serif" }}>
         <button type="button" onClick={() => onSwitch("login")}
           style={{ background: "none", border: "none", color: "#B5B5B5", fontSize: 13, cursor: "pointer", fontFamily: "'Rubik',sans-serif", textDecoration: "underline" }}>
-          ← Back to Sign in
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><FaArrowLeft size={10} /> Back to Sign in</span>
         </button>
       </p>
     </form>

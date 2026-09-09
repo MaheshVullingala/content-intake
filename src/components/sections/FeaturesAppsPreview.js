@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
+import { FaCheck, FaPalette, FaArrowRight } from "react-icons/fa";
 
 export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
   const {
@@ -49,7 +50,7 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
             )}
             {fa_items.map((item, i) => (
               <div key={item.id || i} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                <span style={{ color: "#181313", fontWeight: 500, fontSize: 16, flexShrink: 0, marginTop: 1 }}>✓</span>
+                <span style={{ color: "#181313", fontWeight: 500, fontSize: 16, flexShrink: 0, marginTop: 1, display: "flex" }}><FaCheck size={13} /></span>
                 <p style={{ fontSize: 15, color: "#3C3C3C", lineHeight: 1.7, margin: 0, wordBreak: "break-word" }}>
                   {item.text || <span style={{ color: "#E0E0E0", fontStyle: "italic" }}>List item text...</span>}
                 </p>
@@ -79,13 +80,13 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
                 )}
                 {!activeTabImage && getImagePlaceholder(fa_items[activeTab].image_ref) && (
                   <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.5rem", marginBottom: 20, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: "#B5B5B5" }}>🎨 {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
+                    <div style={{ fontSize: 11, color: "#B5B5B5", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}><FaPalette size={10} /> {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
                   </div>
                 )}
                 <p style={{ fontSize: 15, color: "#3C3C3C", lineHeight: 1.75, marginBottom: 20, wordBreak: "break-word" }}>{fa_items[activeTab].description}</p>
                 {fa_items[activeTab].cta_label && (
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "#181313", letterSpacing: "0.05em", textTransform: "uppercase", cursor: "default" }}>
-                    {fa_items[activeTab].cta_label} →
+                    {fa_items[activeTab].cta_label} <FaArrowRight size={11} />
                   </div>
                 )}
               </div>
@@ -114,13 +115,13 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
                 )}
                 {!activeTabImage && getImagePlaceholder(fa_items[activeTab].image_ref) && (
                   <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.5rem", marginBottom: 20, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: "#B5B5B5" }}>🎨 {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
+                    <div style={{ fontSize: 11, color: "#B5B5B5", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}><FaPalette size={10} /> {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
                   </div>
                 )}
                 <p style={{ fontSize: 15, color: "#3C3C3C", lineHeight: 1.75, marginBottom: 20, wordBreak: "break-word" }}>{fa_items[activeTab].description}</p>
                 {fa_items[activeTab].cta_label && (
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: "#181313", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                    {fa_items[activeTab].cta_label} →
+                    {fa_items[activeTab].cta_label} <FaArrowRight size={11} />
                   </div>
                 )}
               </div>

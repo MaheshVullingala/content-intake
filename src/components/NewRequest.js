@@ -1,6 +1,11 @@
 "use client";
 import { sanitizePayload, validateFile, getAuthHeaders } from "@/lib/security";
 import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  FaCheck, FaExclamationTriangle, FaUndo, FaChevronDown, FaChevronUp,
+  FaSave, FaDice, FaArrowRight, FaArrowLeft, FaPalette, FaSearch,
+  FaPen, FaLink, FaTag, FaInfoCircle,
+} from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import { PAGE_TYPES, getSectionsForPageType, CHAR_LIMITS as DEFAULT_CHAR_LIMITS } from "@/lib/constants";
@@ -57,7 +62,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly}
             style={fieldStyle || (over ? { borderColor: "#c0392b" } : {})} />
       }
-      {over && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 3 }}>⚠️ Exceeds {limit} character limit</div>}
+      {over && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}><FaExclamationTriangle size={10} /> Exceeds {limit} character limit</div>}
       {hint && !over && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -703,7 +708,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           display: "flex", alignItems: "center", gap: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
           fontSize: 13, fontWeight: 500, animation: "fadeIn 0.2s ease", fontFamily: "'Rubik',sans-serif",
           border: "1px solid rgba(0,155,114,0.4)" }}>
-          <span style={{ fontSize: 18 }}>✅</span>
+          <span style={{ fontSize: 18, display: "flex", color: "#3ec5cb" }}><FaCheck /></span>
           <span>Draft saved successfully</span>
         </div>
       )}
@@ -715,10 +720,10 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           <div onClick={() => setShowReturnPanel(p => !p)}
             style={{ background:"#fff3cd", padding:"0.75rem 1rem", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", gap:8 }}>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:16 }}>↩</span>
+              <span style={{ fontSize:16, display:"flex" }}><FaUndo /></span>
               <span style={{ fontSize:13, fontWeight:600, color:"#856404" }}>Revision Notes ({returnComments.length})</span>
             </div>
-            <span style={{ fontSize:12, color:"#856404", fontWeight:500 }}>{showReturnPanel ? "▼" : "▲"}</span>
+            <span style={{ fontSize:12, color:"#856404", fontWeight:500, display:"flex" }}>{showReturnPanel ? <FaChevronDown /> : <FaChevronUp />}</span>
           </div>
           {showReturnPanel && (
             <div style={{ maxHeight:320, overflowY:"auto", padding:"0.75rem" }}>
@@ -744,8 +749,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             <h2>Leave without saving?</h2>
             <p>You have unsaved content. Save it as a draft so you can continue later.</p>
             <div className="modal-actions">
-              <button onClick={saveAndExit} disabled={saving} className="btn-primary btn-full">
-                {saving ? "Saving..." : "💾 Save as Draft & Exit"}
+              <button onClick={saveAndExit} disabled={saving} className="btn-primary btn-full" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                {saving ? "Saving..." : <><FaSave size={12} /> Save as Draft & Exit</>}
               </button>
               <button onClick={() => { onClearPendingNav?.(); go(pendingNav || "dashboard"); }} className="btn-secondary btn-full">
                 Discard & Leave
@@ -790,7 +795,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     color: done ? "#0f2744" : active ? "#fff" : "#94a3b8",
                     flexShrink: 0,
                   }}>
-                    {done ? "✓" : n}
+                    {done ? <FaCheck size={9} /> : n}
                   </div>
                   <span style={{
                     fontSize: 12, fontWeight: 500, whiteSpace: "nowrap",
@@ -815,8 +820,9 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 padding: "0.55rem 1.2rem", fontSize: 13, fontWeight: 500,
                 cursor: "pointer",
                 fontFamily: "'Rubik', sans-serif", whiteSpace: "nowrap",
+                display: "flex", alignItems: "center", gap: 6,
               }}>
-              🎲 Fill Test Data
+              <FaDice size={12} /> Fill Test Data
             </button>
           )}
           {step === 2 && pageType && (
@@ -828,8 +834,9 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 cursor: saving ? "not-allowed" : "pointer",
                 fontFamily: "'Rubik', sans-serif", whiteSpace: "nowrap",
                 opacity: saving ? 0.5 : 1,
+                display: "flex", alignItems: "center", gap: 6,
               }}>
-              {saving ? "Saving..." : "💾 Save as Draft"}
+              {saving ? "Saving..." : <><FaSave size={12} /> Save as Draft</>}
             </button>
           )}
           {step === 2 && (
@@ -842,8 +849,9 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 fontSize: 13, fontWeight: 500,
                 cursor: isValid() ? "pointer" : "not-allowed",
                 fontFamily: "'Rubik', sans-serif", whiteSpace: "nowrap",
+                display: "flex", alignItems: "center", gap: 6,
               }}>
-              Preview & Submit →
+              Preview & Submit <FaArrowRight size={11} />
             </button>
           )}
 
@@ -944,11 +952,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 display: "flex", alignItems: "center", justifyContent: "center",
                 transition: "all 0.15s",
               }}>
-                {needsBrand && <span style={{ color: "#fff", fontSize: 11, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+                {needsBrand && <FaCheck style={{ color: "#fff", fontSize: 10 }} />}
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#181313" }}>
-                  🎨 Needs Brand Team involvement
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}>
+                  <FaPalette size={12} /> Needs Brand Team involvement
                 </div>
                 <p className="field-hint">
                   Select if this page requires new custom images, graphics, or brand assets
@@ -959,8 +967,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           </div>
 
           <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
-            <button disabled={!pageType} onClick={() => setStep(2)} className="btn-primary" style={{ opacity: pageType ? 1 : 0.4 }}>
-              Continue →
+            <button disabled={!pageType} onClick={() => setStep(2)} className="btn-primary" style={{ opacity: pageType ? 1 : 0.4, display: "flex", alignItems: "center", gap: 6 }}>
+              Continue <FaArrowRight size={11} />
             </button>
           </div>
         </>
@@ -1022,7 +1030,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                       {s.label}
                     </span>
                     {isDone && !isNA && (
-                      <span style={{ fontSize: 11, color: "#3ec5cb", fontWeight: 600 }}>✓</span>
+                      <span style={{ fontSize: 11, color: "#3ec5cb", fontWeight: 600, display: "flex" }}><FaCheck size={9} /></span>
                     )}
                     {isNA && (
                       <span style={{ fontSize: 10, color: "#94a3b8" }}>—</span>
@@ -1048,7 +1056,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                   <div className="card">
                     <div className="card-header">
-                      <div><h3>🔍 SEO Meta Data</h3><p>Required for all page types · Helps search engines find and rank your page</p></div>
+                      <div><h3 style={{ display: "flex", alignItems: "center", gap: 8 }}><FaSearch size={14} /> SEO Meta Data</h3><p>Required for all page types · Helps search engines find and rank your page</p></div>
                       <SectionAIAssist sectionKey="seo_meta" currentContent={`${seoData.seo_meta_title} ${seoData.seo_meta_description}`} onAccept={(d) => setSeoData(p => ({ ...p, ...d }))} />
                     </div>
                     <Field label="Page Location" charLimit={CHAR_LIMITS.seo_page_location} value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" hint="The URL path where this page will live on the site" />
@@ -1066,9 +1074,9 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 <div style={{ position:"sticky", top:0, height:"100vh", overflowY:"auto", paddingBottom:"2rem" }}>
                   <p className="text-xs text-uppercase text-muted mb-8">SEO Guidelines</p>
                   <div className="card" style={{ gap:14 }}>
-                    {[["🔍","Meta Title","50–70 characters. Include the primary keyword and brand name."],["📝","Meta Description","120–160 characters. Summarise the page value clearly."],["🔗","Page Location","Use lowercase, hyphens (not underscores). e.g. /products/xcelium"],["🏷️","Keywords","3–8 comma-separated terms your audience searches for."]].map(([icon,title,desc]) => (
+                    {[[FaSearch,"Meta Title","50–70 characters. Include the primary keyword and brand name."],[FaPen,"Meta Description","120–160 characters. Summarise the page value clearly."],[FaLink,"Page Location","Use lowercase, hyphens (not underscores). e.g. /products/xcelium"],[FaTag,"Keywords","3–8 comma-separated terms your audience searches for."]].map(([Icon,title,desc]) => (
                       <div key={title} style={{ display:"flex", gap:12, paddingBottom:14, borderBottom:"1px solid #F3F3F3" }}>
-                        <div style={{ fontSize:20, flexShrink:0 }}>{icon}</div>
+                        <div style={{ fontSize:20, flexShrink:0, display:"flex" }}><Icon /></div>
                         <div><div style={{ fontSize:13, fontWeight:600, color:"#181313", marginBottom:4 }}>{title}</div><div style={{ fontSize:12, color:"#646464", lineHeight:1.6 }}>{desc}</div></div>
                       </div>
                     ))}
@@ -1128,7 +1136,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                         onToggleNA={() => toggleNA("key_benefits")}
                         requestId={draftId || "draft"}
                         aiAssistButton={<SectionAIAssist sectionKey="key_benefits" currentContent={kbData.kb_impact} onAccept={(d) => { const { kb_cards, ...rest } = d; setKbData(p => ({ ...p, ...rest, ...(kb_cards ? { kb_cards: kb_cards.map((c,i) => ({ ...c, id:`kb-ai-${i}-${Date.now()}` })) } : {}) })); }} />}
-                        naButton={<button onClick={() => toggleNA("key_benefits")} className={`btn-na${naMap["key_benefits"] ? " active" : ""}`}>{naMap["key_benefits"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>}
+                        naButton={<button onClick={() => toggleNA("key_benefits")} className={`btn-na${naMap["key_benefits"] ? " active" : ""}`}>{naMap["key_benefits"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>}
                       />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
@@ -1154,7 +1162,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => { const { fa_items, ...rest } = d; setFaData(p => ({ ...p, ...rest, ...(fa_items ? { fa_items: fa_items.map((it,i) => ({ ...it, id:`li-ai-${i}-${Date.now()}` })) } : {}) })); }} />} naButton={<button onClick={() => toggleNA("features_apps")} className={`btn-na${naMap["features_apps"] ? " active" : ""}`}>{naMap["features_apps"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
+                      <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => { const { fa_items, ...rest } = d; setFaData(p => ({ ...p, ...rest, ...(fa_items ? { fa_items: fa_items.map((it,i) => ({ ...it, id:`li-ai-${i}-${Date.now()}` })) } : {}) })); }} />} naButton={<button onClick={() => toggleNA("features_apps")} className={`btn-na${naMap["features_apps"] ? " active" : ""}`}>{naMap["features_apps"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -1179,7 +1187,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <Applications data={appData} onChange={setAppData} isNA={false} onToggleNA={() => toggleNA("applications")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="applications" currentContent={appData.app_impact} onAccept={(d) => { const { app_items, ...rest } = d; setAppData(p => ({ ...p, ...rest, ...(app_items ? { app_items: app_items.map((it,i) => ({ ...it, id:`app-tab-ai-${i}-${Date.now()}` })) } : {}) })); }} />} naButton={<button onClick={() => toggleNA("applications")} className={`btn-na${naMap["applications"] ? " active" : ""}`}>{naMap["applications"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
+                      <Applications data={appData} onChange={setAppData} isNA={false} onToggleNA={() => toggleNA("applications")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="applications" currentContent={appData.app_impact} onAccept={(d) => { const { app_items, ...rest } = d; setAppData(p => ({ ...p, ...rest, ...(app_items ? { app_items: app_items.map((it,i) => ({ ...it, id:`app-tab-ai-${i}-${Date.now()}` })) } : {}) })); }} />} naButton={<button onClick={() => toggleNA("applications")} className={`btn-na${naMap["applications"] ? " active" : ""}`}>{naMap["applications"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -1199,7 +1207,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Customer Stories marked as Not Applicable</div><button onClick={() => toggleNA("customer_stories")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -1215,7 +1223,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Promo Section marked as Not Applicable</div><button onClick={() => toggleNA("promo_section")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("promo_section")} className={`btn-na${naMap["promo_section"] ? " active" : ""}`}>{naMap["promo_section"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
+                    <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("promo_section")} className={`btn-na${naMap["promo_section"] ? " active" : ""}`}>{naMap["promo_section"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -1231,7 +1239,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Content marked as Not Applicable</div><button onClick={() => toggleNA("related_content")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("related_content")} className={`btn-na${naMap["related_content"] ? " active" : ""}`}>{naMap["related_content"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} /></div>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("related_content")} className={`btn-na${naMap["related_content"] ? " active" : ""}`}>{naMap["related_content"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -1281,7 +1289,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="training_support" currentContent={tsData.ts_impact} onAccept={(d) => setTsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("training_support")} className={`btn-na${naMap["training_support"] ? " active" : ""}`}>{naMap["training_support"] ? "✓ N/A — Undo" : "Mark as N/A"}</button>} />
+                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="training_support" currentContent={tsData.ts_impact} onAccept={(d) => setTsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("training_support")} className={`btn-na${naMap["training_support"] ? " active" : ""}`}>{naMap["training_support"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -1310,7 +1318,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                           <SectionAIAssist sectionKey="overview" currentContent={overview.overview_impact} onAccept={(d) => setOverview(p => ({ ...p, ...d }))} />
                           <button onClick={() => toggleNA("overview")} className={`btn-na${naMap["overview"] ? " active" : ""}`}>
-                            {naMap["overview"] ? "✓ N/A — Undo" : "Mark as N/A"}
+                            {naMap["overview"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}
                           </button>
                         </div>
                       </div>
@@ -1367,23 +1375,23 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           <div className="card" style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, marginBottom: 14 }}>Pre-flight Check</h3>
             {!placeholderCheckEnabled && (
-              <div style={{ fontSize: 11, color: "#d97706", background: "#fffbeb", border: "1px solid #f59e0b44", borderRadius: 6, padding: "0.4rem 0.7rem", marginBottom: 10 }}>
-                ⚠ Placeholder/Lorem Ipsum checking is turned off (AdminPanel → Settings) — temporary QA setting.
+              <div style={{ fontSize: 11, color: "#d97706", background: "#fffbeb", border: "1px solid #f59e0b44", borderRadius: 6, padding: "0.4rem 0.7rem", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                <FaExclamationTriangle size={11} /> Placeholder/Lorem Ipsum checking is turned off (AdminPanel → Settings) — temporary QA setting.
               </div>
             )}
             {preflightIssues.length === 0 ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#2a7a4b", fontWeight: 500 }}>
-                ✓ No issues found
+                <FaCheck size={11} /> No issues found
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {preflightIssues.map((issue, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#fef2f2", border: "1px solid #c0392b33", borderRadius: 8, padding: "0.65rem 0.9rem" }}>
-                    <div style={{ fontSize: 13, color: "#181313" }}>⚠ {issue.message}</div>
+                    <div style={{ fontSize: 13, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}><FaExclamationTriangle size={11} /> {issue.message}</div>
                     {issue.section && (
                       <button type="button" onClick={() => { setStep(2); handleSectionChange(issue.section); }}
-                        style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, fontWeight: 500, color: "#181313", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "'Rubik',sans-serif" }}>
-                        Fix →
+                        style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, fontWeight: 500, color: "#181313", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+                        Fix <FaArrowRight size={9} />
                       </button>
                     )}
                   </div>
@@ -1408,8 +1416,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     <div style={{ fontSize: 13, fontWeight: 500 }}>{s.label}</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 10, color: s.required ? "#c0392b" : "#B5B5B5", fontWeight: 500 }}>{s.required ? "Required" : "Optional"}</span>
-                      <span style={{ fontSize: 12, color: isNA ? "#B5B5B5" : isDone ? "#2a7a4b" : "#c0392b", fontWeight: 500 }}>
-                        {isNA ? "N/A" : isDone ? "✓ Complete" : "⚠ Incomplete"}
+                      <span style={{ fontSize: 12, color: isNA ? "#B5B5B5" : isDone ? "#2a7a4b" : "#c0392b", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                        {isNA ? "N/A" : isDone ? <><FaCheck size={10} /> Complete</> : <><FaExclamationTriangle size={10} /> Incomplete</>}
                       </span>
                     </div>
                   </div>
@@ -1419,16 +1427,16 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           </div>
 
           {error && <div className="alert alert-error">{error}</div>}
-          <div className="alert alert-info" style={{ marginBottom: 22 }}>
-            ℹ️ Submitting will send this to an <strong style={{ color: "#181313" }}>Admin</strong> who will set up the parallel task workflow.
+          <div className="alert alert-info" style={{ marginBottom: 22, display: "flex", alignItems: "center", gap: 8 }}>
+            <FaInfoCircle /> Submitting will send this to an <strong style={{ color: "#181313" }}>Admin</strong> who will set up the parallel task workflow.
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <button onClick={() => setStep(2)} className="btn-ghost">
-              ← Back to Edit
+            <button onClick={() => setStep(2)} className="btn-ghost" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <FaArrowLeft size={11} /> Back to Edit
             </button>
-            <button onClick={submit} disabled={saving} className="btn-primary">
-              {saving ? "Submitting..." : "Submit Request →"}
+            <button onClick={submit} disabled={saving} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {saving ? "Submitting..." : <>Submit Request <FaArrowRight size={11} /></>}
             </button>
           </div>
         </>

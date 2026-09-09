@@ -1,5 +1,6 @@
 "use client";
 import ImageField from "@/components/ImageField";
+import { FaExclamationTriangle, FaCommentDots, FaArrowUp, FaArrowDown, FaTimes } from "react-icons/fa";
 
 const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle, charLimit, required }) => {
   const len  = (value || "").length;
@@ -14,7 +15,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled,
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -70,7 +71,7 @@ export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA,
 
       {items.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>💬</div>
+          <div style={{ fontSize: 28, marginBottom: 8, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaCommentDots /></div>
           <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>No quotes yet. Add at least 1 customer quote.</div>
           <button onClick={addItem} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first quote</button>
         </div>
@@ -86,11 +87,11 @@ export default function CustomerStories({ data = {}, onChange, isNA, onToggleNA,
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => moveItem(idx, -1)} disabled={idx === 0}
-                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464" }}>↑</button>
+                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowUp size={10} /></button>
                 <button onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1}
-                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464" }}>↓</button>
+                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowDown size={10} /></button>
                 <button onClick={() => removeItem(item.id)}
-                  style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: "pointer" }}>✕</button>
+                  style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
               </div>
             </div>
             <Field label="Customer Quote" required value={item.quote}

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { FaPen, FaArrowRight, FaCheckCircle, FaEye, FaSearch } from "react-icons/fa";
 import { CHAR_LIMITS as DEFAULT_CHAR_LIMITS, getSectionsForPageType, AUDIT_ACTIONS } from "@/lib/constants";
 import { useCharLimits } from "@/lib/charLimits";
 import { isFastLaneEligible } from "@/lib/fastLane";
@@ -241,7 +242,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
     return (
       <div className="card" style={{ maxWidth: 560, margin: "3rem auto" }}>
         <div className="card-header">
-          <h3 style={{ margin: 0 }}>✎ Suggest a Change</h3>
+          <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}><FaPen size={13} /> Suggest a Change</h3>
         </div>
         <p className="text-sm text-muted" style={{ marginTop: 0 }}>
           Why does this need to change? Once you continue, you'll be able to
@@ -261,11 +262,11 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
           </button>
           <button
             className="btn-primary"
-            style={{ flex: 1, justifyContent: "center" }}
+            style={{ flex: 1, justifyContent: "center", display: "flex", alignItems: "center", gap: 6 }}
             disabled={!reason.trim()}
             onClick={() => setReasonConfirmed(true)}
           >
-            Continue →
+            Continue <FaArrowRight size={10} />
           </button>
         </div>
       </div>
@@ -294,8 +295,8 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {changedFields.length > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: fastLane ? "#2a7a4b" : "#9333ea", whiteSpace: "nowrap" }}>
-              {fastLane ? "✅ Small edit — applies immediately" : "👁️ Will need admin review"}
+            <span style={{ fontSize: 11, fontWeight: 600, color: fastLane ? "#2a7a4b" : "#9333ea", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}>
+              {fastLane ? <><FaCheckCircle size={10} /> Small edit — applies immediately</> : <><FaEye size={10} /> Will need admin review</>}
             </span>
           )}
           <button className="btn-ghost" onClick={onCancel} disabled={saving}>Cancel</button>
@@ -349,7 +350,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
         {activeSection === "seo_meta" && (
           <SectionLayout activeSection={activeSection} pageType={req.page_type} mergedPreview={mergedPreview}>
             <div className="card">
-              <div className="card-header"><div><h3>🔍 SEO Meta Data</h3></div></div>
+              <div className="card-header"><div><h3 style={{ display: "flex", alignItems: "center", gap: 6 }}><FaSearch size={13} /> SEO Meta Data</h3></div></div>
               <Field label="Page Location" charLimit={CHAR_LIMITS.seo_page_location} value={seoData.seo_page_location} onChange={v => setSeoData(p => ({ ...p, seo_page_location: v }))} placeholder="e.g. /products/xcelium-logic-simulator" />
               <Field label="Meta Title" charLimit={CHAR_LIMITS.seo_meta_title} value={seoData.seo_meta_title} onChange={v => setSeoData(p => ({ ...p, seo_meta_title: v }))} placeholder="e.g. Xcelium Logic Simulator | Cadence" />
               <Field label="Meta Description" charLimit={CHAR_LIMITS.seo_meta_description} value={seoData.seo_meta_description} onChange={v => setSeoData(p => ({ ...p, seo_meta_description: v }))} multiline />

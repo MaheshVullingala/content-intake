@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FaHourglassHalf, FaCheck, FaUserClock, FaArrowRight, FaLock } from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
 import { getStatus, ROLE_META, STATUS_FLOW, AUDIT_ACTIONS } from "@/lib/constants";
 import { OKTA_ENABLED } from "@/lib/authConfig";
@@ -110,7 +111,7 @@ function CharLimitsPanel({ user }) {
     if (error) { setMsg(`Failed to save ${key}: ${error.message}`); setSaving(null); return; }
     setLimits(p => ({ ...p, [key]: num }));
     setSaving(null);
-    setMsg(`✓ ${key} limit saved`);
+    setMsg(`${key} limit saved`);
     setTimeout(() => setMsg(""), 2000);
   };
 
@@ -125,6 +126,9 @@ function CharLimitsPanel({ user }) {
           <h3 style={{ fontSize: 16, fontWeight: 500, margin: 0 }}>Character Limits</h3>
           <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Configure maximum character counts for each field. Changes apply immediately to all new requests.</p>
         </div>
+        {/* Shared between success ("... saved") and failure ("Failed to
+            save...") messages -- no icon here since a single fixed icon
+            would be wrong for one of the two states; see saveLimit(). */}
         {msg && <span style={{ fontSize: 12, color: "#0e7a3d", background: "#e8f9f0", padding: "4px 12px", borderRadius: 6 }}>{msg}</span>}
       </div>
       {sections.map(section => (
@@ -143,7 +147,7 @@ function CharLimitsPanel({ user }) {
                     style={{ width: 70, padding: "0.35rem 0.5rem", border: "1px solid #E0E0E0", borderRadius: 6, fontSize: 13, fontFamily: "'Rubik',sans-serif", textAlign: "center", color: "#181313", background: "#F9F9F9" }}
                   />
                   {saving === field.key && <span style={{ fontSize: 10, color: "#94a3b8" }}>Saving...</span>}
-                  {limits[field.key] !== undefined && saving !== field.key && <span style={{ fontSize: 10, color: "#3ec5cb" }}>✓</span>}
+                  {limits[field.key] !== undefined && saving !== field.key && <span style={{ fontSize: 10, color: "#3ec5cb", display: "inline-flex" }}><FaCheck size={9} /></span>}
                 </div>
               </div>
             ))}
@@ -296,7 +300,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
       console.warn("No rows updated for userId:", userId);
     } else {
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
-      setMsg(`✅ Role updated to "${role}" — ${data[0]?.email || userId}`);
+      setMsg(`Role updated to "${role}" — ${data[0]?.email || userId}`);
       setTimeout(() => setMsg(""), 4000);
     }
     setUpdating(null);
@@ -341,7 +345,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
     setShowInviteModal(false);
     setInviteForm({ email: "", name: "", department: "", role: "stakeholder", can_assign: false });
     setInviting(false);
-    setMsg(`✅ Invited ${data.email} — sending notification email...`);
+    setMsg(`Invited ${data.email} — sending notification email...`);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -354,11 +358,11 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
         body: JSON.stringify({ email: data.email, name: data.name, roleLabel: ROLE_META[data.role]?.label || data.role }),
       });
       const result = await res.json();
-      if (result.sent) setMsg(`✅ Invited ${data.email} — notification email sent.`);
-      else if (result.skipped) setMsg(`✅ Invited ${data.email} — role assigned, but email wasn't sent (${result.reason})`);
-      else setMsg(`✅ Invited ${data.email} — role assigned, but the notification email failed to send.`);
+      if (result.sent) setMsg(`Invited ${data.email} — notification email sent.`);
+      else if (result.skipped) setMsg(`Invited ${data.email} — role assigned, but email wasn't sent (${result.reason})`);
+      else setMsg(`Invited ${data.email} — role assigned, but the notification email failed to send.`);
     } catch (e) {
-      setMsg(`✅ Invited ${data.email} — role assigned, but the notification email failed to send.`);
+      setMsg(`Invited ${data.email} — role assigned, but the notification email failed to send.`);
     }
     setTimeout(() => setMsg(""), 6000);
   };
@@ -376,12 +380,12 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
       {/* Pending users alert */}
       {pendingUsers.length > 0 && (
         <div style={{ background: "#fffbeb", border: "1px solid #f59e0b44", borderRadius: 10, padding: "0.85rem 1.3rem", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 16 }}>⚡</span>
+          <span style={{ fontSize: 16, display: "flex", color: "#92400e" }}><FaUserClock /></span>
           <span style={{ fontSize: 13, color: "#92400e", fontWeight: 500 }}>
             {pendingUsers.length} user{pendingUsers.length > 1 ? "s" : ""} waiting for role assignment
           </span>
-          <button onClick={() => setTab("users")} style={{ marginLeft: "auto", background: "#181313", color: "#fff", border: "none", borderRadius: 6, padding: "0.35rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-            Assign Roles →
+          <button onClick={() => setTab("users")} style={{ marginLeft: "auto", background: "#181313", color: "#fff", border: "none", borderRadius: 6, padding: "0.35rem 0.9rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            Assign Roles <FaArrowRight size={10} />
           </button>
         </div>
       )}
@@ -482,14 +486,14 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                 </thead>
                 <tbody>
                   {users.map((u, i) => {
-                    const m = ROLE_META[u.role] || { label: "Pending", color: "#f59e0b", icon: "⏳" };
+                    const m = ROLE_META[u.role] || { label: "Pending", color: "#f59e0b", icon: FaHourglassHalf };
                     const isPending = u.role === "pending";
                     const isMe = u.id === user.id;
                     return (
                       <tr key={u.id} style={{ borderBottom: i < users.length - 1 ? "1px solid #F9F9F9" : "none", background: isPending ? "#fffdf5" : "#fff" }}>
                         <td style={{ padding: "0.75rem 1rem" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#F3F3F3", border: "1px solid #E0E0E0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{m.icon}</div>
+                            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#F3F3F3", border: "1px solid #E0E0E0", display: "flex", alignItems: "center", justifyContent: "center" }}>{m.icon && <m.icon size={13} color="#3C3C3C" />}</div>
                             <span style={{ fontSize: 13, fontWeight: 500, color: "#181313" }}>{u.name}</span>
                           </div>
                         </td>
@@ -503,8 +507,8 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                         </td>
                         <td style={{ padding: "0.75rem 1rem", fontSize: 13, color: "#646464" }}>{u.department || "—"}</td>
                         <td style={{ padding: "0.75rem 1rem" }}>
-                          <span style={{ background: isPending ? "#fffbeb" : "#F3F3F3", color: isPending ? "#d97706" : "#3C3C3C", fontSize: 11, borderRadius: 4, padding: "2px 8px", border: `1px solid ${isPending ? "#f59e0b44" : "#E0E0E0"}`, fontWeight: 500 }}>
-                            {isPending ? "⏳ Pending" : m.label}
+                          <span style={{ background: isPending ? "#fffbeb" : "#F3F3F3", color: isPending ? "#d97706" : "#3C3C3C", fontSize: 11, borderRadius: 4, padding: "2px 8px", border: `1px solid ${isPending ? "#f59e0b44" : "#E0E0E0"}`, fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                            {isPending ? <><FaHourglassHalf size={9} /> Pending</> : m.label}
                           </span>
                         </td>
 
@@ -587,8 +591,8 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           {/* Audit Log tab */}
           {tab === "audit_log" && (
             <div>
-              <div style={{ background: "#eff6ff", border: "1px solid rgba(27,87,147,0.15)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: 16, fontSize: 12, color: "#1b5793", lineHeight: 1.6 }}>
-                🔒 Audit log is read-only. Records cannot be modified or deleted.
+              <div style={{ background: "#eff6ff", border: "1px solid rgba(27,87,147,0.15)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: 16, fontSize: 12, color: "#1b5793", lineHeight: 1.6, display: "flex", alignItems: "center", gap: 8 }}>
+                <FaLock size={11} /> Audit log is read-only. Records cannot be modified or deleted.
               </div>
 
               {/* Filters */}
@@ -802,7 +806,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
             <div className="card" style={{ maxWidth: 480, marginTop: 20 }}>
               <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Fill Test Data Button</h3>
               <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 20, lineHeight: 1.6 }}>
-                The 🎲 Fill Test Data button (New Request → step 2) is normally stripped out of production builds automatically.
+                The Fill Test Data button (New Request → step 2) is normally stripped out of production builds automatically.
                 Turn this on to temporarily keep it available in production too — e.g. for QA on a live-configured deployment.
                 Remember to turn it back off once that testing is done. Note this doesn't weaken the pre-flight check —
                 Submit is still blocked if placeholder text is present, regardless of this setting.

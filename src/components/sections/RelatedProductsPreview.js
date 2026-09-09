@@ -1,5 +1,6 @@
 "use client";
 import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
+import { FaPalette, FaArrowRight } from "react-icons/fa";
 
 export default function RelatedProductsPreview({ data = {}, attachments = [] }) {
   const { rp_label = "", rp_impact = "", rp_description = "", rp_cards = [] } = data;
@@ -44,7 +45,7 @@ export default function RelatedProductsPreview({ data = {}, attachments = [] }) 
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         onError={e => { e.target.style.display = "none"; }} />
                     ) : (
-                      <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 8px" }}>🎨 {imagePlaceholder}</span>
+                      <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 8px", display: "flex", alignItems: "center", gap: 4 }}><FaPalette size={9} /> {imagePlaceholder}</span>
                     )}
                   </div>
                 )}
@@ -57,7 +58,7 @@ export default function RelatedProductsPreview({ data = {}, attachments = [] }) 
                 </p>
                 {card.cta_link && (
                   <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "#181313", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                    {card.cta_label || "LEARN MORE"} →
+                    {card.cta_label || "LEARN MORE"} <FaArrowRight size={11} />
                   </div>
                 )}
               </div>

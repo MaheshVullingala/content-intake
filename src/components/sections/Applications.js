@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import ImageField from "@/components/ImageField";
+import { FaExclamationTriangle, FaFolderOpen, FaArrowUp, FaArrowDown, FaTimes, FaGripHorizontal, FaGripVertical } from "react-icons/fa";
 
 const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle, charLimit, required }) => {
   const len  = (value || "").length;
@@ -15,7 +16,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled,
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -48,7 +49,7 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
 
       {items.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-          <div style={{ fontSize: 24, marginBottom: 8 }}>📑</div>
+          <div style={{ fontSize: 24, marginBottom: 8, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaFolderOpen /></div>
           <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>No tabs yet. Add at least 1 tab.</div>
           <button type="button" onClick={addTab} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first tab</button>
         </div>
@@ -64,11 +65,11 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 <button type="button" onClick={() => moveTab(idx, -1)} disabled={idx === 0}
-                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464" }}>↑</button>
+                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowUp size={10} /></button>
                 <button type="button" onClick={() => moveTab(idx, 1)} disabled={idx === items.length - 1}
-                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464" }}>↓</button>
+                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowDown size={10} /></button>
                 <button type="button" onClick={() => removeTab(tab.id)}
-                  style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: "pointer" }}>✕</button>
+                  style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
               </div>
             </div>
 
@@ -131,14 +132,14 @@ export default function Applications({ data = {}, onChange, isNA, onToggleNA, ai
     {
       key:   "tabs_horizontal",
       label: "Horizontal Tabs",
-      icon:  "▭",
+      icon:  FaGripHorizontal,
       desc:  "Tabs across the top",
       when:  "Best for: 3–6 distinct applications/use cases each needing a title, description and image. Users click to explore.",
     },
     {
       key:   "tabs_vertical",
       label: "Vertical Tabs",
-      icon:  "▯",
+      icon:  FaGripVertical,
       desc:  "Tabs on the left side",
       when:  "Best for: same as Horizontal Tabs but with longer tab labels or more items (up to 10). Works well for application categories.",
     },
@@ -181,7 +182,7 @@ export default function Applications({ data = {}, onChange, isNA, onToggleNA, ai
           {VIEW_TYPES.map(vt => (
             <button type="button" key={vt.key} onClick={() => { const cur = parseJ(data.app_items, []); upd("app_view_type", vt.key); if (!Array.isArray(cur)) onChange({ ...safeData, app_view_type: vt.key, app_items: [] }); }}
               style={{ background: data.app_view_type === vt.key ? "#0f2744" : "#F9F9F9", border: `2px solid ${data.app_view_type === vt.key ? "#1b5793" : "#E0E0E0"}`, borderRadius: 10, padding: "0.9rem 1rem", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
-              <div style={{ fontSize: 22, marginBottom: 6 }}>{vt.icon}</div>
+              <div style={{ fontSize: 22, marginBottom: 6, display: "flex", color: data.app_view_type === vt.key ? "#fff" : "#181313" }}><vt.icon /></div>
               <div style={{ fontSize: 13, fontWeight: 600, color: data.app_view_type === vt.key ? "#fff" : "#181313", marginBottom: 3 }}>{vt.label}</div>
               <div style={{ fontSize: 11, color: "#B5B5B5", marginBottom: 6 }}>{vt.desc}</div>
               <div style={{ fontSize: 12, color: data.app_view_type === vt.key ? "#3ec5cb" : "#1b5793", lineHeight: 1.6, borderTop: `1px solid ${data.app_view_type === vt.key ? "#1b579344" : "#E0E0E0"}`, paddingTop: 8, marginTop: 4, fontWeight: 400 }}>{vt.when}</div>

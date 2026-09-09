@@ -1,4 +1,5 @@
 "use client";
+import { FaClipboardList, FaCloud, FaUsers, FaPalette } from "react-icons/fa";
 
 const DEFAULTS = {
   ts_label: "TRAINING AND SUPPORT",
@@ -56,15 +57,15 @@ export default function TrainingSupportPreview({ data = {} }) {
                   {isUrl(card.icon) ? (
                     <img src={card.icon} alt={`card ${i + 1} icon`} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                   ) : (
-                    <span style={{ fontSize: 22 }}>
-                      {i === 0 ? "📋" : i === 1 ? "☁️" : "👥"}
+                    <span style={{ fontSize: 22, display: "flex" }}>
+                      {i === 0 ? <FaClipboardList /> : i === 1 ? <FaCloud /> : <FaUsers />}
                     </span>
                   )}
                 </div>
               </div>
               {card.icon && !isUrl(card.icon) && (
-                <div style={{ fontSize: 10, color: "#B5B5B5", marginBottom: 10, fontStyle: "italic" }}>
-                  🎨 {card.icon}
+                <div style={{ fontSize: 10, color: "#B5B5B5", marginBottom: 10, fontStyle: "italic", display: "flex", alignItems: "center", gap: 4 }}>
+                  <FaPalette size={9} /> {card.icon}
                 </div>
               )}
               <h3 style={{ fontSize: 18, fontWeight: 400, color: "#181313", marginBottom: 12, lineHeight: 1.3 }}>

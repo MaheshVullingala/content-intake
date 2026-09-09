@@ -1,6 +1,12 @@
 "use client";
 import { useState } from "react";
 import JSZip from "jszip";
+import {
+  FaImage, FaFileAlt, FaPalette, FaBoxOpen, FaPaperclip, FaClipboardList,
+  FaBook, FaStar, FaTools, FaPuzzlePiece, FaQuoteRight, FaBullhorn,
+  FaGraduationCap, FaSearch, FaFolderOpen, FaDownload, FaHourglassHalf,
+  FaFileArchive, FaCheckCircle, FaGlobe,
+} from "react-icons/fa";
 import BrandFilesPanel from "@/components/BrandFilesPanel";
 
 const FIELD = { fontFamily: "'Rubik', sans-serif" };
@@ -14,11 +20,11 @@ function formatBytes(b) {
 
 function fileIcon(name = "") {
   const ext = (name.split(".").pop() || "").toLowerCase();
-  if (["png","jpg","jpeg","gif","webp","svg"].includes(ext)) return "🖼️";
-  if (ext === "pdf") return "📄";
-  if (["psd","ai"].includes(ext)) return "🎨";
-  if (["zip","rar","7z"].includes(ext)) return "📦";
-  return "📎";
+  if (["png","jpg","jpeg","gif","webp","svg"].includes(ext)) return FaImage;
+  if (ext === "pdf") return FaFileAlt;
+  if (["psd","ai"].includes(ext)) return FaPalette;
+  if (["zip","rar","7z"].includes(ext)) return FaFileArchive;
+  return FaPaperclip;
 }
 
 function isImage(name = "") {
@@ -57,10 +63,11 @@ function CopyBtn({ label, value, copied, onCopy }) {
         cursor: "pointer", padding: "2px 6px", borderRadius: 4,
         fontSize: 12, color: copied ? "#2a7a4b" : "#94a3b8",
         flexShrink: 0, transition: "color 0.15s",
+        display: "inline-flex", alignItems: "center",
         ...FIELD,
       }}
     >
-      {copied ? "Copied!" : "📋"}
+      {copied ? "Copied!" : <FaClipboardList />}
     </button>
   );
 }
@@ -97,7 +104,8 @@ function SectionHead({ children }) {
     <div style={{
       fontSize: 11, fontWeight: 700, textTransform: "uppercase",
       letterSpacing: "0.08em", color: "var(--color-silver)",
-      padding: "14px 0 6px", ...FIELD,
+      padding: "14px 0 6px", display: "flex", alignItems: "center", gap: 6,
+      ...FIELD,
     }}>
       {children}
     </div>
@@ -259,8 +267,8 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
           </div>
         )}
         {missing.length === 0 && (
-          <p className="text-xs text-muted" style={{ margin: 0 }}>
-            All sections complete ✓
+          <p className="text-xs text-muted" style={{ margin: 0, display: "flex", alignItems: "center", gap: 5 }}>
+            All sections complete <FaCheckCircle size={10} />
           </p>
         )}
         <p className="field-hint" style={{ marginTop: 8, marginBottom: 0 }}>
@@ -269,7 +277,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
       </div>
 
       {/* ── Banner ───────────────────────────────────────────────────── */}
-      <SectionHead>📄 Banner</SectionHead>
+      <SectionHead><FaFileAlt size={11} /> Banner</SectionHead>
       <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
         <FieldRow label="Page Title"   value={req.page_title}   copiedKey={copiedKey} onCopy={copy} />
         <FieldRow label="Sub Title"    value={req.sub_title}    copiedKey={copiedKey} onCopy={copy} />
@@ -281,7 +289,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Overview ─────────────────────────────────────────────────── */}
       {(req.overview_impact || req.overview_description) && (<>
-        <SectionHead>📋 Overview</SectionHead>
+        <SectionHead><FaClipboardList size={11} /> Overview</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact"      value={req.overview_impact}      copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Description" value={req.overview_description} copiedKey={copiedKey} onCopy={copy} />
@@ -290,7 +298,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Key Benefits ─────────────────────────────────────────────── */}
       {(req.kb_impact || kbCards.length > 0) && (<>
-        <SectionHead>⭐ Key Benefits</SectionHead>
+        <SectionHead><FaStar size={11} /> Key Benefits</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact"      value={req.kb_impact}      copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Description" value={req.kb_description} copiedKey={copiedKey} onCopy={copy} />
@@ -305,7 +313,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Features ─────────────────────────────────────────────────── */}
       {(req.fa_impact || faItems.length > 0) && (<>
-        <SectionHead>🔧 Features</SectionHead>
+        <SectionHead><FaTools size={11} /> Features</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact"      value={req.fa_impact}      copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Description" value={req.fa_description} copiedKey={copiedKey} onCopy={copy} />
@@ -321,7 +329,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Applications ─────────────────────────────────────────────── */}
       {(req.app_impact || appItems.length > 0) && (<>
-        <SectionHead>🧩 Applications</SectionHead>
+        <SectionHead><FaPuzzlePiece size={11} /> Applications</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact"      value={req.app_impact}      copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Description" value={req.app_description} copiedKey={copiedKey} onCopy={copy} />
@@ -337,7 +345,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Customer Stories ─────────────────────────────────────────── */}
       {(req.cs_impact || csItems.length > 0) && (<>
-        <SectionHead>💬 Customer Stories</SectionHead>
+        <SectionHead><FaQuoteRight size={11} /> Customer Stories</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact" value={req.cs_impact} copiedKey={copiedKey} onCopy={copy} />
           {csItems.map((c, i) => (
@@ -351,7 +359,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Promo ────────────────────────────────────────────────────── */}
       {req.promo_title && (<>
-        <SectionHead>📣 Promo Section</SectionHead>
+        <SectionHead><FaBullhorn size={11} /> Promo Section</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Title"       value={req.promo_title}       copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Description" value={req.promo_description} copiedKey={copiedKey} onCopy={copy} />
@@ -362,7 +370,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Related Content ───────────────────────────────────────────── */}
       {(req.rc_impact || rcCards.length > 0) && (<>
-        <SectionHead>📄 Related Content</SectionHead>
+        <SectionHead><FaFileAlt size={11} /> Related Content</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact" value={req.rc_impact} copiedKey={copiedKey} onCopy={copy} />
           {rcCards.map((c, i) => (
@@ -377,7 +385,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Related Products ─────────────────────────────────────────── */}
       {(req.rp_impact || rpCards.length > 0) && (<>
-        <SectionHead>📦 Related Products</SectionHead>
+        <SectionHead><FaBoxOpen size={11} /> Related Products</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact"      value={req.rp_impact}      copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Description" value={req.rp_description} copiedKey={copiedKey} onCopy={copy} />
@@ -392,7 +400,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── Training & Support ───────────────────────────────────────── */}
       {req.ts_impact && (<>
-        <SectionHead>🎓 Training & Support</SectionHead>
+        <SectionHead><FaGraduationCap size={11} /> Training & Support</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Impact"        value={req.ts_impact}             copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Card 1 Title"  value={req.ts_card1_title}        copiedKey={copiedKey} onCopy={copy} />
@@ -407,7 +415,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
 
       {/* ── SEO ──────────────────────────────────────────────────────── */}
       {(req.seo_meta_title || req.seo_meta_description || req.seo_meta_keywords) && (<>
-        <SectionHead>🔍 SEO Meta</SectionHead>
+        <SectionHead><FaSearch size={11} /> SEO Meta</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
           <FieldRow label="Page URL"    value={req.seo_page_location}   copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Meta Title"  value={req.seo_meta_title}       copiedKey={copiedKey} onCopy={copy} />
@@ -420,7 +428,7 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
       <BrandFilesPanel requestId={req.id} supabase={supabase} />
 
       {/* ── Attachments ───────────────────────────────────────────────── */}
-      <SectionHead>📁 Team Attachments</SectionHead>
+      <SectionHead><FaFolderOpen size={11} /> Team Attachments</SectionHead>
       {attachments.length === 0 ? (
         <div className="alert alert-info mb-12">No files have been uploaded yet.</div>
       ) : (
@@ -443,8 +451,8 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
                       }}
                     />
                   ) : (
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>
-                      {fileIcon(a.file_name)}
+                    <span style={{ fontSize: 22, flexShrink: 0, display: "flex" }}>
+                      {(() => { const FileIcon = fileIcon(a.file_name); return <FileIcon />; })()}
                     </span>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -473,9 +481,10 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
                       style={{
                         fontSize: 11, color: "var(--color-primary)",
                         textDecoration: "none", flexShrink: 0, ...FIELD,
+                        display: "inline-flex", alignItems: "center", gap: 4,
                       }}
                     >
-                      ↓ Download
+                      <FaDownload size={9} /> Download
                     </a>
                   )}
                 </div>
@@ -488,8 +497,9 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
               className="btn-ghost btn-full mt-8"
               onClick={downloadAll}
               disabled={zipping}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
             >
-              {zipping ? "⏳ Bundling…" : `📦 Download All as ZIP (${attachments.length} files)`}
+              {zipping ? <><FaHourglassHalf size={10} /> Bundling…</> : <><FaFileArchive size={11} /> {`Download All as ZIP (${attachments.length} files)`}</>}
             </button>
           )}
         </div>
@@ -499,19 +509,19 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
       <div style={{ marginTop: 8 }}>
         {pubError && <div className="alert alert-error mb-8">{pubError}</div>}
         {isPublished ? (
-          <div className="alert alert-success">
+          <div className="alert alert-success" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {publishSuccess
-              ? "🎉 Page published successfully! The stakeholder has been notified."
-              : "✅ This request has been published."}
+              ? <><FaCheckCircle /> Page published successfully! The stakeholder has been notified.</>
+              : <><FaCheckCircle /> This request has been published.</>}
           </div>
         ) : (
           <button
             className="btn-success btn-full"
             onClick={handlePublish}
             disabled={publishing}
-            style={{ justifyContent: "center" }}
+            style={{ justifyContent: "center", display: "flex", alignItems: "center", gap: 6 }}
           >
-            {publishing ? "Publishing…" : "✅ Mark as Published"}
+            {publishing ? "Publishing…" : <><FaGlobe size={11} /> Mark as Published</>}
           </button>
         )}
       </div>

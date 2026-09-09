@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { FaBell } from "react-icons/fa";
 
 function timeAgo(dateStr) {
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
@@ -66,7 +67,7 @@ export default function NotificationBell({ user, supabase, go }) {
           transition: "background 0.15s",
         }}
       >
-        🔔
+        <FaBell />
         {badge && (
           <span style={{
             position: "absolute", top: 1, right: 1,

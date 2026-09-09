@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { FaCheckCircle } from "react-icons/fa";
 
 export default function ResetPassword({ onDone }) {
   const [password, setPassword] = useState("");
@@ -39,7 +40,7 @@ export default function ResetPassword({ onDone }) {
 
   if (success) return (
     <div style={{ textAlign: "center", fontFamily: "'Rubik',sans-serif" }}>
-      <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
+      <div style={{ fontSize: 40, marginBottom: 16, display: "flex", justifyContent: "center", color: "#2a7a4b" }}><FaCheckCircle /></div>
       <h2 style={{ fontSize: 20, fontWeight: 500, color: "#F3F3F3", marginBottom: 10 }}>Password updated!</h2>
       <p style={{ fontSize: 13, color: "#646464" }}>Redirecting you to the app...</p>
     </div>

@@ -1,3 +1,9 @@
+import {
+  FaUser, FaPenNib, FaImage, FaGlobe, FaCog, FaPalette, FaSearch, FaBolt,
+  FaClipboardList, FaStar, FaTools, FaPuzzlePiece, FaQuoteRight, FaBullhorn,
+  FaFileAlt, FaBook, FaBoxOpen, FaGraduationCap,
+} from "react-icons/fa";
+
 export const PAGE_TYPES = ["Product", "Solutions", "Glossary", "On-demand Webinar"];
 
 export const STATUS_FLOW = [
@@ -9,18 +15,22 @@ export const STATUS_FLOW = [
   { key: "published",        label: "Published",        color: "#2a7a4b", bg: "#ecfdf5" },
 ];
 
+// `icon` is a react-icons component reference (not a rendered element) --
+// was an emoji string, which read as unofficial/inconsistent across OSes
+// and clashed with the teal/monochrome palette. Consumers render it as
+// <meta.icon /> (member-expression JSX tags work fine as components).
 export const ROLE_META = {
-  stakeholder:  { label: "Stakeholder",  color: "#181313", icon: "👤" },
-  editorial_qa: { label: "Editorial QA", color: "#646464", icon: "✍️"  },
-  design_qa:    { label: "Design QA",    color: "#3C3C3C", icon: "🖼️" },
-  web_team:     { label: "Web Team",     color: "#06b6d4", icon: "🌐" },
-  admin:        { label: "Admin",        color: "#181313", icon: "⚙️"  },
-  brand_team:   { label: "Brand Team",   color: '#d97706', bg: '#fffbeb', icon: "🎨" },
-  seo_team:     { label: "SEO Team",     color: '#1b5793', bg: '#eff6ff', icon: "🔍" },
+  stakeholder:  { label: "Stakeholder",  color: "#181313", icon: FaUser },
+  editorial_qa: { label: "Editorial QA", color: "#646464", icon: FaPenNib },
+  design_qa:    { label: "Design QA",    color: "#3C3C3C", icon: FaImage },
+  web_team:     { label: "Web Team",     color: "#06b6d4", icon: FaGlobe },
+  admin:        { label: "Admin",        color: "#181313", icon: FaCog },
+  brand_team:   { label: "Brand Team",   color: '#d97706', bg: '#fffbeb', icon: FaPalette },
+  seo_team:     { label: "SEO Team",     color: '#1b5793', bg: '#eff6ff', icon: FaSearch },
   // v2 parallel-workflow roles
-  editorial_team: { label: 'Editorial Team', icon: '✍️',  color: '#2a7a4b', bg: '#ecfdf5' },
-  design_team:    { label: 'Design Team',    icon: '🖼️', color: '#ea580c', bg: '#fff7ed' },
-  super_admin:    { label: 'Super Admin',    icon: '⚡',  color: '#7e22ce', bg: '#faf5ff' },
+  editorial_team: { label: 'Editorial Team', icon: FaPenNib, color: '#2a7a4b', bg: '#ecfdf5' },
+  design_team:    { label: 'Design Team',    icon: FaImage,  color: '#ea580c', bg: '#fff7ed' },
+  super_admin:    { label: 'Super Admin',    icon: FaBolt,   color: '#7e22ce', bg: '#faf5ff' },
 };
 
 // Drives Navbar.js's "View as" impersonation dropdown (super_admin
@@ -47,8 +57,11 @@ export const canAct = (role, status) => ({
   web_team:     "web_team",
 }[role] === status);
 
+// Unused (no call sites) -- legacy v1 linear-flow helper, superseded by the
+// v2 parallel-task workflow. Left in place rather than deleted, matching
+// this codebase's "dormant, not deleted" convention.
 export const nextActionLabel = (role, status) => {
-  if (role === "stakeholder" && status === "pending_approval") return "✅ Approve & Send to Web Team";
+  if (role === "stakeholder" && status === "pending_approval") return "Approve & Send to Web Team";
   return ({
     stakeholder:  "Submit for Editorial QA",
     editorial_qa: "Approve → Send to Design QA",
@@ -72,10 +85,11 @@ export const returnDestination = (role) => ({
   design_qa:    "draft",
 }[role] || "draft");
 
+// Also unused -- see nextActionLabel above.
 export const returnActionLabel = (role) => ({
-  editorial_qa: "↩ Return for Revision",
-  design_qa:    "💬 Query Stakeholder",
-}[role] || "↩ Return");
+  editorial_qa: "Return for Revision",
+  design_qa:    "Query Stakeholder",
+}[role] || "Return");
 
 // Which roles can act at each status
 export const ROLE_FOR_STATUS = {
@@ -100,11 +114,12 @@ export const CHAR_LIMITS = {
   ts_label:40, ts_impact:80,
 };
 
-// Section definitions per page type
+// Section definitions per page type. `icon` is a react-icons component
+// reference (see ROLE_META above for the same pattern) -- was emoji.
 export const SECTIONS = {
   seo_meta: {
     label: "SEO Meta Data",
-    icon: "🔍",
+    icon: FaSearch,
     description: "Page location, meta title, meta description and keywords for search engines",
     pageTypes: {
       "Product":           { required: false },
@@ -115,7 +130,7 @@ export const SECTIONS = {
   },
   banner: {
     label: "Banner",
-    icon: "🖼️",
+    icon: FaImage,
     description: "Page hero banner with title, subtitle and CTAs",
     pageTypes: {
       "Product":           { required: true },
@@ -126,7 +141,7 @@ export const SECTIONS = {
   },
   overview: {
     label: "Overview",
-    icon: "📋",
+    icon: FaClipboardList,
     description: "Impact statement, description and supporting media",
     pageTypes: {
       "Product":           { required: true },
@@ -137,7 +152,7 @@ export const SECTIONS = {
   },
   key_benefits: {
     label: "Key Benefits",
-    icon: "⭐",
+    icon: FaStar,
     description: "Label, impact statement and benefit cards with icons",
     pageTypes: {
       "Product":           { required: false },
@@ -148,7 +163,7 @@ export const SECTIONS = {
   },
   features_apps: {
     label: "Features",
-    icon: "🔧",
+    icon: FaTools,
     description: "List or table view of product features",
     pageTypes: {
       "Product":           { required: false },
@@ -159,7 +174,7 @@ export const SECTIONS = {
   },
   applications: {
     label: "Applications",
-    icon: "🧩",
+    icon: FaPuzzlePiece,
     description: "Horizontal or vertical tabs covering how the product applies to different use cases",
     pageTypes: {
       "Product":           { required: false },
@@ -170,7 +185,7 @@ export const SECTIONS = {
   },
   customer_stories: {
     label: "Customer Stories",
-    icon: "💬",
+    icon: FaQuoteRight,
     description: "Testimonial carousel with customer quotes",
     pageTypes: {
       "Product":           { required: false },
@@ -181,7 +196,7 @@ export const SECTIONS = {
   },
   promo_section: {
     label: "Promo Section",
-    icon: "📣",
+    icon: FaBullhorn,
     description: "Full-width banner with background image and CTA",
     pageTypes: {
       "Product":           { required: false },
@@ -192,7 +207,7 @@ export const SECTIONS = {
   },
   related_content: {
     label: "Related Content",
-    icon: "📄",
+    icon: FaFileAlt,
     description: "Up to 3 content cards with image, label and description",
     pageTypes: {
       "Product":           { required: false },
@@ -203,7 +218,7 @@ export const SECTIONS = {
   },
   resources: {
     label: "Resources",
-    icon: "📚",
+    icon: FaBook,
     description: "Video carousel, mixed media, resource cards, news and blogs",
     pageTypes: {
       "Product":           { required: false },
@@ -214,7 +229,7 @@ export const SECTIONS = {
   },
   related_products: {
     label: "Related Products",
-    icon: "📦",
+    icon: FaBoxOpen,
     description: "Grid of related product cards with title, description and CTA",
     pageTypes: {
       "Product":           { required: false },
@@ -225,7 +240,7 @@ export const SECTIONS = {
   },
   training_support: {
     label: "Training & Support",
-    icon: "🎓",
+    icon: FaGraduationCap,
     description: "Pre-filled training, online support and technical forums cards",
     pageTypes: {
       "Product":           { required: false },
@@ -239,15 +254,19 @@ export const SECTIONS = {
 // ─── v2 Parallel Workflow Constants ──────────────────────────────────────────
 // Everything below is additive. Nothing above this line was changed.
 
+// Unused/orphaned duplicate -- every real consumer (Dashboard.js,
+// TaskPanel.js, TaskBoardOverview.js) imports TASK_STATUS_META from
+// taskUtils.js instead. Left in place (dormant, not deleted) but emoji
+// stripped for consistency with the rest of the sweep.
 export const TASK_STATUS_META = {
-  locked:            { label: 'Locked',           color: '#B5B5B5', bg: '#F9F9F9', icon: '🔒' },
-  pending:           { label: 'Pending',           color: '#646464', bg: '#F3F3F3', icon: '⏳' },
-  in_progress:       { label: 'In Progress',       color: '#1b5793', bg: '#eff6ff', icon: '⚡' },
-  waiting_for_brand: { label: 'Waiting for Brand', color: '#d97706', bg: '#fffbeb', icon: '🎨' },
-  needs_info:        { label: 'Needs Info',        color: '#d97706', bg: '#fffbeb', icon: '❓' },
-  pending_approval:  { label: 'Needs Approval',    color: '#9333ea', bg: '#faf5ff', icon: '👁️' },
-  pending_action:    { label: 'Pending Action',    color: '#dc2626', bg: '#fef2f2', icon: '🔴' },
-  completed:         { label: 'Completed',         color: '#2a7a4b', bg: '#ecfdf5', icon: '✅' },
+  locked:            { label: 'Locked',           color: '#B5B5B5', bg: '#F9F9F9' },
+  pending:           { label: 'Pending',           color: '#646464', bg: '#F3F3F3' },
+  in_progress:       { label: 'In Progress',       color: '#1b5793', bg: '#eff6ff' },
+  waiting_for_brand: { label: 'Waiting for Brand', color: '#d97706', bg: '#fffbeb' },
+  needs_info:        { label: 'Needs Info',        color: '#d97706', bg: '#fffbeb' },
+  pending_approval:  { label: 'Needs Approval',    color: '#9333ea', bg: '#faf5ff' },
+  pending_action:    { label: 'Pending Action',    color: '#dc2626', bg: '#fef2f2' },
+  completed:         { label: 'Completed',         color: '#2a7a4b', bg: '#ecfdf5' },
 };
 
 export const OVERALL_STATUS_META = {

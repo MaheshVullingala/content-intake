@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
+import { FaCommentDots, FaTimes } from "react-icons/fa";
 import { ROLE_META } from "@/lib/constants";
 
 // Replaces the dropdown-driven CommentThread sidebar panel: a small
-// chat-bubble icon sits on each section (next to the ✎ Edit button
+// chat-bubble icon sits on each section (next to the Edit button
 // pattern already used there), badge-counted, and clicking it pops open
 // a compact thread scoped to just that section — no picking a section
 // from a list first. Purely presentational: PagePreview.js owns the
@@ -40,8 +41,14 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
         title={`Discuss ${label}`}
         style={{
           position: "relative",
+          // Closed state used white text/icon on #3ec5cb -- ~2.1:1 contrast,
+          // fails WCAG AA (needs 4.5:1 for text, 3:1 for UI components).
+          // Dark navy (existing Midnight Steel navbar color) on that same
+          // background comes out to ~8.5:1. Open state's #0f766e is dark
+          // enough that white text already passes (~5.5:1), so only the
+          // closed state needed to change.
           background: open ? "#0f766e" : "#3ec5cb",
-          color: "#fff",
+          color: open ? "#fff" : "#0f172a",
           border: "1.5px solid #0f766e",
           borderRadius: inline ? 20 : "50%",
           width: inline ? "auto" : 30, height: 30,
@@ -50,12 +57,16 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
           fontSize: inline ? 12 : 14, fontWeight: inline ? 600 : 400, cursor: "pointer",
           fontFamily: inline ? "'Rubik',sans-serif" : undefined,
           boxShadow: "0 2px 6px rgba(0,0,0,0.18)",
-          opacity: inline || hovered || open || comments.length > 0 ? 1 : 0,
+          // Same touch-discoverability fix as EditBtn in PagePreview.js:
+          // was opacity:0 with no comments and no hover -- invisible and
+          // untappable on touch devices for a section nobody has
+          // discussed yet. Dimmed-but-present instead of hidden.
+          opacity: inline || hovered || open || comments.length > 0 ? 1 : 0.55,
           transition: "opacity 0.15s, background 0.15s",
         }}
       >
         {inline && <span>{label}</span>}
-        💬
+        <FaCommentDots size={inline ? 12 : 14} />
         {comments.length > 0 && (
           <span style={{
             position: "absolute", top: -5, right: -5,
@@ -79,8 +90,8 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
           padding: 10, fontFamily: "'Rubik',sans-serif",
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#181313" }}>💬 {label}</span>
-            <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#B5B5B5" }}>✕</button>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}><FaCommentDots size={12} /> {label}</span>
+            <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#B5B5B5", display: "flex", alignItems: "center" }}><FaTimes size={12} /></button>
           </div>
 
           <div style={{ maxHeight: 180, overflowY: "auto", marginBottom: 8 }}>
@@ -97,7 +108,7 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
                     border: "1px solid #F0F0F0",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600 }}>{meta.icon || ""} {c.user_name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{meta.icon && <meta.icon size={10} />} {c.user_name}</span>
                       <span style={{ fontSize: 10, color: "#B5B5B5", marginLeft: "auto" }}>{formatTime(c.created_at)}</span>
                     </div>
                     <div style={{ fontSize: 12, whiteSpace: "pre-wrap", color: "#3C3C3C" }}>{c.text}</div>

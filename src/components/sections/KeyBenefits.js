@@ -1,5 +1,6 @@
 "use client";
 import ImageField from "@/components/ImageField";
+import { FaExclamationTriangle, FaArrowUp, FaArrowDown, FaTimes } from "react-icons/fa";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle, charLimit }) => {
   const len  = (value || "").length;
@@ -14,7 +15,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), borderColor: over ? "#c0392b" : undefined }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, borderColor: over ? "#c0392b" : undefined }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -126,13 +127,13 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
               <div style={{ display: "flex", gap: 6 }}>
                 <button onClick={() => moveCard(idx, -1)} disabled={idx === 0}
                   title="Move up"
-                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", fontFamily: "'Rubik',sans-serif" }}>↑</button>
+                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", fontFamily: "'Rubik',sans-serif", display: "flex" }}><FaArrowUp size={10} /></button>
                 <button onClick={() => moveCard(idx, 1)} disabled={idx === cards.length - 1}
                   title="Move down"
-                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: idx === cards.length - 1 ? "not-allowed" : "pointer", color: idx === cards.length - 1 ? "#B5B5B5" : "#646464", fontFamily: "'Rubik',sans-serif" }}>↓</button>
+                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: idx === cards.length - 1 ? "not-allowed" : "pointer", color: idx === cards.length - 1 ? "#B5B5B5" : "#646464", fontFamily: "'Rubik',sans-serif", display: "flex" }}><FaArrowDown size={10} /></button>
                 <button onClick={() => removeCard(card.id)}
                   title="Remove card"
-                  style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>✕</button>
+                  style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex" }}><FaTimes size={10} /></button>
               </div>
             </div>
 

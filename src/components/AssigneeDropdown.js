@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FaCheck, FaUserPlus } from "react-icons/fa";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 
@@ -129,7 +130,7 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
             color: assignedName ? "#0f766e" : "var(--color-silver)",
             border: `1px solid ${assignedName ? "rgba(62,197,203,0.35)" : "var(--color-border)"}`,
           }}>
-            {assignedName ? `✓ Assigned to: ${assignedName}` : "— Unassigned —"}
+            {assignedName ? <><FaCheck size={10} /> Assigned to: {assignedName}</> : "— Unassigned —"}
           </span>
 
           {members.length > 0 && (
@@ -148,11 +149,11 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
             <button
               type="button"
               className="btn-ghost"
-              style={{ fontSize: 12, padding: "5px 10px", whiteSpace: "nowrap" }}
+              style={{ fontSize: 12, padding: "5px 10px", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5 }}
               onClick={handleAssignSelf}
               disabled={saving || reassignTarget !== null}
             >
-              👤 Assign to me
+              <FaUserPlus size={10} /> Assign to me
             </button>
           )}
         </div>
@@ -177,11 +178,11 @@ export default function AssigneeDropdown({ task, req, user, supabase, onRefresh 
             <button
               type="button"
               className="btn-ghost"
-              style={{ fontSize: 12, padding: "6px 10px", whiteSpace: "nowrap" }}
+              style={{ fontSize: 12, padding: "6px 10px", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5 }}
               onClick={handleAssignSelf}
               disabled={saving || reassignTarget !== null}
             >
-              👤 Assign to me
+              <FaUserPlus size={10} /> Assign to me
             </button>
           )}
           {task.assigned_to && (

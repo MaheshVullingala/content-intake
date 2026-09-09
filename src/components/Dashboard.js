@@ -1,5 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  FaFileAlt, FaClipboardList, FaExclamationTriangle, FaBolt, FaUsers,
+  FaTrashAlt, FaUndo, FaSearch, FaTimes, FaComments, FaClock, FaUserCheck,
+  FaEye, FaCheckCircle, FaSync, FaPen, FaHourglassHalf, FaArrowRight,
+} from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import { getStatus, ROLE_META, canAct, STATUS_FLOW } from "@/lib/constants";
@@ -29,23 +34,23 @@ export default function Dashboard({ go, user }) {
   // ── Tab config ──────────────────────────────────────────────────────────────
   const getTabConfig = () => {
     if (user.role === "stakeholder") return {
-      tab1: { label: "📝 My Drafts",        key: "tab1" },
-      tab2: { label: "📋 My Requests",       key: "tab2" },
+      tab1: { label: "My Drafts",        icon: FaFileAlt,        key: "tab1" },
+      tab2: { label: "My Requests",      icon: FaClipboardList,  key: "tab2" },
     };
     if (["admin", "super_admin"].includes(user.role)) return {
-      tab1: { label: "⚠️ Pending Review",    key: "tab1" },
-      tab2: { label: "📋 All Requests",      key: "tab2" },
+      tab1: { label: "Pending Review",   icon: FaExclamationTriangle, key: "tab1" },
+      tab2: { label: "All Requests",     icon: FaClipboardList,       key: "tab2" },
     };
     if (isLead) return {
-      tab1: { label: "⚡ Needs Review",      key: "tab1" },
-      tab2: { label: "👥 Assigned to Team",  key: "tab2" },
-      tab3: { label: "📋 All Requests",      key: "tab3" },
+      tab1: { label: "Needs Review",     icon: FaBolt,           key: "tab1" },
+      tab2: { label: "Assigned to Team", icon: FaUsers,          key: "tab2" },
+      tab3: { label: "All Requests",     icon: FaClipboardList,  key: "tab3" },
     };
     // Regular operational member (brand_team/seo_team/editorial_team/design_team
     // now fall through to isLead above or the member path below — no special branch)
     return {
-      tab1: { label: "⚡ Assigned to Me",   key: "tab1" },
-      tab2: { label: "📋 All Requests",      key: "tab2" },
+      tab1: { label: "Assigned to Me",   icon: FaBolt,           key: "tab1" },
+      tab2: { label: "All Requests",     icon: FaClipboardList,  key: "tab2" },
     };
   };
   const tabConfig = getTabConfig();
@@ -288,18 +293,18 @@ export default function Dashboard({ go, user }) {
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }}>
           <div onClick={e => e.stopPropagation()}
             style={{ background: "#fff", borderRadius: 16, padding: "2rem", maxWidth: 420, width: "90%", boxShadow: "0 8px 40px rgba(0,0,0,0.15)" }}>
-            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#fff5f5", border: "1px solid #c0392b33", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 16 }}>🗑️</div>
+            <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#fff5f5", border: "1px solid #c0392b33", display: "flex", alignItems: "center", justifyContent: "center", color: "#c0392b", marginBottom: 16 }}><FaTrashAlt size={17} /></div>
             <h2 style={{ fontSize: 17, fontWeight: 500, marginBottom: 8 }}>Delete Draft?</h2>
             <p style={{ fontSize: 13, color: "#646464", marginBottom: 6, lineHeight: 1.6 }}>You are about to permanently delete:</p>
             <div style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.7rem 1rem", marginBottom: 20 }}>
               <div style={{ fontSize: 14, fontWeight: 500 }}>{deleteModal.page_title || "Untitled"}</div>
               <div style={{ fontSize: 12, color: "#B5B5B5", marginTop: 3 }}>{deleteModal.page_type} · Draft</div>
             </div>
-            <p style={{ fontSize: 12, color: "#c0392b", marginBottom: 20 }}>⚠️ This action cannot be undone.</p>
+            <p style={{ fontSize: 12, color: "#c0392b", marginBottom: 20, display: "flex", alignItems: "center", gap: 6 }}><FaExclamationTriangle size={11} /> This action cannot be undone.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button onClick={handleDelete} disabled={deleting}
-                style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 8, padding: "0.7rem", fontSize: 14, fontWeight: 500, cursor: deleting ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: deleting ? 0.6 : 1 }}>
-                {deleting ? "Deleting..." : "🗑️ Yes, Delete Draft"}
+                style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 8, padding: "0.7rem", fontSize: 14, fontWeight: 500, cursor: deleting ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", opacity: deleting ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                {deleting ? "Deleting..." : <><FaTrashAlt size={12} /> Yes, Delete Draft</>}
               </button>
               <button onClick={() => setDeleteModal(null)} disabled={deleting}
                 style={{ background: "#F3F3F3", color: "#646464", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.7rem", fontSize: 14, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
@@ -313,7 +318,7 @@ export default function Dashboard({ go, user }) {
       {/* Header */}
       <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#3C3C3C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{m.icon}</div>
+          <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#3C3C3C", display: "flex", alignItems: "center", justifyContent: "center" }}>{m?.icon && <m.icon size={18} color="#fff" />}</div>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>Welcome back, {user.name}</h1>
             <p style={{ color: "#B5B5B5", fontSize: 13, margin: 0 }}>{m.label}{isLead ? " · Team Lead" : ""} · {user.department}</p>
@@ -324,8 +329,8 @@ export default function Dashboard({ go, user }) {
             <button onClick={() => go("new")} className="btn-primary" style={{ padding: "0.5rem 1.2rem", fontSize: 13 }}>+ New Request</button>
           )}
           <button onClick={fetchRequests}
-            style={{ background: "transparent", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", color: "#646464", fontFamily: "'Rubik',sans-serif" }}>
-            ↻ Refresh
+            style={{ background: "transparent", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.4rem 0.9rem", fontSize: 12, cursor: "pointer", color: "#646464", fontFamily: "'Rubik',sans-serif", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <FaSync size={10} /> Refresh
           </button>
         </div>
       </div>
@@ -343,6 +348,7 @@ export default function Dashboard({ go, user }) {
                 const count    = applyFilters(getTabRows(t)).length;
                 const isActive = tab === t;
                 const isMyRequestsForStakeholder = t === "tab2" && user.role === "stakeholder";
+                const TabIcon = tabConfig[t].icon;
 
                 const tabButton = (
                   <button key={t} onClick={() => { setTab(t); setSearch(""); setFilterStatus("all"); setFilterType("all"); }}
@@ -357,7 +363,7 @@ export default function Dashboard({ go, user }) {
                       borderRadius: isActive ? "8px 8px 0 0" : 0,
                       transition: "all 0.15s", whiteSpace: "nowrap",
                     }}>
-                    {tabConfig[t].label}
+                    <TabIcon size={12} /> {tabConfig[t].label}
                     <span style={{ background: isActive ? "#1b5793" : "#E0E0E0", color: isActive ? "#fff" : "#646464", borderRadius: 20, padding: "2px 9px", fontSize: 11, fontWeight: 600, minWidth: 22, textAlign: "center" }}>{count}</span>
                   </button>
                 );
@@ -396,13 +402,13 @@ export default function Dashboard({ go, user }) {
                           }}>
                           <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #F3F3F3",
                                         display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: "#181313" }}>
-                              ⚠️ Needs Attention
+                            <span style={{ fontSize: 13, fontWeight: 600, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}>
+                              <FaExclamationTriangle size={12} color="#d97706" /> Needs Attention
                             </span>
                             <button onClick={() => setShowAttention(false)}
                               style={{ background: "none", border: "none", cursor: "pointer",
-                                       fontSize: 16, color: "#B5B5B5", lineHeight: 1, padding: 0 }}>
-                              ✕
+                                       fontSize: 16, color: "#B5B5B5", lineHeight: 1, padding: 0, display: "flex" }}>
+                              <FaTimes size={13} />
                             </button>
                           </div>
                           <div style={{ maxHeight: 320, overflowY: "auto" }}>
@@ -461,7 +467,7 @@ export default function Dashboard({ go, user }) {
             {/* Search + filters */}
             <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 200, paddingTop: 8, paddingBottom: 8 }}>
               <div style={{ position: "relative", flex: 1 }}>
-                <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#B5B5B5", fontSize: 13 }}>🔍</span>
+                <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#B5B5B5", display: "flex" }}><FaSearch size={12} /></span>
                 <input value={search} onChange={e => setSearch(e.target.value)}
                   placeholder={user.role === "stakeholder" ? "Search by title or URL..." : "Search by title, URL or stakeholder..."}
                   style={{ width: "100%", paddingLeft: 36, paddingRight: 10, paddingTop: 10, paddingBottom: 10, border: "1px solid #cddaed", borderRadius: 7, fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313", outline: "none", background: "rgba(255,255,255,0.8)" }} />
@@ -486,8 +492,8 @@ export default function Dashboard({ go, user }) {
               </select>
               {hasActiveFilters && (
                 <button onClick={() => { setSearch(""); setFilterStatus("all"); setFilterType("all"); }}
-                  style={{ fontSize: 12, padding: "0.4rem 0.8rem", border: "1px solid #E0E0E0", borderRadius: 7, background: "#fff", color: "#646464", cursor: "pointer", fontFamily: "'Rubik',sans-serif", height: 40, whiteSpace: "nowrap" }}>
-                  ✕ Clear
+                  style={{ fontSize: 12, padding: "0.4rem 0.8rem", border: "1px solid #E0E0E0", borderRadius: 7, background: "#fff", color: "#646464", cursor: "pointer", fontFamily: "'Rubik',sans-serif", height: 40, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <FaTimes size={10} /> Clear
                 </button>
               )}
               <span style={{ color: "#B5B5B5", fontSize: 12, whiteSpace: "nowrap" }}>{displayRows.length} shown</span>
@@ -500,7 +506,7 @@ export default function Dashboard({ go, user }) {
           <PCBLoader label="LOADING REQUESTS..." />
         ) : displayRows.length === 0 ? (
           <div style={{ padding: "3.5rem", textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>{hasActiveFilters ? "🔍" : "📋"}</div>
+            <div style={{ fontSize: 36, marginBottom: 12, display: "flex", justifyContent: "center", color: "#D0D0D0" }}>{hasActiveFilters ? <FaSearch /> : <FaClipboardList />}</div>
             <p style={{ color: "#B5B5B5", fontSize: 14 }}>
               {hasActiveFilters ? "No requests match your search or filters." :
                tab === "tab1" && user.role === "stakeholder" ? "No drafts yet." :
@@ -555,8 +561,8 @@ export default function Dashboard({ go, user }) {
                       {req.hasPendingChange && (
                         <span
                           title="Stakeholder proposed a content change — open the request to review and approve/reject it"
-                          style={{ marginLeft: 8, fontSize: 10, background: "#faf5ff", color: "#9333ea", border: "1px solid #9333ea33", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: "help" }}>
-                          📝 CONTENT UPDATED
+                          style={{ marginLeft: 8, fontSize: 10, background: "#faf5ff", color: "#9333ea", border: "1px solid #9333ea33", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: "help", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <FaFileAlt size={9} /> CONTENT UPDATED
                         </span>
                       )}
                       {isDraft && !isReturnedDraft && <span style={{ marginLeft: 8, fontSize: 10, background: "#F3F3F3", color: "#B5B5B5", border: "1px solid #E0E0E0", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>DRAFT</span>}
@@ -630,8 +636,8 @@ export default function Dashboard({ go, user }) {
                           {teamMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </select>
                       ) : assigneeName ? (
-                        <span style={{ fontSize: 12, color: isAssignedToMe ? "#1b5793" : "#646464", fontWeight: isAssignedToMe ? 600 : 400 }}>
-                          {isAssignedToMe ? "👤 Me" : assigneeName}
+                        <span style={{ fontSize: 12, color: isAssignedToMe ? "#1b5793" : "#646464", fontWeight: isAssignedToMe ? 600 : 400, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          {isAssignedToMe ? <><FaUserCheck size={10} /> Me</> : assigneeName}
                         </span>
                       ) : (
                         <span style={{ fontSize: 12, color: "#B5B5B5" }}>—</span>
@@ -647,8 +653,8 @@ export default function Dashboard({ go, user }) {
                         const isDueSoon = !isOverdue && (due - today) / 86400000 <= 2;
                         if (!isOverdue && !isDueSoon) return null;
                         return (
-                          <div style={{ marginTop: 3, fontSize: 11, color: isOverdue ? "#c0392b" : "#d97706", display: "flex", alignItems: "center", gap: 3 }}>
-                            🕐 {isOverdue ? "Overdue" : "Due soon"} · {due.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                          <div style={{ marginTop: 3, fontSize: 11, color: isOverdue ? "#c0392b" : "#d97706", display: "flex", alignItems: "center", gap: 4 }}>
+                            <FaClock size={10} /> {isOverdue ? "Overdue" : "Due soon"} · {due.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
                           </div>
                         );
                       })()}
@@ -658,14 +664,14 @@ export default function Dashboard({ go, user }) {
                         {isReturnedDraft && isOwner && (
                           <button onClick={() => go("detail", req.id)}
                             style={{ background: isDesignQuery ? "#eff6ff" : "#fff3cd", color: isDesignQuery ? "#1b5793" : "#856404", border: `1px solid ${isDesignQuery ? "#3b82f666" : "#ffc10766"}`, borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
-                            {isDesignQuery ? "💬 Design Query" : "↩ Comments"}
+                            {isDesignQuery ? <><FaComments size={11} /> Design Query</> : <><FaUndo size={11} /> Comments</>}
                             <span style={{ background: "#c0392b", color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>{returnInfo.count}</span>
                           </button>
                         )}
                         {isDraft && !isReturnedDraft && isOwner && (
                           <button onClick={() => go("edit", req.id)}
-                            style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
-                            ✎ Edit
+                            style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
+                            <FaPen size={10} /> Edit
                           </button>
                         )}
                         {!isDraft && isNewWorkflow && (
@@ -676,10 +682,11 @@ export default function Dashboard({ go, user }) {
                               border: req.overall_status === "pending_stakeholder" ? "1px solid #9333ea44" : "none",
                               borderRadius: 6, padding: "0.4rem 0.9rem",
                               cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500,
+                              display: "flex", alignItems: "center", gap: 6,
                             }}>
-                            {req.overall_status === "pending_stakeholder" ? "👁️ Review & Approve" :
-                             req.overall_status === "pending_admin" ? "⏳ Pending Admin" :
-                             "View Tasks →"}
+                            {req.overall_status === "pending_stakeholder" ? <><FaEye size={11} /> Review & Approve</> :
+                             req.overall_status === "pending_admin" ? <><FaHourglassHalf size={11} /> Pending Admin</> :
+                             <>View Tasks <FaArrowRight size={10} /></>}
                           </button>
                         )}
                         {!isDraft && !isNewWorkflow && (
@@ -691,21 +698,21 @@ export default function Dashboard({ go, user }) {
                               cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500,
                               display: "flex", alignItems: "center", gap: 6,
                             }}>
-                            {act && isAssignedToMe && req.status === "pending_approval" ? "✅ Sign off" :
-                             act && isAssignedToMe ? "Review →" : "View"}
+                            {act && isAssignedToMe && req.status === "pending_approval" ? <><FaCheckCircle size={11} /> Sign off</> :
+                             act && isAssignedToMe ? <>Review <FaArrowRight size={10} /></> : "View"}
                             {isLead && !isAssignedToMe && req.status === myStage && (comments_count => comments_count > 0 ? (
-                              <span style={{ background: "#e8f2fb", color: "#1b5793", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 600 }}>
-                                💬
+                              <span style={{ background: "#e8f2fb", color: "#1b5793", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 600, display: "flex" }}>
+                                <FaComments size={9} />
                               </span>
                             ) : null)(req.comment_count || 0)}
                           </button>
                         )}
                         {canDelete && (
                           <button onClick={() => setDeleteModal(req)}
-                            style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif" }}
+                            style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.7rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", display: "flex" }}
                             onMouseEnter={e => e.currentTarget.style.background = "#fee2e2"}
                             onMouseLeave={e => e.currentTarget.style.background = "#fff5f5"}>
-                            🗑️
+                            <FaTrashAlt size={11} />
                           </button>
                         )}
                       </div>

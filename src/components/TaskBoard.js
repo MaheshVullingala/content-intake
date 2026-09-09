@@ -11,6 +11,7 @@ import PendingChangeCard   from "@/components/PendingChangeCard";
 import JiraTicketCard      from "@/components/JiraTicketCard";
 import WordExportButton    from "@/components/WordExportButton";
 import { OVERALL_STATUS_META, getTasksForRequest, updateTask } from "@/lib/taskUtils";
+import { FaArrowLeft, FaHourglassHalf, FaInfoCircle, FaPen } from "react-icons/fa";
 
 const TEAM_ROLES = new Set([
   "editorial_team", "brand_team", "seo_team", "design_team", "web_team",
@@ -117,9 +118,9 @@ export default function TaskBoard({
         <button
           className="btn-ghost"
           onClick={() => go("dashboard")}
-          style={{ flexShrink: 0, marginTop: 2 }}
+          style={{ flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", gap: 6 }}
         >
-          ← Back
+          <FaArrowLeft size={11} /> Back
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 500, color: "var(--color-night)",
@@ -215,8 +216,8 @@ export default function TaskBoard({
       return (
         <div>
           <Header />
-          <div className="alert alert-info mt-12">
-            ⏳ An administrator needs to set up tasks before work can begin.
+          <div className="alert alert-info mt-12" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <FaHourglassHalf size={12} /> An administrator needs to set up tasks before work can begin.
           </div>
         </div>
       );
@@ -225,8 +226,8 @@ export default function TaskBoard({
       return (
         <div>
           <Header />
-          <div className="alert alert-info mt-12">
-            ℹ️ Your team was not assigned a task for this request.
+          <div className="alert alert-info mt-12" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <FaInfoCircle size={12} /> Your team was not assigned a task for this request.
           </div>
         </div>
       );
@@ -325,8 +326,8 @@ export default function TaskBoard({
       <div>
         <Header />
         {isPendingAdmin ? (
-          <div className="alert alert-info mt-12">
-            ⏳ An administrator is reviewing your request and will set up tasks shortly.
+          <div className="alert alert-info mt-12" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <FaHourglassHalf size={12} /> An administrator is reviewing your request and will set up tasks shortly.
           </div>
         ) : (hasPendingApproval || hasNeedsInfo) ? (
           <div style={TWO_COL}>
@@ -377,8 +378,8 @@ export default function TaskBoard({
                           paddingLeft: "1.5rem" }}>
               {req.overall_status && req.overall_status !== "published" && (
                 <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
-                  <button className="btn-ghost" onClick={() => setComposingChange(true)}>
-                    ✎ Suggest a Change
+                  <button className="btn-ghost" onClick={() => setComposingChange(true)} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <FaPen size={11} /> Suggest a Change
                   </button>
                 </div>
               )}

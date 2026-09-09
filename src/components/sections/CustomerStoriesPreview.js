@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
+import { FaPalette } from "react-icons/fa";
 
 export default function CustomerStoriesPreview({ data = {}, attachments = [] }) {
   const { cs_label = "", cs_impact = "", cs_items = [] } = data;
@@ -43,8 +44,8 @@ export default function CustomerStoriesPreview({ data = {}, attachments = [] }) 
                 style={{ height: 32, maxWidth: 160, objectFit: "contain", margin: "0 auto 16px" }}
                 onError={e => { e.target.style.display = "none"; }} />
             ) : logoPlaceholder ? (
-              <div style={{ display: "inline-block", background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5", marginBottom: 16 }}>
-                🎨 {logoPlaceholder}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5", marginBottom: 16 }}>
+                <FaPalette size={10} /> {logoPlaceholder}
               </div>
             ) : null}
             <p style={{ fontSize: 17, color: "#3C3C3C", lineHeight: 1.8, fontStyle: "italic", marginBottom: 20, wordBreak: "break-word" }}>

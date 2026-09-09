@@ -1,5 +1,6 @@
 "use client";
 import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
+import { FaImage, FaArrowRight } from "react-icons/fa";
 
 export default function RelatedContentPreview({ data = {}, attachments = [] }) {
   const { rc_label = "", rc_impact = "", rc_cards = [] } = data;
@@ -33,7 +34,7 @@ export default function RelatedContentPreview({ data = {}, attachments = [] }) {
                       onError={e => { e.target.style.display = "none"; }} />
                   ) : (
                     <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}>
-                      <span style={{ fontSize: 24 }}>🖼️</span>
+                      <span style={{ fontSize: 24, display: "flex", color: "#B5B5B5" }}><FaImage /></span>
                       {imagePlaceholder && <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 8px" }}>{imagePlaceholder}</span>}
                     </div>
                   )}
@@ -54,7 +55,7 @@ export default function RelatedContentPreview({ data = {}, attachments = [] }) {
                   )}
                   {card.link && (
                     <div style={{ fontSize: 12, fontWeight: 600, color: "#181313", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 6 }}>
-                      LEARN MORE →
+                      LEARN MORE <FaArrowRight size={11} />
                     </div>
                   )}
                 </div>

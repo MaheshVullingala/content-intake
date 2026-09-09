@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { FaCog, FaArrowRight, FaPalette, FaTimes, FaBolt } from "react-icons/fa";
 import { TASK_TEAMS } from "@/lib/taskUtils";
 import { PRIORITY_META, AUDIT_ACTIONS } from "@/lib/constants";
 import { createTasksForRequest } from "@/lib/taskUtils";
@@ -130,7 +131,7 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
       {/* Header */}
       <div className="card-header">
         <div>
-          <h3>⚙️ Admin Task Setup</h3>
+          <h3 style={{ display: "flex", alignItems: "center", gap: 8 }}><FaCog size={14} /> Admin Task Setup</h3>
           <p>Select teams, set a deadline, then create parallel tasks.</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -139,9 +140,9 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
             type="button"
             className="btn-ghost"
             onClick={() => setShowPreview(true)}
-            style={{ fontSize: 13, whiteSpace: "nowrap" }}
+            style={{ fontSize: 13, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}
           >
-            Preview Page →
+            Preview Page <FaArrowRight size={10} />
           </button>
         </div>
       </div>
@@ -158,9 +159,9 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
 
       {/* Stakeholder brand signal */}
       {req.needs_brand && (
-        <div className="alert alert-warning mb-12">
-          🎨 Stakeholder indicated this request <strong>needs Brand Team</strong> involvement.
-          Brand Team has been pre-selected below.
+        <div className="alert alert-warning mb-12" style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+          <FaPalette size={12} style={{ marginTop: 2, flexShrink: 0 }} /> <span>Stakeholder indicated this request <strong>needs Brand Team</strong> involvement.
+          Brand Team has been pre-selected below.</span>
         </div>
       )}
 
@@ -294,10 +295,11 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
         className="btn-primary btn-full"
         onClick={handleCreate}
         disabled={saving || teamCount === 0}
+        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
       >
         {saving
           ? "Creating tasks…"
-          : `⚡ Create Tasks for ${teamCount} Team${teamCount !== 1 ? "s" : ""}`}
+          : <><FaBolt size={11} /> {`Create Tasks for ${teamCount} Team${teamCount !== 1 ? "s" : ""}`}</>}
       </button>
 
       {showPreview && typeof document !== "undefined" && createPortal(
@@ -326,9 +328,10 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
                 position: "absolute", top: 12, right: 12,
                 background: "none", border: "none", fontSize: 22,
                 cursor: "pointer", color: "#646464", lineHeight: 1,
+                display: "flex",
               }}
             >
-              ✕
+              <FaTimes size={18} />
             </button>
             <PagePreview req={req} pageType={req.page_type} fullPage={true} />
           </div>

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FaComments } from "react-icons/fa";
 import { getSectionsForPageType, ROLE_META } from "@/lib/constants";
 
 // Open, section-scoped conversation — "start a conversation with
@@ -71,7 +72,7 @@ export default function CommentThread({ req, user, supabase }) {
   return (
     <div className="card" style={{ marginBottom: 16 }}>
       <div className="card-header">
-        <div><h3 style={{ margin: 0, fontSize: 14 }}>💬 Discussion</h3></div>
+        <div><h3 style={{ margin: 0, fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}><FaComments size={12} /> Discussion</h3></div>
       </div>
 
       {sectionOptions.length > 0 && (
@@ -99,7 +100,7 @@ export default function CommentThread({ req, user, supabase }) {
                 border: "1px solid var(--color-border)",
               }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600 }}>{meta.icon || ""} {c.user_name}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{meta.icon && <meta.icon size={10} />} {c.user_name}</span>
                   <span className="text-xs text-muted">{meta.label || c.user_role}</span>
                   <span className="text-xs text-muted" style={{ marginLeft: "auto" }}>{formatTime(c.created_at)}</span>
                 </div>

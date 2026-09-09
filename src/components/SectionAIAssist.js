@@ -3,6 +3,11 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabase";
 import { getAccessToken } from "@/lib/security";
+import {
+  FaSearch, FaTag, FaClipboardList, FaStar, FaTools, FaPuzzlePiece,
+  FaCommentDots, FaBullseye, FaLink, FaGraduationCap, FaTimes, FaMagic,
+  FaSync, FaCheck, FaArrowLeft, FaArrowRight,
+} from "react-icons/fa";
 
 // The Cadence brand-voice system prompt and per-section field schemas used
 // to live here (and, nearly identically, in AIAssistant.js too). Both are
@@ -15,16 +20,16 @@ import { getAccessToken } from "@/lib/security";
 
 // ── Section label map ─────────────────────────────────────────────────────────
 const SECTION_LABELS = {
-  seo_meta:         { label: "SEO Meta",         icon: "🔍" },
-  banner:           { label: "Banner",            icon: "🏷" },
-  overview:         { label: "Overview",          icon: "📋" },
-  key_benefits:     { label: "Key Benefits",      icon: "⭐" },
-  features_apps:    { label: "Features",          icon: "🔧" },
-  applications:     { label: "Applications",      icon: "🧩" },
-  customer_stories: { label: "Customer Stories",  icon: "💬" },
-  promo_section:    { label: "Promo Section",     icon: "🎯" },
-  related_content:  { label: "Related Content",   icon: "🔗" },
-  training_support: { label: "Training & Support",icon: "🎓" },
+  seo_meta:         { label: "SEO Meta",         icon: FaSearch },
+  banner:           { label: "Banner",            icon: FaTag },
+  overview:         { label: "Overview",          icon: FaClipboardList },
+  key_benefits:     { label: "Key Benefits",      icon: FaStar },
+  features_apps:    { label: "Features",          icon: FaTools },
+  applications:     { label: "Applications",      icon: FaPuzzlePiece },
+  customer_stories: { label: "Customer Stories",  icon: FaCommentDots },
+  promo_section:    { label: "Promo Section",     icon: FaBullseye },
+  related_content:  { label: "Related Content",   icon: FaLink },
+  training_support: { label: "Training & Support",icon: FaGraduationCap },
 };
 
 // ── Main SectionAIAssist component ────────────────────────────────────────────
@@ -112,14 +117,14 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
         {/* Header */}
         <div style={{ background: "linear-gradient(135deg, #1b5793, #2c90b2)", padding: "0.85rem 1.1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 16 }}>{config.icon}</span>
+            <span style={{ fontSize: 16, display: "flex" }}><config.icon /></span>
             <div>
               <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>AI Assist — {config.label}</div>
               <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 11 }}>Cadence brand voice</div>
             </div>
           </div>
           <button type="button" onClick={close}
-            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
+            style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 4, display: "flex" }}><FaTimes /></button>
         </div>
 
         <div style={{ padding: "1.1rem", overflowY: "auto", flex: 1 }}>
@@ -142,7 +147,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <button type="button" onClick={() => { setMode("improve"); generate("improve"); }}
                       style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 9, padding: "0.7rem 1rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 8, textAlign: "left" }}>
-                      <span style={{ fontSize: 16 }}>✨</span>
+                      <span style={{ fontSize: 16, display: "flex" }}><FaMagic /></span>
                       <div>
                         <div style={{ fontWeight: 600 }}>Improve what I wrote</div>
                         <div style={{ fontSize: 11, opacity: 0.8, marginTop: 1 }}>AI rewrites it in Cadence brand voice</div>
@@ -151,7 +156,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
 
                     <button type="button" onClick={() => setMode("direction")}
                       style={{ background: "#f0f6ff", color: "#1b5793", border: "1px solid rgba(27,87,147,0.2)", borderRadius: 9, padding: "0.7rem 1rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 8, textAlign: "left" }}>
-                      <span style={{ fontSize: 16 }}>🔄</span>
+                      <span style={{ fontSize: 16, display: "flex" }}><FaSync /></span>
                       <div>
                         <div style={{ fontWeight: 600 }}>Start fresh with new direction</div>
                         <div style={{ fontSize: 11, opacity: 0.8, marginTop: 1 }}>Tell AI what you want to say instead</div>
@@ -177,8 +182,8 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
                   <button type="button"
                     onClick={() => { setMode("direction"); generate("direction"); }}
                     disabled={!direction.trim()}
-                    style={{ width: "100%", marginTop: 10, background: direction.trim() ? "linear-gradient(135deg, #1b5793, #3ec5cb)" : "#e2e8f0", color: direction.trim() ? "#fff" : "#94a3b8", border: "none", borderRadius: 8, padding: "0.7rem", fontSize: 13, fontWeight: 600, cursor: direction.trim() ? "pointer" : "not-allowed", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s" }}>
-                    ✨ Generate content →
+                    style={{ width: "100%", marginTop: 10, background: direction.trim() ? "linear-gradient(135deg, #1b5793, #3ec5cb)" : "#e2e8f0", color: direction.trim() ? "#fff" : "#94a3b8", border: "none", borderRadius: 8, padding: "0.7rem", fontSize: 13, fontWeight: 600, cursor: direction.trim() ? "pointer" : "not-allowed", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                    <FaMagic size={12} /> Generate content <FaArrowRight size={11} />
                   </button>
                 </>
               )}
@@ -202,14 +207,14 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
               />
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                 <button type="button" onClick={reset}
-                  style={{ flex: 1, background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.65rem", fontSize: 13, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
-                  ← Back
+                  style={{ flex: 1, background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.65rem", fontSize: 13, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <FaArrowLeft size={11} /> Back
                 </button>
                 <button type="button"
                   onClick={() => generate("direction")}
                   disabled={!direction.trim()}
-                  style={{ flex: 2, background: direction.trim() ? "linear-gradient(135deg, #1b5793, #3ec5cb)" : "#e2e8f0", color: direction.trim() ? "#fff" : "#94a3b8", border: "none", borderRadius: 8, padding: "0.65rem", fontSize: 13, fontWeight: 600, cursor: direction.trim() ? "pointer" : "not-allowed", fontFamily: "'Rubik',sans-serif" }}>
-                  ✨ Generate →
+                  style={{ flex: 2, background: direction.trim() ? "linear-gradient(135deg, #1b5793, #3ec5cb)" : "#e2e8f0", color: direction.trim() ? "#fff" : "#94a3b8", border: "none", borderRadius: 8, padding: "0.65rem", fontSize: 13, fontWeight: 600, cursor: direction.trim() ? "pointer" : "not-allowed", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <FaMagic size={12} /> Generate <FaArrowRight size={11} />
                 </button>
               </div>
             </>
@@ -218,7 +223,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
           {/* ── Loading ── */}
           {loading && (
             <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
-              <div style={{ fontSize: 28, marginBottom: 12, animation: "spin 1.5s linear infinite", display: "inline-block" }}>✨</div>
+              <div style={{ fontSize: 28, marginBottom: 12, animation: "spin 1.5s linear infinite", display: "inline-flex" }}><FaMagic /></div>
               <div style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>Writing in Cadence voice...</div>
               <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>This takes a few seconds</div>
               <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
@@ -237,7 +242,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
           {result && !loading && (
             <>
               <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: "0.75rem 0.9rem", marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>✓ AI Generated Content</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}><FaCheck size={10} /> AI Generated Content</div>
                 {Object.entries(result).map(([key, val]) => (
                   <div key={key} style={{ marginBottom: 8 }}>
                     <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
@@ -252,16 +257,16 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
 
               <div style={{ display: "flex", gap: 8 }}>
                 <button type="button" onClick={accept}
-                  style={{ flex: 2, background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.65rem", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
-                  ✅ Apply to section
+                  style={{ flex: 2, background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.65rem", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  <FaCheck size={12} /> Apply to section
                 </button>
                 <button type="button" onClick={() => { setResult(null); mode === "improve" ? generate("improve") : setMode(mode); }}
-                  style={{ flex: 1, background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.65rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
-                  🔄 Redo
+                  style={{ flex: 1, background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.65rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+                  <FaSync size={11} /> Redo
                 </button>
                 <button type="button" onClick={close}
-                  style={{ background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.65rem 0.75rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
-                  ✕
+                  style={{ background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.65rem 0.75rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center" }}>
+                  <FaTimes size={12} />
                 </button>
               </div>
             </>
@@ -295,7 +300,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
           transition: "all 0.15s",
           whiteSpace: "nowrap",
         }}>
-        <span>✨</span>
+        <span style={{ display: "flex" }}><FaMagic /></span>
         {buttonLabel || "AI Assist"}
       </button>
 

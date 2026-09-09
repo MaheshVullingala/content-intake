@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { FaClipboardList, FaPlay } from "react-icons/fa";
 import { createTasksForRequest } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
@@ -35,7 +36,7 @@ export default function AdminReviewGate({ req, user, supabase, onStarted }) {
   return (
     <div className="card">
       <div className="card-header">
-        <div><h3 style={{ margin: 0 }}>📋 Review this request</h3></div>
+        <div><h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}><FaClipboardList size={14} /> Review this request</h3></div>
       </div>
       <p className="text-sm text-muted" style={{ marginTop: 0 }}>
         Take a look at the content in the preview. When you're ready, this
@@ -43,8 +44,8 @@ export default function AdminReviewGate({ req, user, supabase, onStarted }) {
         a Jira ticket to it right after.
       </p>
       {error && <div className="alert alert-error mb-8">{error}</div>}
-      <button className="btn-primary btn-full" onClick={handleStart} disabled={starting}>
-        {starting ? "Starting…" : "▶ Begin Editorial Review"}
+      <button className="btn-primary btn-full" onClick={handleStart} disabled={starting} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        {starting ? "Starting…" : <><FaPlay size={10} /> Begin Editorial Review</>}
       </button>
     </div>
   );

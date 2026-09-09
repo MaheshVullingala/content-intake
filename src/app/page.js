@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { FaHourglassHalf, FaExclamationTriangle, FaBolt } from "react-icons/fa";
 import { supabase, getUserProfile } from "@/lib/supabase";
 import AuthPage      from "@/components/auth/AuthPage";
 import Navbar        from "@/components/layout/Navbar";
@@ -294,7 +295,7 @@ export default function App() {
   if (user.role === "pending") return (
     <div className="app-pending">
       <div className="app-pending-inner">
-        <div className="app-pending-icon">⏳</div>
+        <div className="app-pending-icon"><FaHourglassHalf /></div>
         <h1 className="app-pending-heading">Account pending approval</h1>
         <p className="app-pending-text">
           Your account has been created and is awaiting role assignment by an administrator.
@@ -331,8 +332,8 @@ export default function App() {
           padding: "6px 2.5rem",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <span style={{ fontSize: 12, color: "#3ec5cb", fontFamily: "'Rubik', sans-serif" }}>
-            ⚡ Viewing as: <strong>{impersonatedLabel}</strong>
+          <span style={{ fontSize: 12, color: "#3ec5cb", fontFamily: "'Rubik', sans-serif", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <FaBolt size={10} /> Viewing as: <strong>{impersonatedLabel}</strong>
           </span>
           <button
             onClick={() => switchImpersonatedRole(null)}
@@ -355,7 +356,7 @@ export default function App() {
       {/* ── Idle Warning Toast ── */}
       {idleWarning && (
         <div className="idle-warning-toast">
-          <span className="idle-warning-icon">⚠️</span>
+          <span className="idle-warning-icon"><FaExclamationTriangle /></span>
           <div className="idle-warning-text">
             <div className="idle-warning-title">You'll be logged out in {countdown}s due to inactivity</div>
             <div className="idle-warning-sub">Click anywhere to stay logged in</div>

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { FaTimes, FaArrowLeft } from "react-icons/fa";
 import { CHAR_LIMITS, AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 import { useCharLimits } from "@/lib/charLimits";
@@ -251,9 +252,9 @@ export default function EditSectionModal({
             </h3>
             <button
               onClick={onClose}
-              style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--color-silver)", lineHeight: 1 }}
+              style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--color-silver)", lineHeight: 1, display: "flex" }}
             >
-              ✕
+              <FaTimes size={15} />
             </button>
           </div>
           <div style={{ padding: "1.25rem 1.5rem", overflowY: "auto", flex: 1 }}>
@@ -358,18 +359,18 @@ export default function EditSectionModal({
               <button
                 onClick={() => setPickedSection(null)}
                 title="Back to section list"
-                style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "var(--color-silver)", padding: 0 }}
+                style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "var(--color-silver)", padding: 0, display: "flex" }}
               >
-                ←
+                <FaArrowLeft size={12} />
               </button>
             )}
             Edit {config.title}
           </h3>
           <button
             onClick={onClose}
-            style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--color-silver)", lineHeight: 1 }}
+            style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: "var(--color-silver)", lineHeight: 1, display: "flex" }}
           >
-            ✕
+            <FaTimes size={15} />
           </button>
         </div>
 

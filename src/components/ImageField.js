@@ -2,6 +2,7 @@
 import { validateFile } from "@/lib/security";
 import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { FaPaperclip, FaLink, FaPen, FaTimes, FaImage, FaExternalLinkAlt, FaExclamationTriangle } from "react-icons/fa";
 
 /**
  * ImageField — 3-mode image input (Description / Link / Attachment)
@@ -139,19 +140,19 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
       {/* Icon toolbar — below the note */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
         <button type="button" title="Upload a reference image from your computer" style={iconBtn("attachment")} onClick={() => toggle("attachment")}>
-          📎
+          <FaPaperclip size={15} />
           {isFilled && value.type === "attachment" && <span style={dot} />}
         </button>
         <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Upload</span>
         <button type="button" title="Paste an image URL" style={iconBtn("link")} onClick={() => toggle("link")}>
-          🔗
+          <FaLink size={15} />
           {isFilled && value.type === "link" && <span style={dot} />}
         </button>
         <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Paste URL</span>
         {!hideDescription && (
           <>
             <button type="button" title="Add description / notes for Design QA" style={iconBtn("description")} onClick={() => toggle("description")}>
-              📝
+              <FaPen size={14} />
               {isFilled && value.type === "description" && <span style={dot} />}
             </button>
             <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Describe</span>
@@ -159,19 +160,19 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
         )}
         {isFilled && (
           <button type="button" title="Clear" onClick={clear}
-            style={{ background: "none", border: "none", color: "#c0392b", cursor: "pointer", fontSize: 13, padding: "0 4px", marginLeft: 4 }}>✕ Clear</button>
+            style={{ background: "none", border: "none", color: "#c0392b", cursor: "pointer", fontSize: 13, padding: "0 4px", marginLeft: 4, display: "flex", alignItems: "center", gap: 4 }}><FaTimes size={11} /> Clear</button>
         )}
       </div>
 
       {/* Filled preview (when panel closed) */}
       {isFilled && !active && (
         <div style={{ background: "#f0fafb", border: "1px solid #3ec5cb44", borderRadius: 7, padding: "8px 12px", fontSize: 12, color: "#1b5793", display: "flex", alignItems: "center", gap: 8 }}>
-          <span>{value.type === "description" ? "📝" : value.type === "link" ? "🔗" : "📎"}</span>
+          <span style={{ display: "flex" }}>{value.type === "description" ? <FaPen size={12} /> : value.type === "link" ? <FaLink size={12} /> : <FaPaperclip size={12} />}</span>
           <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {value.type === "attachment" ? value.value : value.value}
           </span>
-          {value.type === "link" && <a href={value.url} target="_blank" rel="noreferrer" style={{ color: "#1b5793", fontSize: 11 }}>Open ↗</a>}
-          {value.type === "attachment" && value.url && <a href={value.url} target="_blank" rel="noreferrer" style={{ color: "#1b5793", fontSize: 11 }}>View ↗</a>}
+          {value.type === "link" && <a href={value.url} target="_blank" rel="noreferrer" style={{ color: "#1b5793", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>Open <FaExternalLinkAlt size={9} /></a>}
+          {value.type === "attachment" && value.url && <a href={value.url} target="_blank" rel="noreferrer" style={{ color: "#1b5793", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>View <FaExternalLinkAlt size={9} /></a>}
         </div>
       )}
 
@@ -210,10 +211,10 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
         <div style={{ marginTop: 4 }}>
           {value?.type === "attachment" && value.value ? (
             <div style={{ background: "#f0fafb", border: "1px solid #3ec5cb44", borderRadius: 7, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 20 }}>🖼️</span>
+              <span style={{ fontSize: 20, display: "flex", color: "#1b5793" }}><FaImage /></span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 500, color: "#181313" }}>{value.value}</div>
-                {value.url && <a href={value.url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#1b5793" }}>View uploaded file ↗</a>}
+                {value.url && <a href={value.url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#1b5793", display: "inline-flex", alignItems: "center", gap: 3 }}>View uploaded file <FaExternalLinkAlt size={9} /></a>}
               </div>
               <button type="button" onClick={() => { onChange(null); fileRef.current?.click(); }}
                 style={{ fontSize: 11, background: "none", border: "1px solid #E0E0E0", borderRadius: 5, padding: "3px 8px", cursor: "pointer", color: "#646464" }}>Replace</button>
@@ -234,7 +235,7 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 24, marginBottom: 6 }}>📎</div>
+                  <div style={{ fontSize: 24, marginBottom: 6, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaPaperclip /></div>
                   <div style={{ fontSize: 12, color: "#646464" }}>Click to upload a reference image</div>
                   <div style={{ fontSize: 11, color: "#B5B5B5", marginTop: 4 }}>JPG, PNG, WebP, SVG · Max {MAX_MB}MB</div>
                 </>
@@ -242,7 +243,7 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
             </div>
           )}
           <input ref={fileRef} type="file" accept={ACCEPTED} style={{ display: "none" }} onChange={handleFile} />
-          {error && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 4 }}>⚠️ {error}</div>}
+          {error && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}><FaExclamationTriangle size={10} /> {error}</div>}
         </div>
       )}
     </div>

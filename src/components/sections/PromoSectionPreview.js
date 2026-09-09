@@ -1,5 +1,6 @@
 "use client";
 import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
+import { FaPalette } from "react-icons/fa";
 
 export default function PromoSectionPreview({ data = {}, attachments = [] }) {
   const { promo_bg_image_ref = null, promo_label = "", promo_title = "", promo_description = "", promo_btn_label = "", promo_btn_link = "" } = data;
@@ -38,8 +39,8 @@ export default function PromoSectionPreview({ data = {}, attachments = [] }) {
             <p style={{ fontSize: 13, color: "#B5B5B5", marginTop: 10, lineHeight: 1.6, textShadow: promo_bg_image ? "0 1px 4px rgba(0,0,0,0.65)" : "none" }}>{promo_description}</p>
           )}
           {!promo_bg_image && promo_bg_placeholder && (
-            <div style={{ marginTop: 10, display: "inline-block", background: "rgba(255,255,255,0.08)", border: "1px dashed rgba(255,255,255,0.3)", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5" }}>
-              🎨 {promo_bg_placeholder}
+            <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.08)", border: "1px dashed rgba(255,255,255,0.3)", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5" }}>
+              <FaPalette size={10} /> {promo_bg_placeholder}
             </div>
           )}
         </div>

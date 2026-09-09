@@ -1,5 +1,6 @@
 "use client";
 import ImageField from "@/components/ImageField";
+import { FaExclamationTriangle, FaFileAlt, FaTimes } from "react-icons/fa";
 
 const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle, charLimit, required }) => {
   const len  = (value || "").length;
@@ -14,7 +15,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled,
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -66,7 +67,7 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
 
       {cards.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
+          <div style={{ fontSize: 28, marginBottom: 8, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaFileAlt /></div>
           <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>No cards yet. Add up to 3 content cards.</div>
           <button onClick={addCard} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first card</button>
         </div>
@@ -81,7 +82,7 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
                 <span style={{ fontSize: 13, fontWeight: 500 }}>{card.title || `Card ${idx + 1}`}</span>
               </div>
               <button onClick={() => removeCard(card.id)}
-                style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.6rem", fontSize: 11, cursor: "pointer" }}>✕</button>
+                style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.6rem", fontSize: 11, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
             </div>
 
             {/* Category label */}

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { FaEnvelope, FaPen, FaTools, FaInfoCircle } from "react-icons/fa";
 
 const DEPARTMENTS = ["Product Team", "Content Team", "Design Team", "Web Team", "Marketing", "Engineering", "Operations", "Other"];
 
@@ -64,7 +65,7 @@ export default function Register({ onSwitch }) {
 
   if (success) return (
     <div style={{ textAlign: "center", fontFamily: "'Rubik',sans-serif" }}>
-      <div style={{ fontSize: 40, marginBottom: 16 }}>📧</div>
+      <div style={{ fontSize: 40, marginBottom: 16, display: "flex", justifyContent: "center", color: "#1b5793" }}><FaEnvelope /></div>
       <h2 style={{ fontSize: 20, fontWeight: 500, color: "#0f2744", marginBottom: 10 }}>Check your email</h2>
       <p style={{ fontSize: 13, color: "#646464", lineHeight: 1.7, marginBottom: 24 }}>
         We sent a verification link to <strong style={{ color: "#1b5793" }}>{form.email}</strong>.<br />
@@ -126,8 +127,8 @@ export default function Register({ onSwitch }) {
         <label style={labelStyle}>I'm signing up to...</label>
         <div style={{ display: "flex", gap: 8 }}>
           {[
-            { key: "stakeholder", label: "📝 Request content", hint: "Get access right away" },
-            { key: "team",        label: "🛠️ Join a content team", hint: "Needs admin approval" },
+            { key: "stakeholder", icon: FaPen,   label: "Request content", hint: "Get access right away" },
+            { key: "team",        icon: FaTools, label: "Join a content team", hint: "Needs admin approval" },
           ].map(opt => (
             <button
               key={opt.key}
@@ -141,7 +142,7 @@ export default function Register({ onSwitch }) {
                 fontFamily: "'Rubik',sans-serif",
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 500, color: "#0f2744" }}>{opt.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#0f2744", display: "flex", alignItems: "center", gap: 6 }}><opt.icon size={12} /> {opt.label}</div>
               <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{opt.hint}</div>
             </button>
           ))}
@@ -173,10 +174,13 @@ export default function Register({ onSwitch }) {
         </div>
       </div>
 
-      <div style={{ background: "#e8f4fb", border: "1px solid #1b579322", borderRadius: 8, padding: "0.7rem 0.9rem", marginBottom: 20, fontSize: 12, color: "#1b5793", fontFamily: "'Rubik',sans-serif", lineHeight: 1.6 }}>
-        {isStakeholderIntent
-          ? "ℹ️ Stakeholder access is granted automatically — no admin approval needed. You can start submitting requests as soon as you verify your email."
-          : "ℹ️ After registration, an admin will assign your role before you can access the portal."}
+      <div style={{ background: "#e8f4fb", border: "1px solid #1b579322", borderRadius: 8, padding: "0.7rem 0.9rem", marginBottom: 20, fontSize: 12, color: "#1b5793", fontFamily: "'Rubik',sans-serif", lineHeight: 1.6, display: "flex", gap: 6 }}>
+        <FaInfoCircle style={{ flexShrink: 0, marginTop: 2 }} />
+        <span>
+          {isStakeholderIntent
+            ? "Stakeholder access is granted automatically — no admin approval needed. You can start submitting requests as soon as you verify your email."
+            : "After registration, an admin will assign your role before you can access the portal."}
+        </span>
       </div>
 
       <button type="submit" disabled={loading}

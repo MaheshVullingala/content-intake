@@ -1,4 +1,5 @@
 "use client";
+import { FaExclamationTriangle, FaInfoCircle, FaUndo } from "react-icons/fa";
 
 const DEFAULTS = {
   ts_label: "TRAINING AND SUPPORT",
@@ -33,7 +34,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled,
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3 }}>⚠️ Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -59,14 +60,14 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
       {/* Info banner */}
       <div style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 10, padding: "0.85rem 1.1rem", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 16 }}>ℹ️</span>
+          <span style={{ fontSize: 16, display: "flex", color: "#646464" }}><FaInfoCircle /></span>
           <span style={{ fontSize: 13, color: "#646464" }}>
             Pre-filled with default content. Edit any field to customise for this page.
           </span>
         </div>
         <button onClick={resetToDefault}
-          style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.35rem 0.8rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", color: "#646464", whiteSpace: "nowrap", flexShrink: 0 }}>
-          ↺ Reset to default
+          style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.35rem 0.8rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", color: "#646464", whiteSpace: "nowrap", flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
+          <FaUndo size={10} /> Reset to default
         </button>
       </div>
 

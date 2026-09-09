@@ -1,6 +1,11 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import {
+  FaSearch, FaTag, FaClipboardList, FaStar, FaTools, FaPuzzlePiece,
+  FaCommentDots, FaBullseye, FaLink, FaGraduationCap, FaArrowRight,
+  FaPen, FaMagic, FaTimes, FaArrowLeft, FaHourglassHalf, FaBolt, FaCheck,
+} from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
 import { getAccessToken } from "@/lib/security";
 
@@ -15,16 +20,16 @@ import { getAccessToken } from "@/lib/security";
 // display metadata (label/icon/desc for the section picker) -- it no
 // longer influences what gets generated.
 const SECTION_CONFIGS = {
-  seo_meta:         { label: "SEO Meta Data",      icon: "\ud83d\udd0d", desc: "Page location, meta title, description and keywords" },
-  banner:           { label: "Banner",              icon: "\ud83c\udff7", desc: "Page title, subtitle and CTA buttons" },
-  overview:         { label: "Overview",            icon: "\ud83d\udccb", desc: "Section label, impact statement and description" },
-  key_benefits:     { label: "Key Benefits",        icon: "\u2b50",       desc: "Section header and 3-4 benefit cards" },
-  features_apps:    { label: "Features",            icon: "\ud83d\udd27", desc: "Section header and feature highlights" },
-  applications:     { label: "Applications",        icon: "\ud83e\udde9", desc: "Section header and application/use-case tabs" },
-  customer_stories: { label: "Customer Stories",    icon: "\ud83d\udcac", desc: "Section header and story cards" },
-  promo_section:    { label: "Promo Section",       icon: "\ud83c\udfaf", desc: "Promo label, title, description and CTA" },
-  related_content:  { label: "Related Content",     icon: "\ud83d\udd17", desc: "Section label and impact statement" },
-  training_support: { label: "Training & Support",  icon: "\ud83c\udf93", desc: "Section label and impact statement" },
+  seo_meta:         { label: "SEO Meta Data",      icon: FaSearch,        desc: "Page location, meta title, description and keywords" },
+  banner:           { label: "Banner",              icon: FaTag,          desc: "Page title, subtitle and CTA buttons" },
+  overview:         { label: "Overview",            icon: FaClipboardList, desc: "Section label, impact statement and description" },
+  key_benefits:     { label: "Key Benefits",        icon: FaStar,         desc: "Section header and 3-4 benefit cards" },
+  features_apps:    { label: "Features",            icon: FaTools,        desc: "Section header and feature highlights" },
+  applications:     { label: "Applications",        icon: FaPuzzlePiece,  desc: "Section header and application/use-case tabs" },
+  customer_stories: { label: "Customer Stories",    icon: FaCommentDots,  desc: "Section header and story cards" },
+  promo_section:    { label: "Promo Section",       icon: FaBullseye,     desc: "Promo label, title, description and CTA" },
+  related_content:  { label: "Related Content",     icon: FaLink,         desc: "Section label and impact statement" },
+  training_support: { label: "Training & Support",  icon: FaGraduationCap, desc: "Section label and impact statement" },
 };
 
 // ── Product Brief Form ────────────────────────────────────────────────────────
@@ -78,8 +83,8 @@ function ProductBriefForm({ brief, setBrief, onSave }) {
         type="button"
         disabled={!isComplete}
         onClick={onSave}
-        style={{ width: "100%", background: isComplete ? "#1b5793" : "#E0E0E0", color: isComplete ? "#fff" : "#B5B5B5", border: "none", borderRadius: 8, padding: "0.75rem", fontSize: 14, fontWeight: 500, cursor: isComplete ? "pointer" : "not-allowed", fontFamily: "'Rubik',sans-serif", transition: "background 0.15s", marginTop: 4 }}>
-        Save & Generate Content →
+        style={{ width: "100%", background: isComplete ? "#1b5793" : "#E0E0E0", color: isComplete ? "#fff" : "#B5B5B5", border: "none", borderRadius: 8, padding: "0.75rem", fontSize: 14, fontWeight: 500, cursor: isComplete ? "pointer" : "not-allowed", fontFamily: "'Rubik',sans-serif", transition: "background 0.15s", marginTop: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        Save & Generate Content <FaArrowRight size={11} />
       </button>
     </div>
   );
@@ -139,15 +144,15 @@ function SectionPicker({ brief, setBrief, availableSections, onGenerate, onEditB
           </p>
         </div>
         <button type="button" onClick={onEditBrief}
-          style={{ background: "none", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, color: "#646464", cursor: "pointer", fontFamily: "'Rubik',sans-serif", flexShrink: 0 }}>
-          ✏️ Edit brief
+          style={{ background: "none", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, color: "#646464", cursor: "pointer", fontFamily: "'Rubik',sans-serif", flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
+          <FaPen size={9} /> Edit brief
         </button>
       </div>
 
       {/* Generate All button */}
       <button type="button" onClick={generateAll} disabled={generatingAll || !!generating}
         style={{ width: "100%", background: generatingAll ? "#E0E0E0" : "linear-gradient(135deg, #1b5793, #3ec5cb)", color: "#fff", border: "none", borderRadius: 8, padding: "0.65rem", fontSize: 13, fontWeight: 600, cursor: generatingAll ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-        {generatingAll ? "⏳ Generating all sections..." : "⚡ Generate All Sections"}
+        {generatingAll ? <><FaHourglassHalf size={11} /> Generating all sections...</> : <><FaBolt size={11} /> Generate All Sections</>}
       </button>
 
       {/* Per-section buttons */}
@@ -159,14 +164,14 @@ function SectionPicker({ brief, setBrief, availableSections, onGenerate, onEditB
           const isDone = done[key];
           return (
             <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, background: isDone ? "#f0fdf4" : "#F9F9F9", border: `1px solid ${isDone ? "#86efac" : "#E0E0E0"}`, borderRadius: 8, padding: "0.6rem 0.9rem" }}>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>{config.icon}</span>
+              <span style={{ fontSize: 16, flexShrink: 0, display: "flex" }}><config.icon /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: "#181313" }}>{config.label}</div>
                 <div style={{ fontSize: 11, color: "#B5B5B5" }}>{config.desc}</div>
               </div>
               <button type="button" onClick={() => generate(key)} disabled={isGenerating || generatingAll}
-                style={{ background: isDone ? "#22c55e" : "#1b5793", color: "#fff", border: "none", borderRadius: 6, padding: "0.35rem 0.75rem", fontSize: 11, fontWeight: 500, cursor: isGenerating || generatingAll ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", flexShrink: 0, whiteSpace: "nowrap", opacity: isGenerating ? 0.7 : 1 }}>
-                {isGenerating ? "⏳..." : isDone ? "✓ Redo" : "Generate"}
+                style={{ background: isDone ? "#22c55e" : "#1b5793", color: "#fff", border: "none", borderRadius: 6, padding: "0.35rem 0.75rem", fontSize: 11, fontWeight: 500, cursor: isGenerating || generatingAll ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", flexShrink: 0, whiteSpace: "nowrap", opacity: isGenerating ? 0.7 : 1, display: "flex", alignItems: "center", gap: 4 }}>
+                {isGenerating ? <FaHourglassHalf size={9} /> : isDone ? <><FaCheck size={9} /> Redo</> : "Generate"}
               </button>
             </div>
           );
@@ -230,7 +235,7 @@ export default function AIAssistant({ availableSections = [], onGenerate }) {
           animation: open ? "none" : "ai-pulse 2.5s ease-in-out infinite",
           WebkitFontSmoothing: "antialiased",
         }}>
-        <span style={{ fontSize: 16 }}>{open ? "✕" : "✨"}</span>
+        <span style={{ fontSize: 16, display: "flex" }}>{open ? <FaTimes /> : <FaMagic />}</span>
         {open ? "Close" : "AI Assistant"}
       </button>
 
@@ -268,7 +273,7 @@ export default function AIAssistant({ availableSections = [], onGenerate }) {
             {/* Header */}
             <div style={{ background: "linear-gradient(135deg, #1b5793, #2c90b2)", padding: "0.9rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 18 }}>✨</span>
+                <span style={{ fontSize: 18, display: "flex" }}><FaMagic /></span>
                 <div>
                   <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.2 }}>AI Content Assistant</div>
                   <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}>
@@ -278,8 +283,8 @@ export default function AIAssistant({ availableSections = [], onGenerate }) {
               </div>
               {briefSaved && screen === "sections" && (
                 <button type="button" onClick={() => setScreen("brief")}
-                  style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, color: "#fff", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
-                  ← Brief
+                  style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, color: "#fff", cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 5 }}>
+                  <FaArrowLeft size={9} /> Brief
                 </button>
               )}
             </div>

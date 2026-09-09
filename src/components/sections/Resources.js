@@ -1,6 +1,7 @@
 "use client";
 import ImageField from "@/components/ImageField";
 import { useState } from "react";
+import { FaTimes, FaNewspaper, FaPen, FaFilm, FaFolder, FaFileAlt, FaCheck } from "react-icons/fa";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint }) => (
   <div className="field-wrap">
@@ -113,7 +114,7 @@ function CarouselForm({ data = {}, onChange, type, requestId = "draft" }) {
                 <input value={item.url} onChange={e => updateItem(item.id, "url", e.target.value)}
                   placeholder="https://..." className="input" />
               </div>
-              <button onClick={() => removeItem(item.id)} style={{ marginTop: 20, background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.6rem", fontSize: 11, cursor: "pointer" }}>✕</button>
+              <button onClick={() => removeItem(item.id)} style={{ marginTop: 20, background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.6rem", fontSize: 11, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
             </div>
             <ImageField
               label={isVideo ? "Video Thumbnail" : "Item Thumbnail"}
@@ -211,7 +212,7 @@ function NewsBlogsForm({ news = {}, blogs = {}, onNewsChange, onBlogsChange }) {
             {TAGS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <button onClick={() => onRemove(link.id)}
-            style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.6rem 0.6rem", fontSize: 11, cursor: "pointer", marginTop: 1 }}>✕</button>
+            style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.6rem 0.6rem", fontSize: 11, cursor: "pointer", marginTop: 1, display: "flex" }}><FaTimes size={10} /></button>
         </div>
       ))}
       <button onClick={onAdd}
@@ -226,11 +227,11 @@ function NewsBlogsForm({ news = {}, blogs = {}, onNewsChange, onBlogsChange }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
       <div className="card">
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid #F3F3F3" }}>📰 News</div>
+        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid #F3F3F3", display: "flex", alignItems: "center", gap: 6 }}><FaNewspaper size={12} /> News</div>
         <LinkList items={news.links || []} onAdd={addNewsLink} onUpdate={updateNewsLink} onRemove={removeNewsLink} placeholder="News article URL..." />
       </div>
       <div className="card">
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid #F3F3F3" }}>✍️ Blogs</div>
+        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid #F3F3F3", display: "flex", alignItems: "center", gap: 6 }}><FaPen size={11} /> Blogs</div>
         <LinkList items={blogs.links || []} onAdd={addBlogLink} onUpdate={updateBlogLink} onRemove={removeBlogLink} placeholder="Blog post URL..." />
       </div>
     </div>
@@ -239,10 +240,10 @@ function NewsBlogsForm({ news = {}, blogs = {}, onNewsChange, onBlogsChange }) {
 
 // Main Resources Component
 const SUB_ITEMS = [
-  { key: "video_carousel",  label: "Video Carousel",       icon: "🎬", desc: "Video thumbnails with play button" },
-  { key: "mixed_carousel",  label: "Mixed Media Carousel", icon: "📁", desc: "Mixed resource thumbnails" },
-  { key: "resources",       label: "Resources",            icon: "📄", desc: "Featured + 3 resource cards" },
-  { key: "news_blogs",      label: "News & Blogs",         icon: "📰", desc: "News and blog links with tags" },
+  { key: "video_carousel",  label: "Video Carousel",       icon: FaFilm, desc: "Video thumbnails with play button" },
+  { key: "mixed_carousel",  label: "Mixed Media Carousel", icon: FaFolder, desc: "Mixed resource thumbnails" },
+  { key: "resources",       label: "Resources",            icon: FaFileAlt, desc: "Featured + 3 resource cards" },
+  { key: "news_blogs",      label: "News & Blogs",         icon: FaNewspaper, desc: "News and blog links with tags" },
 ];
 
 export default function Resources({ data = {}, onChange, isNA, onToggleNA, requestId = "draft" }) {
@@ -288,12 +289,12 @@ export default function Resources({ data = {}, onChange, isNA, onToggleNA, reque
           {SUB_ITEMS.map(sub => (
             <button key={sub.key} onClick={() => toggleSub(sub.key)}
               style={{ background: selected.includes(sub.key) ? "#181313" : "#F9F9F9", border: `2px solid ${selected.includes(sub.key) ? "#181313" : "#E0E0E0"}`, borderRadius: 10, padding: "0.9rem 1rem", cursor: "pointer", textAlign: "left", transition: "all 0.15s", display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontSize: 20 }}>{sub.icon}</span>
+              <span style={{ fontSize: 20, display: "flex", color: selected.includes(sub.key) ? "#F3F3F3" : "#181313" }}><sub.icon /></span>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: selected.includes(sub.key) ? "#F3F3F3" : "#181313" }}>{sub.label}</div>
                 <div style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{sub.desc}</div>
               </div>
-              {selected.includes(sub.key) && <span style={{ marginLeft: "auto", color: "#2a7a4b", fontSize: 16 }}>✓</span>}
+              {selected.includes(sub.key) && <span style={{ marginLeft: "auto", color: "#2a7a4b", fontSize: 16, display: "flex" }}><FaCheck /></span>}
             </button>
           ))}
         </div>
@@ -307,8 +308,8 @@ export default function Resources({ data = {}, onChange, isNA, onToggleNA, reque
             {selected.map(key => {
               const sub = SUB_ITEMS.find(s => s.key === key);
               return (
-                <button key={key} onClick={() => setActiveTab(key)} className={`tab-btn${activeTab === key ? " active" : ""}`}>
-                  {sub?.icon} {sub?.label}
+                <button key={key} onClick={() => setActiveTab(key)} className={`tab-btn${activeTab === key ? " active" : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  {sub?.icon && <sub.icon size={12} />} {sub?.label}
                 </button>
               );
             })}

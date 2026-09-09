@@ -5,7 +5,7 @@
 // network calls, nothing is written to the database until the user
 // explicitly clicks Save Draft / Submit.
 //
-// Used by NewRequest.js's "🎲 Fill Test Data" button (step 2 only, once a
+// Used by NewRequest.js's "Fill Test Data" button (step 2 only, once a
 // page type is selected). Respects getSectionsForPageType() — only the
 // sections that actually apply to the selected page type get filled.
 // ─────────────────────────────────────────────────────────────────────────

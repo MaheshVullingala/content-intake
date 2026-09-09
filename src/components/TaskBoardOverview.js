@@ -1,5 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import {
+  FaClipboardList, FaLock, FaCheckCircle, FaChevronDown, FaChevronRight,
+  FaPaperclip, FaUndo, FaBolt, FaPen,
+} from "react-icons/fa";
 import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
@@ -219,6 +223,8 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
         {sortedTasks.map(task => {
           const teamMeta      = TASK_TEAMS.find(t => t.role === task.team_role);
           const statusMeta    = TASK_STATUS_META[task.status] || TASK_STATUS_META.pending;
+          const TeamIcon      = teamMeta?.icon ?? FaClipboardList;
+          const StatusIcon    = statusMeta.icon;
           const isLocked      = task.status === "locked";
           const isDone        = task.status === "completed";
           const needsInfo     = task.status === "needs_info";
@@ -263,8 +269,8 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                   cursor: isLocked ? "default" : "pointer",
                 }}
               >
-                <span style={{ fontSize: 20, lineHeight: 1.2, flexShrink: 0 }}>
-                  {isDone ? "✅" : isLocked ? "🔒" : (teamMeta?.icon ?? "📋")}
+                <span style={{ fontSize: 20, lineHeight: 1.2, flexShrink: 0, display: "flex" }}>
+                  {isDone ? <FaCheckCircle /> : isLocked ? <FaLock /> : <TeamIcon />}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
@@ -274,21 +280,22 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                     {teamMeta?.label ?? task.team_role}
                   </div>
                   <span style={{
-                    display: "inline-block", marginTop: 4,
+                    display: "inline-flex", marginTop: 4,
                     background: statusMeta.bg, color: statusMeta.color,
                     border: `1px solid ${statusMeta.color}33`,
                     borderRadius: 20, padding: "2px 8px",
                     fontSize: 11, fontWeight: 500,
+                    alignItems: "center", gap: 4,
                   }}>
-                    {statusMeta.icon} {statusMeta.label}
+                    <StatusIcon size={10} /> {statusMeta.label}
                   </span>
                 </div>
                 {!isLocked && (
                   <span
                     title={isExpanded ? "Collapse" : "Expand"}
-                    style={{ fontSize: 13, color: "var(--color-silver)", flexShrink: 0, marginTop: 2 }}
+                    style={{ fontSize: 13, color: "var(--color-silver)", flexShrink: 0, marginTop: 2, display: "flex" }}
                   >
-                    {isExpanded ? "▾" : "▸"}
+                    {isExpanded ? <FaChevronDown size={11} /> : <FaChevronRight size={11} />}
                   </span>
                 )}
               </div>
@@ -327,8 +334,8 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                     </div>
                   </div>
                   {isStakeholder && isEditorialOrSeo ? (
-                    <div className="field-hint">
-                      Use the edit buttons (✎) on the preview to update content.
+                    <div className="field-hint" style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                      Use the edit buttons (<FaPen size={9} />) on the preview to update content.
                       Your answer will be sent automatically.
                     </div>
                   ) : showAnswer && (
@@ -378,7 +385,7 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                               padding: "5px 8px", textDecoration: "none",
                             }}
                           >
-                            📎 {f.file_name || "File"}
+                            <FaPaperclip size={10} /> {f.file_name || "File"}
                           </a>
                         ))}
                       </div>
@@ -404,19 +411,19 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                   <div style={{ display: "flex", gap: 8 }}>
                     <button
                       className="btn-primary"
-                      style={{ flex: 1, justifyContent: "center" }}
+                      style={{ flex: 1, justifyContent: "center", display: "flex", alignItems: "center", gap: 6 }}
                       onClick={() => handleApprove(task, approveField)}
                       disabled={isSaving}
                     >
-                      {isSaving ? "Saving…" : "✅ Approve"}
+                      {isSaving ? "Saving…" : <><FaCheckCircle size={11} /> Approve</>}
                     </button>
                     <button
                       className="btn-danger"
-                      style={{ flex: 1, justifyContent: "center" }}
+                      style={{ flex: 1, justifyContent: "center", display: "flex", alignItems: "center", gap: 6 }}
                       onClick={() => handleReject(task)}
                       disabled={isSaving || !(rejectNotes[task.id] || "").trim()}
                     >
-                      {isSaving ? "Saving…" : "↩ Reject"}
+                      {isSaving ? "Saving…" : <><FaUndo size={10} /> Reject</>}
                     </button>
                   </div>
                 </div>
@@ -425,8 +432,8 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
               {/* Already-approved indicator */}
               {needsApproval && alreadyApproved && isExpanded && (
                 <div className="alert alert-success"
-                     style={{ fontSize: "var(--text-xs)", padding: "4px 8px" }}>
-                  ✅ Approved by stakeholder
+                     style={{ fontSize: "var(--text-xs)", padding: "4px 8px", display: "flex", alignItems: "center", gap: 6 }}>
+                  <FaCheckCircle size={11} /> Approved by stakeholder
                 </div>
               )}
 
@@ -441,8 +448,8 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
               )}
 
               {isExpanded && task.status === "in_progress" && (
-                <div className="text-xs text-muted">
-                  ⚡ Actively being worked on
+                <div className="text-xs text-muted" style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <FaBolt size={9} /> Actively being worked on
                   {task.assignee?.name && <> by <strong>{task.assignee.name}</strong></>}
                 </div>
               )}

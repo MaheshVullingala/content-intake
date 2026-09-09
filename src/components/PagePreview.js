@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { FaPen, FaCheck, FaPalette, FaImage, FaPlay, FaArrowRight, FaChevronRight, FaQuestionCircle } from "react-icons/fa";
 import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
 import SectionCommentBubble from "@/components/SectionCommentBubble";
 import KeyBenefitsPreview from "@/components/sections/KeyBenefitsPreview";
@@ -149,9 +150,10 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
         padding: '6px 12px',
         fontSize: 12,
         color: '#92400e',
-        marginBottom: 8
+        marginBottom: 8,
+        display: "flex", alignItems: "center", gap: 6,
       }}>
-        ✏️ Editorial Team has a question about this section
+        <FaQuestionCircle size={12} /> Editorial Team has a question about this section
       </div>
     );
   };
@@ -170,11 +172,16 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
           fontSize: 11, fontWeight: 600, cursor: "pointer",
           fontFamily: "'Rubik',sans-serif",
           boxShadow: "0 2px 6px rgba(0,0,0,0.18)",
-          opacity: hoverSection === sectionKey || isActive ? 1 : 0,
+          // Was opacity:0 when neither hovered nor active -- invisible with
+          // no way to discover it on touch devices (no hover state exists).
+          // Dimmed-but-present by default, full opacity on hover/active, so
+          // touch users can see and tap it without ever hovering.
+          opacity: hoverSection === sectionKey || isActive ? 1 : 0.55,
           transition: "opacity 0.15s, background 0.15s",
           zIndex: 10,
+          display: "inline-flex", alignItems: "center", gap: 5,
         }}>
-        {isActive ? "✓ Editing" : "✎ Edit"}
+        {isActive ? <><FaCheck size={10} /> Editing</> : <><FaPen size={10} /> Edit</>}
       </button>
     );
   };
@@ -231,13 +238,13 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
             {sub_title || "Subtitle goes here"}
           </p>
           {!banner_image && banner_placeholder && (
-            <div style={{ marginTop: 12, display: "inline-block", background: "#F3F3F3", border: "1px dashed #D0D0D0", borderRadius: 6, padding: "8px 14px", fontSize: 12, color: "#646464" }}>
-              🎨 {banner_placeholder}
+            <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6, background: "#F3F3F3", border: "1px dashed #D0D0D0", borderRadius: 6, padding: "8px 14px", fontSize: 12, color: "#646464" }}>
+              <FaPalette size={12} /> {banner_placeholder}
             </div>
           )}
           <div className="banner-ctas">
-            {cta1_label && <div className="banner-cta-primary">↗ {cta1_label}</div>}
-            {cta2_label && <div className="banner-cta-secondary">▷ {cta2_label}</div>}
+            {cta1_label && <div className="banner-cta-primary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><FaArrowRight size={11} /> {cta1_label}</div>}
+            {cta2_label && <div className="banner-cta-secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><FaChevronRight size={11} /> {cta2_label}</div>}
           </div>
         </div>
       </div>
@@ -261,19 +268,19 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
             {overview_media_url ? (
               <div className="overview-media-wrap">
                 {overview_media_type === "video"
-                  ? <div className="overview-media-video">▶ Video: {overview_media_url}</div>
+                  ? <div className="overview-media-video" style={{ display: "flex", alignItems: "center", gap: 6 }}><FaPlay size={11} /> Video: {overview_media_url}</div>
                   : <img src={overview_media_url} alt={overview_media_alt || "Overview media"} className="overview-media-img"
                       onError={e => { e.target.style.display = "none"; }} />
                 }
               </div>
             ) : overview_media_placeholder ? (
               <div className="overview-media-placeholder">
-                <div className="icon">🎨</div>
+                <div className="icon" style={{ display: "flex", justifyContent: "center" }}><FaPalette /></div>
                 <div className="text">{overview_media_placeholder}</div>
               </div>
             ) : (
               <div className="overview-media-placeholder">
-                <div className="icon">🖼️</div>
+                <div className="icon" style={{ display: "flex", justifyContent: "center" }}><FaImage /></div>
                 <div className="text">Image / Diagram / Video — Optional</div>
                 <div className="sub">To be added by Design QA</div>
               </div>

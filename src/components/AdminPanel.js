@@ -7,7 +7,15 @@ import { OKTA_ENABLED } from "@/lib/authConfig";
 // Mirrors Register.js's own local DEPARTMENTS list — kept in sync
 // manually since there's no shared constants entry for it today.
 const INVITE_DEPARTMENTS = ["Product Team", "Content Team", "Design Team", "Web Team", "Marketing", "Engineering", "Operations", "Other"];
-const INVITE_ROLES = ["stakeholder","editorial_qa","brand_team","seo_team","design_qa","web_team","admin"];
+// Phase 1: brand/seo/design/web are dormant (no tasks are ever created
+// for them — see AdminReviewGate.js), so they're hidden here rather
+// than offered as roles nobody can actually use yet. Also fixed
+// "editorial_qa" -> "editorial_team": the v2 tasks system checks
+// user.role === "editorial_team" everywhere, so inviting someone as
+// "editorial_qa" (the old v1 name, still a legal DB value) silently
+// gave them a role that never matches any task -- a latent bug, not
+// just a display one.
+const INVITE_ROLES = ["stakeholder","editorial_team","admin"];
 
 const csvEscape = (val) => {
   const s = String(val ?? "");
@@ -146,6 +154,13 @@ function CharLimitsPanel({ user }) {
   );
 }
 
+// NOT trimmed like INVITE_ROLES below, on purpose: existing users
+// already hold design_team/web_team roles (assigned before this phase
+// scoped down to editorial-only), and this list drives a native
+// <select value={u.role}> per user -- removing an option that's
+// already someone's current value would leave their dropdown showing
+// no matching option at all, which looks like their role silently
+// changed. Only the invite flow (new users) is scoped down.
 const ROLES = ["stakeholder","editorial_qa","brand_team","seo_team","design_qa","web_team","admin"];
 
 export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {

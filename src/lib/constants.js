@@ -23,15 +23,18 @@ export const ROLE_META = {
   super_admin:    { label: 'Super Admin',    icon: '⚡',  color: '#7e22ce', bg: '#faf5ff' },
 };
 
+// Drives Navbar.js's "View as" impersonation dropdown (super_admin
+// only). Brand/SEO/Design/Web hidden for phase 1 -- no tasks are ever
+// created for those roles anymore (see AdminReviewGate.js), so
+// impersonating them would just land on an empty "no task assigned"
+// screen. Not deleted from the role system itself -- see ROLES in
+// AdminPanel.js for why those roles still need to work for accounts
+// that already have them.
 export const ROLE_OPTIONS = [
   { value: "super_admin",    label: "Super Admin"    },
   { value: "admin",          label: "Admin"          },
   { value: "stakeholder",    label: "Stakeholder"    },
   { value: "editorial_team", label: "Editorial Team" },
-  { value: "brand_team",     label: "Brand Team"     },
-  { value: "seo_team",       label: "SEO Team"       },
-  { value: "design_team",    label: "Design Team"    },
-  { value: "web_team",       label: "Web Team"       },
 ];
 
 export const getStatus = (key) =>

@@ -596,18 +596,24 @@ export default function Dashboard({ go, user }) {
                       {isNewWorkflow && req.taskProgress && req.taskProgress.length > 0 && (
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
                           <div style={{ display: "flex", gap: 3 }}>
-                            {TASK_TEAMS.map(team => {
-                              const t = req.taskProgress.find(x => x.team_role === team.role);
-                              const dot = t ? TASK_STATUS_META[t.status] : null;
+                            {/* Only dots for tasks that actually exist on this
+                                request — was iterating the full TASK_TEAMS list
+                                (5 teams) regardless of how many tasks were
+                                created, showing gray "Not assigned" dots for
+                                brand/seo/design/web even in phase 1, where only
+                                an editorial_team task is ever created. */}
+                            {req.taskProgress.map(t => {
+                              const team = TASK_TEAMS.find(tm => tm.role === t.team_role);
+                              const dot = TASK_STATUS_META[t.status];
                               return (
-                                <div key={team.role}
-                                  title={`${team.label}: ${dot?.label || "Not assigned"}`}
+                                <div key={t.team_role}
+                                  title={`${team?.label || t.team_role}: ${dot?.label || t.status}`}
                                   style={{ width: 7, height: 7, borderRadius: "50%", background: dot?.color || "#E0E0E0", border: "1px solid rgba(0,0,0,0.08)", flexShrink: 0 }} />
                               );
                             })}
                           </div>
                           <span style={{ fontSize: 10, color: "#B5B5B5" }}>
-                            {req.taskProgress.filter(t => t.status === "completed").length} of {TASK_TEAMS.length} tasks complete
+                            {req.taskProgress.filter(t => t.status === "completed").length} of {req.taskProgress.length} tasks complete
                           </span>
                         </div>
                       )}

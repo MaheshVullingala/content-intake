@@ -700,8 +700,8 @@ Return this exact format:
         </div>
       )}
 
-      {/* ── Q&A thread ───────────────────────────────────────────────── */}
-      {myTask.question && (
+      {/* ── Q&A thread — not shown for editorial_team, see note below ─── */}
+      {user.role !== "editorial_team" && myTask.question && (
         <div className="card">
           <div style={{
             background: "#fffbeb", border: "1px solid #d97706aa",
@@ -746,8 +746,15 @@ Return this exact format:
         </div>
       )}
 
-      {/* ── Ask stakeholder a question (non-blocking) ────────────────── */}
-      {(isActive || canStart) && !isLocked && !isCompleted && !isPendingApproval && (
+      {/* ── Ask stakeholder a question (non-blocking) ──────────────────
+          Not shown for editorial_team — the open, section-scoped
+          CommentThread (rendered separately in TaskBoard.js) replaces
+          this single-question-slot flow for them: it's a real back-and-
+          forth with stakeholder + admin + editorial all in one thread,
+          not a single question/answer pair on the task row. Left as-is
+          for other team roles (seo_team, etc.), which are dormant in
+          this phase and untouched. */}
+      {user.role !== "editorial_team" && (isActive || canStart) && !isLocked && !isCompleted && !isPendingApproval && (
         <div className="card">
           <h3 style={{ margin: "0 0 6px", fontSize: "var(--text-base)", fontWeight: 600 }}>
             ❓ Ask Stakeholder

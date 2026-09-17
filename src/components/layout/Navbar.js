@@ -17,10 +17,12 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
 
   if (!user) return null;
 
-  const isAdmin        = ["admin", "super_admin"].includes(user.role);
-  const isSuperAdmin   = user.role === "super_admin";
-  const activeRole     = impersonatedRole || "super_admin";
-  const activeLabel    = ROLE_OPTIONS.find(r => r.value === activeRole)?.label ?? "Super Admin";
+  const isAdmin        = user.role === "admin";
+  // Role switcher used to be super_admin-only; super_admin was folded
+  // into admin in the 2026-09-11 role consolidation (see
+  // sql/29-role-consolidation.sql), so admin now gets it instead.
+  const activeRole     = impersonatedRole || "admin";
+  const activeLabel    = ROLE_OPTIONS.find(r => r.value === activeRole)?.label ?? "Admin";
 
   return (
     <nav style={{
@@ -85,8 +87,9 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
         {/* Notification bell */}
         <NotificationBell user={user} supabase={supabase} go={go} />
 
-        {/* Role switcher — super_admin only */}
-        {isSuperAdmin && (
+        {/* Role switcher — admin only (was super_admin-only before the
+            2026-09-11 role consolidation folded that tier into admin) */}
+        {isAdmin && (
           <div style={{ position: "relative" }}>
             <button
               onClick={() => setDropdownOpen(v => !v)}
@@ -130,7 +133,7 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
                         key={r.value}
                         onClick={() => {
                           setDropdownOpen(false);
-                          onSwitchRole?.(r.value === "super_admin" ? null : r.value);
+                          onSwitchRole?.(r.value === "admin" ? null : r.value);
                         }}
                         style={{
                           display: "flex", alignItems: "center", gap: 6,

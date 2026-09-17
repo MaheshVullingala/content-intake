@@ -279,6 +279,12 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
       {/* ── Banner ───────────────────────────────────────────────────── */}
       <SectionHead><FaFileAlt size={11} /> Banner</SectionHead>
       <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
+        <FieldRow label="Page URL"     value={req.seo_page_location} copiedKey={copiedKey} onCopy={copy} />
+        <FieldRow label="Tags" value={(() => {
+          const tags = Array.isArray(req.banner_tags) ? req.banner_tags
+            : (() => { try { return JSON.parse(req.banner_tags || "[]"); } catch { return []; } })();
+          return tags.map(t => t.category ? `${t.category} / ${t.name}` : t.name).join(", ");
+        })()} copiedKey={copiedKey} onCopy={copy} />
         <FieldRow label="Page Title"   value={req.page_title}   copiedKey={copiedKey} onCopy={copy} />
         <FieldRow label="Sub Title"    value={req.sub_title}    copiedKey={copiedKey} onCopy={copy} />
         <FieldRow label="CTA 1 Label"  value={req.cta1_label}   copiedKey={copiedKey} onCopy={copy} />
@@ -417,7 +423,6 @@ export default function WebTeamView({ req, user, supabase, attachments = [], onR
       {(req.seo_meta_title || req.seo_meta_description || req.seo_meta_keywords) && (<>
         <SectionHead><FaSearch size={11} /> SEO Meta</SectionHead>
         <div className="card" style={{ padding: "0 14px", marginBottom: 12 }}>
-          <FieldRow label="Page URL"    value={req.seo_page_location}   copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Meta Title"  value={req.seo_meta_title}       copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Meta Desc"   value={req.seo_meta_description} copiedKey={copiedKey} onCopy={copy} />
           <FieldRow label="Keywords"    value={req.seo_meta_keywords}    copiedKey={copiedKey} onCopy={copy} />

@@ -223,5 +223,23 @@ export function generateTestData(pageType, sectionKeys = [], limits = {}) {
     };
   }
 
+  if (has("others")) {
+    // description is rich-text HTML (see src/lib/richText.js /
+    // RichTextEditor.js) — build a small paragraph + bullet list so Fill
+    // Test Data actually exercises the rich-text rendering path instead
+    // of leaving it plain text.
+    const richDescription = () =>
+      `<p>${sentence(10, 16)}</p><ul><li>${sentence(4, 8).replace(/\.$/, "")}</li><li>${sentence(4, 8).replace(/\.$/, "")}</li></ul>`;
+    out.othersData = {
+      oth_items: Array.from({ length: 2 }, () => ({
+        id:               testId("oth"),
+        label:            truncate(title(2, 4), 40),
+        impact_statement: truncate(sentence(6, 10), 100),
+        description:      richDescription(),
+        explanation:      truncate(sentence(8, 14), 300),
+      })),
+    };
+  }
+
   return out;
 }

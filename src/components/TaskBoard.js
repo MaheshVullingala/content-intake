@@ -13,8 +13,11 @@ import WordExportButton    from "@/components/WordExportButton";
 import { OVERALL_STATUS_META, getTasksForRequest, updateTask } from "@/lib/taskUtils";
 import { FaArrowLeft, FaHourglassHalf, FaInfoCircle, FaPen } from "react-icons/fa";
 
+// Trimmed to editorial_team only (2026-09-11 role consolidation -- see
+// sql/29-role-consolidation.sql). brand_team/seo_team/design_team/
+// web_team are retired; no user can hold those role values anymore.
 const TEAM_ROLES = new Set([
-  "editorial_team", "brand_team", "seo_team", "design_team", "web_team",
+  "editorial_team",
 ]);
 
 // Spec-exact two-column layout
@@ -433,6 +436,22 @@ export default function TaskBoard({
             />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // ── View 5: General (read-only) → PagePreview only, full width.
+  // Can still post section-scoped comments (PagePreview renders those
+  // whenever it's given both user + supabase, regardless of role -- see
+  // PagePreview.js's Bubble helper) but gets no editorialMode/
+  // onEditSection (no edit buttons) and no TaskBoardOverview task
+  // actions -- pure view + discuss, per the 4-role consolidation
+  // (2026-09-11, sql/29-role-consolidation.sql).
+  if (user.role === "general") {
+    return (
+      <div>
+        <Header />
+        <PagePreview req={req} pageType={req.page_type} attachments={designAttachments} user={user} supabase={supabase} />
       </div>
     );
   }

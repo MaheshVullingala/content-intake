@@ -12,6 +12,7 @@ import RelatedContentPreview from "@/components/sections/RelatedContentPreview";
 import ResourcesPreview from "@/components/sections/ResourcesPreview";
 import RelatedProductsPreview from "@/components/sections/RelatedProductsPreview";
 import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview";
+import OthersPreview from "@/components/sections/OthersPreview";
 
 export default function PagePreview({ req = {}, pageType = "Product", activeSection = "", fullPage = false, editorialMode = false, activeEditSection = null, onEditSection = null, attachments = [], highlightSection = null, user = null, supabase = null }) {
   // Force parse all fields at entry point — handles both raw DB strings and JS objects
@@ -24,6 +25,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   const banner_image_ref = p(req.banner_image_ref, null);
   const banner_image      = getDesignImage("banner_image", attachments) || "";
   const banner_placeholder = getImagePlaceholder(banner_image_ref);
+  const banner_tags = p(req.banner_tags, []);
   const overview_label       = req.overview_label       || "";
   const overview_impact      = req.overview_impact      || "";
   const overview_description = req.overview_description || "";
@@ -72,10 +74,11 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   const ts_card1_cta_link = req.ts_card1_cta_link || "";
   const ts_card2_cta_link = req.ts_card2_cta_link || "";
   const ts_card3_cta_link = req.ts_card3_cta_link || "";
+  const oth_items = p(req.oth_items, []);
 
   // Build parsedReq with all correctly typed fields
   const parsedReq = { ...req,
-    page_title, sub_title, cta1_label, cta2_label, banner_image,
+    page_title, sub_title, cta1_label, cta2_label, banner_image, banner_tags,
     overview_label, overview_impact, overview_description, overview_media_url, overview_media_type,
     kb_label, kb_impact, kb_description, kb_cards,
     fa_label, fa_impact, fa_description, fa_view_type, fa_items, fa_columns, fa_rows,
@@ -86,6 +89,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
     res_label, res_impact, res_selected, res_video_carousel, res_mixed_carousel, res_resources, res_news, res_blogs,
     rp_label, rp_impact, rp_description, rp_cards,
     ts_label, ts_card1_cta_link, ts_card2_cta_link, ts_card3_cta_link,
+    oth_items,
   };
 
   // Editorial mode: hoverable edit button per section
@@ -196,6 +200,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   const hasResources        = res_impact || res_selected.length > 0 || activeSection === "resources";
   const hasRelatedProducts  = rp_impact || rp_cards.length > 0 || activeSection === "related_products";
   const hasTrainingSupport  = ts_label || ts_card1_cta_link || ts_card2_cta_link || ts_card3_cta_link || activeSection === "training_support";
+  const hasOthers           = oth_items.length > 0 || activeSection === "others";
 
   return (
     <div className={fullPage ? "preview-window-full" : "preview-window"}>
@@ -246,6 +251,19 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
             {cta1_label && <div className="banner-cta-primary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><FaArrowRight size={11} /> {cta1_label}</div>}
             {cta2_label && <div className="banner-cta-secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><FaChevronRight size={11} /> {cta2_label}</div>}
           </div>
+          {banner_tags.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
+              {banner_tags.map(t => (
+                <span key={t.id} style={{
+                  fontSize: 11, padding: "3px 10px", borderRadius: 20,
+                  background: "rgba(255,255,255,0.15)", color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.35)",
+                }}>
+                  {t.category ? `${t.category} / ${t.name}` : t.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -362,6 +380,14 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
         </>
       )}
 
+      {/* Others */}
+      {hasOthers && (
+        <>
+          <div className="preview-section-divider" />
+          <div data-section="others" style={{width:"100%",position:"relative"}} onMouseEnter={()=>setHoverSection("others")} onMouseLeave={()=>setHoverSection(null)}><EditBtn sectionKey="others" /><Bubble sectionKey="others" label="Others" /><HighlightBanner sectionKey="others" /><OthersPreview data={parsedReq} /></div>
+        </>
+      )}
+
       {/* Preview label */}
       <div className="preview-label-bar">
         <div className="preview-label-dot" />
@@ -378,6 +404,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
             hasResources ? "Resources" : null,
             hasRelatedProducts ? "Related Products" : null,
             hasTrainingSupport ? "Training & Support" : null,
+            hasOthers ? "Others" : null,
           ].filter(Boolean).join(" + ")}
         </span>
       </div>

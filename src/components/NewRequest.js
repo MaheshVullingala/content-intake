@@ -4,14 +4,16 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   FaCheck, FaExclamationTriangle, FaUndo, FaChevronDown, FaChevronUp,
   FaSave, FaDice, FaArrowRight, FaArrowLeft, FaPalette, FaSearch,
-  FaPen, FaLink, FaTag, FaInfoCircle,
+  FaPen, FaLink, FaTag, FaInfoCircle, FaFileWord,
 } from "react-icons/fa";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import { PAGE_TYPES, getSectionsForPageType, CHAR_LIMITS as DEFAULT_CHAR_LIMITS } from "@/lib/constants";
 import { useCharLimits } from "@/lib/charLimits";
 import { generateTestData } from "@/lib/testData";
+import { htmlToPlainText } from "@/lib/richText";
 import { runPreflightChecks } from "@/lib/preflightCheck";
+import { downloadRequestDocx } from "@/lib/wordExport";
 import PagePreview from "@/components/PagePreview";
 import AIAssistant from "@/components/AIAssistant";
 import SectionAIAssist from "@/components/SectionAIAssist";
@@ -34,10 +36,16 @@ import RelatedProducts from "@/components/sections/RelatedProducts";
 import RelatedProductsPreview from "@/components/sections/RelatedProductsPreview";
 import TrainingSupport from "@/components/sections/TrainingSupport";
 import TrainingSupportPreview from "@/components/sections/TrainingSupportPreview";
+import Others from "@/components/sections/Others";
+import OthersPreview from "@/components/sections/OthersPreview";
+import TagPicker from "@/components/TagPicker";
 
 const EMPTY_SEO = { seo_page_location:"", seo_meta_title:"", seo_meta_description:"", seo_meta_keywords:"" };
 
-const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image_ref:null };
+// banner_tags: array of tag snapshots ({id, name, category, url, status})
+// — see src/lib/tags.js. Lives on banner (not a separate section slice)
+// since it renders directly below Page Location inside the Banner tab.
+const EMPTY_BANNER   = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image_ref:null, banner_tags:[] };
 const EMPTY_OVERVIEW = { overview_label:"OVERVIEW", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_ref:null, overview_media_alt:"" };
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint, charLimit, disabled, readOnly, style: fieldStyle }) => {
@@ -98,7 +106,12 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const [resData,       setResData]      = useState({ res_label:"", res_impact:"", res_selected:[], res_video_carousel:{}, res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
   const [rpData,        setRpData]       = useState({ rp_label:"RELATED PRODUCTS", rp_impact:"", rp_description:"", rp_cards:[] });
   const [tsData,        setTsData]       = useState({});
+  const [othersData,    setOthersData]   = useState({ oth_items: [] });
   const [saving,        setSaving]       = useState(false);
+  // Which submit action is in flight -- drives which of the two Step 3
+  // buttons (Submit Request / Submit & Download) shows "Submitting..."
+  // while `saving` is shared by both.
+  const [downloadOnSubmit, setDownloadOnSubmit] = useState(false);
   const [draftSaved,    setDraftSaved]   = useState(false); // shows "Draft saved" toast
   const [error,         setError]        = useState("");
   const [showExitModal, setShowExitModal]= useState(false);
@@ -182,7 +195,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         if (error || !data) { go("dashboard"); return; }
         setPageType(data.page_type || "");
         setSeoData({ seo_page_location: data.seo_page_location||"", seo_meta_title: data.seo_meta_title||"", seo_meta_description: data.seo_meta_description||"", seo_meta_keywords: data.seo_meta_keywords||"" });
-        setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image_ref: data.banner_image_ref||null });
+        setBanner({ page_title: data.page_title||"", sub_title: data.sub_title||"", cta1_label: data.cta1_label||"", cta1_link: data.cta1_link||"", cta2_label: data.cta2_label||"", cta2_link: data.cta2_link||"", banner_image_ref: data.banner_image_ref||null, banner_tags: data.banner_tags||[] });
         setOverview({ overview_label: "OVERVIEW", overview_impact: data.overview_impact||"", overview_description: data.overview_description||"", overview_media_url: data.overview_media_url||"", overview_media_type: data.overview_media_type||"image", overview_media_ref: data.overview_media_ref||null, overview_media_alt: data.overview_media_alt||"" });
         if (data.kb_impact || data.kb_cards?.length) setKbData({ kb_label: "KEY BENEFITS", kb_impact: data.kb_impact||"", kb_description: data.kb_description||"", kb_cards: data.kb_cards||[] });
         if (data.fa_impact || data.fa_view_type) setFaData({ fa_label: "FEATURES", fa_impact: data.fa_impact||"", fa_description: data.fa_description||"", fa_view_type: data.fa_view_type||"", fa_items: parseJSONB(data.fa_items,[]), fa_columns: parseJSONB(data.fa_columns,[]), fa_rows: parseJSONB(data.fa_rows,[]) });
@@ -193,6 +206,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
         if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
         if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
+        if (data.oth_items?.length) setOthersData({ oth_items: data.oth_items||[] });
         if (data.needs_brand) setNeedsBrand(true);
         setPriority(data.priority || "normal");
         setPriorityReason(data.stakeholder_priority_reason || "");
@@ -237,6 +251,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     if (t.resData)   setResData(p   => ({ ...p, ...t.resData }));
     if (t.rpData)    setRpData(p    => ({ ...p, ...t.rpData }));
     if (t.tsData)    setTsData(p    => ({ ...p, ...t.tsData }));
+    if (t.othersData) setOthersData(p => ({ ...p, ...t.othersData }));
     setNaMap(p => {
       const next = { ...p };
       sectionKeys.forEach(k => { delete next[k]; });
@@ -290,6 +305,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     cta1_label: banner.cta1_label, cta1_link: banner.cta1_link,
     cta2_label: banner.cta2_label, cta2_link: banner.cta2_link,
     banner_image_ref:  banner.banner_image_ref,
+    banner_tags: banner.banner_tags || [],
     // Overview
     ...(!naMap["overview"] ? {
       overview_label:       overview.overview_label,
@@ -384,6 +400,10 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       res_news:           resData.res_news,
       res_blogs:          resData.res_blogs,
     } : {}),
+    // Others — custom section requests
+    ...(!naMap["others"] ? {
+      oth_items: othersData.oth_items,
+    } : {}),
   });
 
   // saveDraft: pass navigate=true to go to dashboard after saving
@@ -416,7 +436,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     try {
       // Small delay to ensure React state has flushed before reading values
       await new Promise(resolve => setTimeout(resolve, 50));
-      const payload = sanitizePayload(buildPayload("draft"));
+      const payload = sanitizePayload(buildPayload("draft"), ["description"]);
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       // Real session JWT, not the anon key — RLS needs auth.uid() to
       // resolve to the caller, which the anon key alone can never do (see
@@ -479,7 +499,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       setSaving(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draftId, draftDbId, step, pageType, seoData, banner, overview, kbData, faData, appData, csData, promoData, rcData, resData, rpData, tsData, naMap, user]);
+  }, [draftId, draftDbId, step, pageType, seoData, banner, overview, kbData, faData, appData, csData, promoData, rcData, resData, rpData, tsData, othersData, naMap, user]);
 
   // Register saveDraft into parent ref so auto-logout can trigger it
   useEffect(() => {
@@ -518,12 +538,12 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     const dest = pendingNav || "dashboard";
     const timeout = setTimeout(() => { setSaving(false); setShowExitModal(false); onClearPendingNav?.(); go(dest); }, 8000);
     try {
-      const payload = sanitizePayload(buildPayload("draft"));
+      const payload = sanitizePayload(buildPayload("draft"), ["description"]);
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       // Use JWT token for authenticated requests (Option A security fix)
       const authHeaders = await getAuthHeaders(supabase);
-      const sanitized   = sanitizePayload({ ...payload, updated_at: new Date().toISOString() });
+      const sanitized   = sanitizePayload({ ...payload, updated_at: new Date().toISOString() }, ["description"]);
 
       if (draftDbId) {
         await fetch(`${supabaseUrl}/rest/v1/requests?id=eq.${draftDbId}`, {
@@ -591,7 +611,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     };
   };
 
-  const submit = async () => {
+  const submit = async (alsoDownload = false) => {
     if ((priority === "high" || priority === "urgent") && !priorityReason.trim()) {
       setError("Please provide a reason for High/Urgent priority before submitting.");
       return;
@@ -602,13 +622,14 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       return;
     }
     setSaving(true);
+    setDownloadOnSubmit(alsoDownload);
     setError("");
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const authHeaders = await getAuthHeaders(supabase);
 
     try {
       const designFlags = computeDesignFlags();
-      const payload = sanitizePayload({ ...buildPayload("draft"), overall_status: "pending_admin", needs_brand: needsBrand, ...designFlags });
+      const payload = sanitizePayload({ ...buildPayload("draft"), overall_status: "pending_admin", needs_brand: needsBrand, ...designFlags }, ["description"]);
       let requestId = draftDbId;
 
       if (draftDbId) {
@@ -648,16 +669,90 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         to_status: "pending_admin"
       });
 
+      // Best-effort — a download hiccup (popup blocker, etc.) must never
+      // block the submit itself, which has already succeeded by this point.
+      if (alsoDownload) {
+        try { await downloadRequestDocx(payload); } catch { /* non-fatal */ }
+      }
+
       go("detail", requestId, { submitted: true });
     } catch (e) {
       setError(`Error: ${e.message}`);
     } finally {
       setSaving(false);
+      setDownloadOnSubmit(false);
     }
   };
 
   // Merged data for unified preview
-  const previewData = { ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData };
+  const previewData = { ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData };
+
+  // Compiles everything the stakeholder has already written across every
+  // OTHER section into one text blob, for the SEO Meta Data section's
+  // "Generate from Page Content" AI option (see SectionAIAssist.js /
+  // src/lib/aiPrompts.js's "from_page" mode) — so SEO metadata can be
+  // generated by summarizing the real page instead of asking the
+  // stakeholder to describe it a second time. Skips sections marked N/A.
+  // Rich text (Others' description) is flattened to plain text first — the
+  // model gets a readable summary, not raw HTML markup.
+  const buildPageContentSummary = () => {
+    const lines = [];
+    const add = (heading, ...vals) => {
+      const content = vals.filter(Boolean).join(" — ");
+      if (content) lines.push(`${heading}: ${content}`);
+    };
+
+    add("Page Title", banner.page_title);
+    add("Sub Title", banner.sub_title);
+
+    if (!naMap["overview"]) {
+      add("Overview — Impact Statement", overview.overview_impact);
+      add("Overview — Description", overview.overview_description);
+    }
+    if (!naMap["key_benefits"]) {
+      add("Key Benefits — Impact Statement", kbData.kb_impact);
+      add("Key Benefits — Description", kbData.kb_description);
+      (kbData.kb_cards || []).forEach((c, i) => add(`Key Benefit ${i + 1}`, c.title, c.description));
+    }
+    if (!naMap["features_apps"]) {
+      add("Features — Impact Statement", faData.fa_impact);
+      add("Features — Description", faData.fa_description);
+      (faData.fa_items || []).forEach((it, i) => add(`Feature ${i + 1}`, it.text));
+    }
+    if (!naMap["applications"]) {
+      add("Applications — Impact Statement", appData.app_impact);
+      add("Applications — Description", appData.app_description);
+      (appData.app_items || []).forEach((it, i) => add(`Application ${i + 1}`, it.title, it.description));
+    }
+    if (!naMap["customer_stories"]) {
+      add("Customer Stories — Impact Statement", csData.cs_impact);
+    }
+    if (!naMap["promo_section"]) {
+      add("Promo Section — Title", promoData.promo_title);
+      add("Promo Section — Description", promoData.promo_description);
+    }
+    if (!naMap["related_content"]) {
+      add("Related Content — Impact Statement", rcData.rc_impact);
+    }
+    if (!naMap["related_products"]) {
+      add("Related Products — Impact Statement", rpData.rp_impact);
+      add("Related Products — Description", rpData.rp_description);
+    }
+    if (!naMap["training_support"]) {
+      add("Training & Support — Impact Statement", tsData.ts_impact);
+    }
+    if (!naMap["others"]) {
+      (othersData.oth_items || []).forEach((it, i) =>
+        add(`Custom Section ${i + 1}`, it.label, it.impact_statement, htmlToPlainText(it.description), it.explanation));
+    }
+
+    // Defensive client-side truncation matching the server's own
+    // MAX_PAGE_CONTENT_CHARS cap (src/app/api/ai/route.js) — avoids a
+    // round trip that the server would just reject as "too long" on an
+    // unusually content-heavy page.
+    const summary = lines.join("\n");
+    return summary.length > 7000 ? summary.slice(0, 7000) + "\n…" : summary;
+  };
   const steps = ["Select Page Type", "Fill Sections", "Preview & Submit"];
 
   if (loadingDraft) return (
@@ -1007,6 +1102,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ? (isNA || (!!rpData.rp_impact && rpData.rp_cards.length > 0))
                 : s.key === "training_support"
                 ? true
+                : s.key === "others"
+                ? (isNA || (othersData.oth_items || []).length > 0)
                 : false;
               return (
                 <button key={s.key} onClick={() => handleSectionChange(s.key)}
@@ -1057,9 +1154,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                   <div className="card">
                     <div className="card-header">
                       <div><h3 style={{ display: "flex", alignItems: "center", gap: 8 }}><FaSearch size={14} /> SEO Meta Data</h3><p>Required for all page types · Helps search engines find and rank your page</p></div>
-                      <SectionAIAssist sectionKey="seo_meta" currentContent={`${seoData.seo_meta_title} ${seoData.seo_meta_description}`} onAccept={(d) => setSeoData(p => ({ ...p, ...d }))} />
+                      <SectionAIAssist sectionKey="seo_meta" currentContent={`${seoData.seo_meta_title} ${seoData.seo_meta_description}`} pageContent={buildPageContentSummary()} usePageContent onAccept={(d) => setSeoData(p => ({ ...p, ...d }))} />
                     </div>
-                    <Field label="Page Location" charLimit={CHAR_LIMITS.seo_page_location} value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" hint="The URL path where this page will live on the site" />
                     <Field label="Meta Title" charLimit={CHAR_LIMITS.seo_meta_title} value={seoData.seo_meta_title} onChange={v => updSeo("seo_meta_title", v)} placeholder="e.g. Xcelium Logic Simulator | Cadence" hint="Shown in browser tabs and search results — 50–70 characters" />
                     <Field label="Meta Description" charLimit={CHAR_LIMITS.seo_meta_description} value={seoData.seo_meta_description} onChange={v => updSeo("seo_meta_description", v)} placeholder="e.g. Accelerate SoC verification with Cadence Xcelium..." multiline hint="Shown in search results — 120–160 characters" />
                     <Field label="Meta Keywords" charLimit={CHAR_LIMITS.seo_meta_keywords} value={seoData.seo_meta_keywords} onChange={v => updSeo("seo_meta_keywords", v)} placeholder="e.g. logic simulator, SoC verification, mixed-signal" multiline hint="Comma-separated keywords" />
@@ -1074,7 +1170,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 <div style={{ position:"sticky", top:0, height:"100vh", overflowY:"auto", paddingBottom:"2rem" }}>
                   <p className="text-xs text-uppercase text-muted mb-8">SEO Guidelines</p>
                   <div className="card" style={{ gap:14 }}>
-                    {[[FaSearch,"Meta Title","50–70 characters. Include the primary keyword and brand name."],[FaPen,"Meta Description","120–160 characters. Summarise the page value clearly."],[FaLink,"Page Location","Use lowercase, hyphens (not underscores). e.g. /products/xcelium"],[FaTag,"Keywords","3–8 comma-separated terms your audience searches for."]].map(([Icon,title,desc]) => (
+                    {[[FaSearch,"Meta Title","50–70 characters. Include the primary keyword and brand name."],[FaPen,"Meta Description","120–160 characters. Summarise the page value clearly."],[FaLink,"Page Location","Set in the Banner tab. Use lowercase, hyphens (not underscores). e.g. /products/xcelium"],[FaTag,"Keywords","3–8 comma-separated terms your audience searches for."]].map(([Icon,title,desc]) => (
                       <div key={title} style={{ display:"flex", gap:12, paddingBottom:14, borderBottom:"1px solid #F3F3F3" }}>
                         <div style={{ fontSize:20, flexShrink:0, display:"flex" }}><Icon /></div>
                         <div><div style={{ fontSize:13, fontWeight:600, color:"#181313", marginBottom:4 }}>{title}</div><div style={{ fontSize:12, color:"#646464", lineHeight:1.6 }}>{desc}</div></div>
@@ -1096,6 +1192,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                       <SectionAIAssist sectionKey="banner" currentContent={`${banner.page_title} ${banner.sub_title}`} onAccept={(d) => setBanner(p => ({ ...p, ...d }))} />
                     </div>
                   </div>
+                  <Field label="Page Location" charLimit={CHAR_LIMITS.seo_page_location} value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" hint="The URL path where this page will live on the site" />
+                  <TagPicker value={banner.banner_tags || []} onChange={v => updBanner("banner_tags", v)} user={user} />
                   <Field label="Page Title" required charLimit={CHAR_LIMITS.page_title} value={banner.page_title} onChange={v => updBanner("page_title", v)} placeholder="e.g. Xcelium Logic Simulator" />
                   <Field label="Sub Title" charLimit={CHAR_LIMITS.sub_title} value={banner.sub_title}  onChange={v => updBanner("sub_title",  v)} placeholder="e.g. Industry-leading simulation platform" />
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -1141,7 +1239,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1166,7 +1264,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1191,7 +1289,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1208,7 +1306,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1224,7 +1322,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("promo_section")} className={`btn-na${naMap["promo_section"] ? " active" : ""}`}>{naMap["promo_section"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1240,7 +1338,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("related_content")} className={`btn-na${naMap["related_content"] ? " active" : ""}`}>{naMap["related_content"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1255,7 +1353,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} requestId={draftId || "draft"} /></div>
-                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} /></div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
                 )}
               </div>
@@ -1273,7 +1371,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
@@ -1293,12 +1391,32 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
-                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData }} activeSection={activeSection} />
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} />
                     </div>
                   </div>
                 )}
               </div>
             </>
+            )}
+
+            {/* Others */}
+            {activeSection === "others" && (
+              <div>
+                {naMap["others"] ? (
+                  <div className="na-placeholder"><div className="icon">—</div><div className="text">Others marked as Not Applicable</div><button onClick={() => toggleNA("others")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
+                      <Others data={othersData} onChange={setOthersData} isNA={false} onToggleNA={() => toggleNA("others")}
+                        naButton={<button onClick={() => toggleNA("others")} className={`btn-na${naMap["others"] ? " active" : ""}`}>{naMap["others"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
+                    </div>
+                    <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
+                      <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
+                      <PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} />
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Overview */}
@@ -1431,13 +1549,18 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             <FaInfoCircle /> Submitting will send this to an <strong style={{ color: "#181313" }}>Admin</strong> who will set up the parallel task workflow.
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
             <button onClick={() => setStep(2)} className="btn-ghost" style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <FaArrowLeft size={11} /> Back to Edit
             </button>
-            <button onClick={submit} disabled={saving} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              {saving ? "Submitting..." : <>Submit Request <FaArrowRight size={11} /></>}
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={() => submit(false)} disabled={saving} className="btn-ghost" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {saving && !downloadOnSubmit ? "Submitting..." : <>Submit Request <FaArrowRight size={11} /></>}
+              </button>
+              <button onClick={() => submit(true)} disabled={saving} className="btn-primary" style={{ display: "flex", alignItems: "center", gap: 6 }} title="Submits the request and downloads the intake document as a Word file">
+                {saving && downloadOnSubmit ? "Submitting..." : <><FaFileWord size={11} /> Submit & Download Intake Document</>}
+              </button>
+            </div>
           </div>
         </>
         );

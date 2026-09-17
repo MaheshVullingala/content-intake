@@ -4,6 +4,12 @@
    attachments, comments, progress, summary, utilities
    ============================================================ */
 
+/* Spinner used by react-icons FaSpinner (e.g. TagPicker.js search /
+   "Requesting..." states, AI Assist loading) — react-icons ships the
+   icon shape only, no built-in animation. */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.fa-spin { animation: spin 0.8s linear infinite; }
+
 /* ══════════════════════════════════════════════════════════
    BUTTONS
    ══════════════════════════════════════════════════════════ */
@@ -400,3 +406,31 @@
 .overflow-hidden { overflow: hidden; }
 .cursor-pointer  { cursor: pointer; }
 .user-select-none { user-select: none; }
+
+/* ══════════════════════════════════════════════════════════
+   RICH TEXT (Others section description field)
+   .rich-text-editor  — the contentEditable input itself
+   .rich-text-content — read-only rendering of saved rich text
+                         (previews, EditSectionModal, request detail)
+   ══════════════════════════════════════════════════════════ */
+
+.rich-text-editor p,
+.rich-text-content p {
+  margin: 0 0 0.6em;
+  line-height: 1.6;
+}
+.rich-text-editor p:last-child,
+.rich-text-content p:last-child { margin-bottom: 0; }
+
+.rich-text-editor ul,
+.rich-text-editor ol,
+.rich-text-content ul,
+.rich-text-content ol {
+  margin: 0 0 0.6em;
+  padding-left: 1.4em;
+  line-height: 1.6;
+}
+.rich-text-editor li,
+.rich-text-content li { margin-bottom: 0.2em; }
+
+.rich-text-content { font-size: var(--text-base); color: var(--color-night); }

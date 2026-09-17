@@ -4,6 +4,7 @@ import { FaHourglassHalf, FaCheck, FaUserClock, FaArrowRight, FaLock } from "rea
 import { supabase } from "@/lib/supabase";
 import { getStatus, ROLE_META, STATUS_FLOW, AUDIT_ACTIONS } from "@/lib/constants";
 import { OKTA_ENABLED } from "@/lib/authConfig";
+import AdminTagsPanel from "@/components/AdminTagsPanel";
 
 // Mirrors Register.js's own local DEPARTMENTS list — kept in sync
 // manually since there's no shared constants entry for it today.
@@ -16,7 +17,7 @@ const INVITE_DEPARTMENTS = ["Product Team", "Content Team", "Design Team", "Web 
 // "editorial_qa" (the old v1 name, still a legal DB value) silently
 // gave them a role that never matches any task -- a latent bug, not
 // just a display one.
-const INVITE_ROLES = ["stakeholder","editorial_team","admin"];
+const INVITE_ROLES = ["stakeholder","editorial_team","general","admin"];
 
 const csvEscape = (val) => {
   const s = String(val ?? "");
@@ -36,10 +37,13 @@ const csvEscape = (val) => {
 // (src/lib/charLimits.js) in NewRequest.js / EditSectionModal.js /
 // ProposeChangeWizard.js.
 const CHAR_LIMIT_FIELDS = [
-  { section: "SEO Meta Data",       key: "seo_page_location",     label: "Page Location (URL)",  default: 300 },
   { section: "SEO Meta Data",       key: "seo_meta_title",        label: "Meta Title",           default: 70  },
   { section: "SEO Meta Data",       key: "seo_meta_description",  label: "Meta Description",     default: 160 },
   { section: "SEO Meta Data",       key: "seo_meta_keywords",     label: "Meta Keywords",        default: 300 },
+  // Lives in the Banner form (above Page Title) even though the DB column
+  // is still seo_page_location -- grouped here to match where stakeholders
+  // actually see and edit it.
+  { section: "Banner",              key: "seo_page_location",     label: "Page Location (URL)",  default: 300 },
   { section: "Banner",              key: "page_title",            label: "Page Title",           default: 70  },
   { section: "Banner",              key: "sub_title",             label: "Subtitle",             default: 120 },
   { section: "Banner",              key: "cta1_label",            label: "CTA 1 Label",          default: 30  },
@@ -158,14 +162,17 @@ function CharLimitsPanel({ user }) {
   );
 }
 
-// NOT trimmed like INVITE_ROLES below, on purpose: existing users
-// already hold design_team/web_team roles (assigned before this phase
-// scoped down to editorial-only), and this list drives a native
-// <select value={u.role}> per user -- removing an option that's
-// already someone's current value would leave their dropdown showing
-// no matching option at all, which looks like their role silently
-// changed. Only the invite flow (new users) is scoped down.
-const ROLES = ["stakeholder","editorial_qa","brand_team","seo_team","design_qa","web_team","admin"];
+// Trimmed to the 4-role model (2026-09-11, see
+// sql/29-role-consolidation.sql). Previously left wider than
+// INVITE_ROLES on purpose, because existing users held design_team/
+// web_team/etc. roles and this list drives a native <select
+// value={u.role}> per user -- removing an option that's someone's
+// current value would leave their dropdown showing no matching option
+// at all. That's no longer a concern: the migration moved every
+// existing account off the retired roles (editorial_qa ->
+// editorial_team, super_admin -> admin, everything else -> general), so
+// no live user row can hold a value outside this list anymore.
+const ROLES = ["stakeholder","editorial_team","general","admin"];
 
 export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
   const [requests,  setRequests]  = useState([]);
@@ -411,7 +418,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
 
       {/* Tabs */}
       <div className="tab-bar" style={{ marginBottom: 16 }}>
-        {["requests","users","activity","audit_log","settings","char_limits"].map(t => (
+        {["requests","users","activity","audit_log","settings","char_limits","tags"].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`tab-btn${tab === t ? " active" : ""}`} style={{ textTransform: "capitalize" }}>{t === "char_limits" ? "Char Limits" : t === "audit_log" ? "Audit Log" : t}</button>
         ))}
       </div>
@@ -671,6 +678,9 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           {/* Settings tab */}
           {tab === "char_limits" && (
             <CharLimitsPanel user={user} />
+          )}
+          {tab === "tags" && (
+            <AdminTagsPanel user={user} />
           )}
           {tab === "settings" && (
             <div className="card" style={{ maxWidth: 480 }}>

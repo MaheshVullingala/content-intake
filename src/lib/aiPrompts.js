@@ -229,7 +229,7 @@ IMPORTANT: Generate content that sounds like it belongs on cadence.com — autho
 // Builds the actual user-turn prompt from structured, server-validated
 // inputs. Returns null if the section/mode combination isn't supported or
 // is missing what it needs — callers must treat null as "bad request."
-export function buildPrompt({ sectionKey, mode, currentContent, direction, brief }) {
+export function buildPrompt({ sectionKey, mode, currentContent, direction, brief, pageContent }) {
   const config = SECTION_SCHEMAS[sectionKey];
   if (!config) return null;
 
@@ -271,6 +271,27 @@ PRODUCT BRIEF:
 ${formatBrief(brief)}
 
 Return ONLY this JSON (no extra text):
+${config.fields}`;
+  }
+
+  // "from_page" — used by the SEO Meta Data section's "Generate from Page
+  // Content" button. Unlike every other mode, the input isn't a draft of
+  // this section's own text (improve) or a one-line instruction
+  // (direction) — it's a compiled dump of everything the stakeholder has
+  // already written across the *other* sections (banner, overview, key
+  // benefits, features, etc., built client-side by NewRequest.js's
+  // buildPageContentSummary()). The model's job is to read that and
+  // summarize it into SEO metadata, not to invent new product claims.
+  if (mode === "from_page") {
+    if (!pageContent || !pageContent.trim()) return null;
+    return `Generate SEO meta data for a Cadence product page by reading everything the stakeholder has already written for the rest of the page — do not ask them to repeat themselves.
+
+FULL PAGE CONTENT (everything already filled in across the other sections of this page):
+${pageContent}
+
+Your task: read the content above, understand what this specific page is about, and produce SEO meta data optimized for search — a compelling, keyword-rich meta title, a meta description that accurately reflects the page's actual value proposition, and a comma-separated list of relevant EDA/technical keywords genuinely reflected in the content above. Do not invent product capabilities, features, numbers, or certifications that are not mentioned in the page content above.
+
+Follow all character limits exactly. Return ONLY this JSON (no extra text):
 ${config.fields}`;
   }
 

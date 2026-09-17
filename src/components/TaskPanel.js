@@ -53,6 +53,7 @@ const QUESTION_SECTIONS = [
   { key: "resources",         label: "Resources" },
   { key: "related_products",  label: "Related Products" },
   { key: "training_support",  label: "Training & Support" },
+  { key: "others",            label: "Others" },
   { key: "seo_meta",          label: "SEO Meta" },
 ];
 

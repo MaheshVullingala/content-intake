@@ -10,7 +10,12 @@ import { SYSTEM_PROMPT, buildPrompt, SUPPORTED_SECTIONS } from "@/lib/aiPrompts"
 // always built server-side from src/lib/aiPrompts.js — the client never
 // sends prompt or system-prompt text (see that file for why this matters).
 const MAX_FIELD_CHARS = 4000;
-const SUPPORTED_MODES = ["improve", "direction", "brief"];
+// pageContent (mode: "from_page") is a compiled dump of every other
+// section's content, not a single field — needs real headroom for a page
+// with a lot filled in, but still capped so nobody can smuggle an
+// oversized payload through it either.
+const MAX_PAGE_CONTENT_CHARS = 8000;
+const SUPPORTED_MODES = ["improve", "direction", "brief", "from_page"];
 
 // Verifies the caller's Supabase access token server-side. Any authenticated
 // user (any role) may call AI Assist — RLS/role checks decide what they can
@@ -33,9 +38,12 @@ async function getVerifiedUser(request) {
 
 // Rejects if any client-supplied string field exceeds MAX_FIELD_CHARS —
 // checks currentContent/direction directly and every value in brief.
-function hasOversizedField({ currentContent, direction, brief }) {
+// pageContent is checked separately against its own, larger limit.
+function hasOversizedField({ currentContent, direction, brief, pageContent }) {
   const values = [currentContent, direction, ...(brief && typeof brief === "object" ? Object.values(brief) : [])];
-  return values.some(v => typeof v === "string" && v.length > MAX_FIELD_CHARS);
+  if (values.some(v => typeof v === "string" && v.length > MAX_FIELD_CHARS)) return true;
+  if (typeof pageContent === "string" && pageContent.length > MAX_PAGE_CONTENT_CHARS) return true;
+  return false;
 }
 
 export async function POST(request) {
@@ -52,7 +60,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Too many AI Assist requests — please wait a moment and try again." }, { status: 429 });
     }
 
-    const { sectionKey, mode, currentContent, direction, brief } = await request.json();
+    const { sectionKey, mode, currentContent, direction, brief, pageContent } = await request.json();
 
     if (!sectionKey || !SUPPORTED_SECTIONS.includes(sectionKey)) {
       return NextResponse.json({ error: "Unsupported section." }, { status: 400 });
@@ -60,7 +68,7 @@ export async function POST(request) {
     if (!mode || !SUPPORTED_MODES.includes(mode)) {
       return NextResponse.json({ error: "Unsupported mode." }, { status: 400 });
     }
-    if (hasOversizedField({ currentContent, direction, brief })) {
+    if (hasOversizedField({ currentContent, direction, brief, pageContent })) {
       return NextResponse.json({ error: "Input is too long." }, { status: 400 });
     }
 
@@ -68,7 +76,7 @@ export async function POST(request) {
     // from the fixed templates in src/lib/aiPrompts.js — the client only
     // ever influences it through the plain-data fields above, never by
     // sending prompt/system-prompt text directly.
-    const prompt = buildPrompt({ sectionKey, mode, currentContent, direction, brief });
+    const prompt = buildPrompt({ sectionKey, mode, currentContent, direction, brief, pageContent });
     if (!prompt) {
       return NextResponse.json({ error: "Missing content for this request." }, { status: 400 });
     }

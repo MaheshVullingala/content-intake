@@ -311,7 +311,9 @@ export default function App() {
   );
 
   // ── Main app ──────────────────────────────────────────────────────────────
-  const effectiveUser = user?.role === "super_admin" && impersonatedRole
+  // Role switcher was super_admin-only; that tier was folded into admin
+  // in the 2026-09-11 role consolidation (see sql/29-role-consolidation.sql).
+  const effectiveUser = user?.role === "admin" && impersonatedRole
     ? { ...user, role: impersonatedRole }
     : user;
 
@@ -325,7 +327,7 @@ export default function App() {
       <Navbar go={go} view={view} user={user} supabase={supabase} logout={logout} onNavigate={(dest) => { if ((view === "new" || view === "edit") && dest !== view) setPendingNav(dest); else go(dest); }} impersonatedRole={impersonatedRole} onSwitchRole={switchImpersonatedRole} />
 
       {/* Impersonation banner */}
-      {user?.role === "super_admin" && impersonatedRole && (
+      {user?.role === "admin" && impersonatedRole && (
         <div style={{
           background: "#0f2744",
           borderBottom: "1px solid #3ec5cb44",

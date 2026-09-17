@@ -8,25 +8,20 @@ import { createTasksForRequest } from "@/lib/taskUtils";
 import { logAudit } from "@/lib/auditLogger";
 import PagePreview from "@/components/PagePreview";
 
+// Only editorial_team remains as a task team (2026-09-11 role
+// consolidation -- see sql/29-role-consolidation.sql).
 const TEAM_HINTS = {
   editorial_team: "Reviews all text content for accuracy and tone",
-  brand_team:     "Designs brand assets — PNGs, PSDs, imagery",
-  seo_team:       "Reviews meta title, description and keywords",
-  design_team:    "Resizes and optimises images for AEM",
-  web_team:       "Implements content in AEM",
 };
 
 export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) {
   const origPriority = req.priority || "normal";
 
-  // Admin has full control over all teams — no team is locked out of
-  // selection. Defaults mirror the standard workflow; brand_team only
-  // defaults on when the stakeholder flagged needs_brand.
-  const [selected, setSelected] = useState(() => {
-    const defaults = new Set(["editorial_team", "seo_team", "design_team", "web_team"]);
-    if (req.needs_brand) defaults.add("brand_team");
-    return defaults;
-  });
+  // Only editorial_team exists now -- selection is effectively fixed,
+  // but kept as a Set (rather than hardcoding the single value further
+  // down) so this component doesn't need a deeper rewrite if a second
+  // team is ever reintroduced later.
+  const [selected, setSelected] = useState(() => new Set(["editorial_team"]));
   const [dueDate,        setDueDate]        = useState(req.due_date || "");
   const [priority,       setPriority]       = useState(origPriority);
   const [priorityReason, setPriorityReason] = useState("");
@@ -97,8 +92,7 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
         }).then(() => {}).catch(() => {});
       }
 
-      // Fix 2 — guarantee web_team is always in the creation list
-      const teamsToCreate = [...new Set([...selected, "web_team"])];
+      const teamsToCreate = [...selected];
 
       const { error: taskErr } = await createTasksForRequest(
         req.id, teamsToCreate, user.id, supabase
@@ -156,14 +150,6 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
           </span>
         )}
       </div>
-
-      {/* Stakeholder brand signal */}
-      {req.needs_brand && (
-        <div className="alert alert-warning mb-12" style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-          <FaPalette size={12} style={{ marginTop: 2, flexShrink: 0 }} /> <span>Stakeholder indicated this request <strong>needs Brand Team</strong> involvement.
-          Brand Team has been pre-selected below.</span>
-        </div>
-      )}
 
       {/* ── Team selection ──────────────────────────────────────── */}
       <div className="field-wrap">

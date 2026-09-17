@@ -17,6 +17,9 @@ import RelatedContent from "@/components/sections/RelatedContent";
 import Resources from "@/components/sections/Resources";
 import RelatedProducts from "@/components/sections/RelatedProducts";
 import TrainingSupport from "@/components/sections/TrainingSupport";
+import Others from "@/components/sections/Others";
+import TagPicker from "@/components/TagPicker";
+import { sanitizeRichText } from "@/lib/richText";
 
 // Same section forms NewRequest.js uses to create a request in the first
 // place — reused here (instead of EditSectionModal's field-only-if-
@@ -30,7 +33,7 @@ import TrainingSupport from "@/components/sections/TrainingSupport";
 // `requests` instead, skipping the review queue entirely.
 
 const EMPTY_SEO     = { seo_page_location:"", seo_meta_title:"", seo_meta_description:"", seo_meta_keywords:"" };
-const EMPTY_BANNER  = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image_ref:null };
+const EMPTY_BANNER  = { page_title:"", sub_title:"", cta1_label:"", cta1_link:"", cta2_label:"", cta2_link:"", banner_image_ref:null, banner_tags:[] };
 const EMPTY_OVERVIEW = { overview_label:"OVERVIEW", overview_impact:"", overview_description:"", overview_media_url:"", overview_media_type:"image", overview_media_ref:null };
 
 const parseJSONB = (val, fb = []) => {
@@ -60,7 +63,9 @@ const FIELD_META = (() => {
   map.fa_columns     = { section: "features_apps", label: "Features table columns" };
   map.fa_rows        = { section: "features_apps", label: "Features table rows" };
   map.app_items      = { section: "applications",  label: "Applications items" };
+  map.oth_items      = { section: "others",        label: "Others items" };
   map.banner_image_ref    = { section: "banner",   label: "Banner Image" };
+  map.banner_tags         = { section: "banner",   label: "Tags" };
   map.overview_media_ref  = { section: "overview", label: "Overview Media" };
   map.overview_media_type = { section: "overview", label: "Overview Media Type" };
   map.promo_bg_image_ref  = { section: "promo_section", label: "Promo Background Image" };
@@ -134,6 +139,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
   const [resData,   setResData]   = useState({ res_label:"", res_impact:"", res_selected:[], res_video_carousel:{}, res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
   const [rpData,    setRpData]    = useState({ rp_label:"RELATED PRODUCTS", rp_impact:"", rp_description:"", rp_cards:[] });
   const [tsData,    setTsData]    = useState({});
+  const [othersData, setOthersData] = useState({ oth_items: [] });
 
   // Seed every section slice from the request currently in flight —
   // unlike NewRequest.js's loadDraft (which only seeds a slice when it
@@ -150,6 +156,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
       cta1_label: req.cta1_label||"", cta1_link: req.cta1_link||"",
       cta2_label: req.cta2_label||"", cta2_link: req.cta2_link||"",
       banner_image_ref: req.banner_image_ref||null,
+      banner_tags: parseJSONB(req.banner_tags, []),
     });
     setOverview({
       overview_label: "OVERVIEW", overview_impact: req.overview_impact||"",
@@ -170,20 +177,32 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
       ts_card2_icon: req.ts_card2_icon||"", ts_card2_title: req.ts_card2_title||"", ts_card2_description: req.ts_card2_description||"", ts_card2_cta_label: req.ts_card2_cta_label||"", ts_card2_cta_link: req.ts_card2_cta_link||"",
       ts_card3_icon: req.ts_card3_icon||"", ts_card3_title: req.ts_card3_title||"", ts_card3_description: req.ts_card3_description||"", ts_card3_cta_label: req.ts_card3_cta_label||"", ts_card3_cta_link: req.ts_card3_cta_link||"",
     });
+    setOthersData({ oth_items: parseJSONB(req.oth_items, []) });
     originalRef.current = { ...req };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [req.id]);
 
   const sections = req.page_type ? getSectionsForPageType(req.page_type) : [];
-  const mergedPreview = { ...banner, ...overview, ...seoData, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData };
+  const mergedPreview = { ...banner, ...overview, ...seoData, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData };
 
   const buildChangedFields = () => {
     const original = originalRef.current || {};
     const fields = [];
     Object.keys(mergedPreview).forEach(key => {
-      if (!isEqualValue(original[key], mergedPreview[key])) {
+      // oth_items holds rich-text HTML from RichTextEditor — sanitize
+      // before it's ever diffed/staged. Both write paths downstream
+      // (handleSubmit's fast-lane update, and PendingChangeCard.js's
+      // Approve & Apply, which writes changed_fields[].new_value straight
+      // to `requests` with no sanitization step of its own) trust
+      // whatever lands here as new_value, so this is the one place that
+      // must clean it.
+      let newVal = mergedPreview[key];
+      if (key === "oth_items" && Array.isArray(newVal)) {
+        newVal = newVal.map(it => ({ ...it, description: sanitizeRichText(it.description || "") }));
+      }
+      if (!isEqualValue(original[key], newVal)) {
         const meta = fieldMeta(key);
-        fields.push({ section: meta.section, key, label: meta.label, old_value: original[key] ?? null, new_value: mergedPreview[key] ?? null });
+        fields.push({ section: meta.section, key, label: meta.label, old_value: original[key] ?? null, new_value: newVal ?? null });
       }
     });
     return fields;
@@ -284,6 +303,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
     resources:        { Component: Resources,       data: resData,   onChange: setResData   },
     related_products: { Component: RelatedProducts, data: rpData,    onChange: setRpData    },
     training_support: { Component: TrainingSupport, data: tsData,    onChange: setTsData    },
+    others:           { Component: Others,          data: othersData, onChange: setOthersData },
   };
 
   return (
@@ -351,7 +371,6 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
           <SectionLayout activeSection={activeSection} pageType={req.page_type} mergedPreview={mergedPreview}>
             <div className="card">
               <div className="card-header"><div><h3 style={{ display: "flex", alignItems: "center", gap: 6 }}><FaSearch size={13} /> SEO Meta Data</h3></div></div>
-              <Field label="Page Location" charLimit={CHAR_LIMITS.seo_page_location} value={seoData.seo_page_location} onChange={v => setSeoData(p => ({ ...p, seo_page_location: v }))} placeholder="e.g. /products/xcelium-logic-simulator" />
               <Field label="Meta Title" charLimit={CHAR_LIMITS.seo_meta_title} value={seoData.seo_meta_title} onChange={v => setSeoData(p => ({ ...p, seo_meta_title: v }))} placeholder="e.g. Xcelium Logic Simulator | Cadence" />
               <Field label="Meta Description" charLimit={CHAR_LIMITS.seo_meta_description} value={seoData.seo_meta_description} onChange={v => setSeoData(p => ({ ...p, seo_meta_description: v }))} multiline />
               <Field label="Meta Keywords" charLimit={CHAR_LIMITS.seo_meta_keywords} value={seoData.seo_meta_keywords} onChange={v => setSeoData(p => ({ ...p, seo_meta_keywords: v }))} multiline />
@@ -363,6 +382,8 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
           <SectionLayout activeSection={activeSection} pageType={req.page_type} mergedPreview={mergedPreview}>
             <div className="card">
               <div className="card-header"><div><h3>Banner Section</h3></div></div>
+              <Field label="Page Location" charLimit={CHAR_LIMITS.seo_page_location} value={seoData.seo_page_location} onChange={v => setSeoData(p => ({ ...p, seo_page_location: v }))} placeholder="e.g. /products/xcelium-logic-simulator" />
+              <TagPicker value={banner.banner_tags || []} onChange={v => setBanner(p => ({ ...p, banner_tags: v }))} user={user} />
               <Field label="Page Title" required charLimit={CHAR_LIMITS.page_title} value={banner.page_title} onChange={v => setBanner(p => ({ ...p, page_title: v }))} />
               <Field label="Sub Title" charLimit={CHAR_LIMITS.sub_title} value={banner.sub_title} onChange={v => setBanner(p => ({ ...p, sub_title: v }))} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>

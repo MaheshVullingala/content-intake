@@ -6,7 +6,7 @@ import { getAccessToken } from "@/lib/security";
 import {
   FaSearch, FaTag, FaClipboardList, FaStar, FaTools, FaPuzzlePiece,
   FaCommentDots, FaBullseye, FaLink, FaGraduationCap, FaTimes, FaMagic,
-  FaSync, FaCheck, FaArrowLeft, FaArrowRight,
+  FaSync, FaCheck, FaArrowLeft, FaArrowRight, FaExclamationTriangle,
 } from "react-icons/fa";
 
 // The Cadence brand-voice system prompt and per-section field schemas used
@@ -33,7 +33,17 @@ const SECTION_LABELS = {
 };
 
 // ── Main SectionAIAssist component ────────────────────────────────────────────
-export default function SectionAIAssist({ sectionKey, currentContent = "", onAccept, buttonLabel }) {
+// `pageContent`: optional. When passed (currently only by NewRequest.js for
+// sectionKey="seo_meta", built from buildPageContentSummary()), it's a
+// compiled dump of everything the stakeholder has written in every OTHER
+// section.
+// `usePageContent`: opt-in flag (only seo_meta sets it). When true, this
+// instance skips the generic "improve what I wrote / start fresh"
+// mode-picker entirely — opening AI Assist immediately checks pageContent
+// and either generates straight away or shows a "no content yet" notice,
+// per the actual point of this button on the SEO tab: there's nothing of
+// its own to "improve", it should read the rest of the page instead.
+export default function SectionAIAssist({ sectionKey, currentContent = "", pageContent = "", usePageContent = false, onAccept, buttonLabel }) {
   const [open,      setOpen]      = useState(false);
   const [mode,      setMode]      = useState(null);   // null | "improve" | "direction"
   const [direction, setDirection] = useState("");
@@ -45,6 +55,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
   useEffect(() => setMounted(true), []);
 
   const hasContent = currentContent && currentContent.trim().length > 10;
+  const hasPageContent = pageContent && pageContent.trim().length > 20;
   const config = SECTION_LABELS[sectionKey];
   if (!config) return null;
 
@@ -71,7 +82,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ sectionKey, mode: selectedMode, currentContent, direction }),
+        body: JSON.stringify({ sectionKey, mode: selectedMode, currentContent, direction, pageContent }),
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);
@@ -130,7 +141,30 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
         <div style={{ padding: "1.1rem", overflowY: "auto", flex: 1 }}>
 
           {/* ── Step 1: Mode selection ── */}
-          {!mode && !result && (
+          {/* usePageContent sections (SEO Meta Data): the trigger button's
+              onClick already fired generate("from_page") when hasPageContent
+              was true, so mode is already set and this whole block is
+              skipped in that case. This block only ever renders here for
+              usePageContent when there's genuinely nothing to read yet. */}
+          {!mode && !result && usePageContent && (
+            <>
+              <div style={{ background: "#fffbeb", border: "1px solid rgba(217,119,6,0.35)", borderRadius: 8, padding: "0.85rem 1rem", marginBottom: 14, display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span style={{ fontSize: 15, color: "#d97706", display: "flex", marginTop: 1 }}><FaExclamationTriangle /></span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#92400e" }}>No content added yet</div>
+                  <div style={{ fontSize: 12, color: "#92400e", marginTop: 3, lineHeight: 1.5 }}>
+                    Fill in Banner, Overview, or another section first — AI Assist reads that content to generate SEO meta data automatically.
+                  </div>
+                </div>
+              </div>
+              <button type="button" onClick={() => setMode("direction")}
+                style={{ width: "100%", background: "#f8fafc", color: "#1b5793", border: "1px solid rgba(27,87,147,0.2)", borderRadius: 9, padding: "0.6rem 1rem", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
+                Or write SEO content myself
+              </button>
+            </>
+          )}
+
+          {!mode && !result && !usePageContent && (
             <>
               {hasContent ? (
                 <>
@@ -224,7 +258,9 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
           {loading && (
             <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
               <div style={{ fontSize: 28, marginBottom: 12, animation: "spin 1.5s linear infinite", display: "inline-flex" }}><FaMagic /></div>
-              <div style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>Writing in Cadence voice...</div>
+              <div style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>
+                {mode === "from_page" ? "Reading your page content..." : "Writing in Cadence voice..."}
+              </div>
               <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>This takes a few seconds</div>
               <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
             </div>
@@ -260,7 +296,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
                   style={{ flex: 2, background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.65rem", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                   <FaCheck size={12} /> Apply to section
                 </button>
-                <button type="button" onClick={() => { setResult(null); mode === "improve" ? generate("improve") : setMode(mode); }}
+                <button type="button" onClick={() => { setResult(null); (mode === "improve" || mode === "from_page") ? generate(mode) : setMode(mode); }}
                   style={{ flex: 1, background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.65rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
                   <FaSync size={11} /> Redo
                 </button>
@@ -269,6 +305,18 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
                   <FaTimes size={12} />
                 </button>
               </div>
+
+              {/* usePageContent auto-generated straight from the page, with
+                  no manual-editing detour along the way — this is the only
+                  point in that flow where one is offered, in case the
+                  stakeholder wants to override the auto-generated result
+                  with their own wording instead of applying/redoing it. */}
+              {usePageContent && (
+                <button type="button" onClick={() => { setResult(null); setMode("direction"); }}
+                  style={{ width: "100%", marginTop: 10, background: "none", border: "none", color: "#94a3b8", fontSize: 11, textDecoration: "underline", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
+                  Write SEO content myself instead
+                </button>
+              )}
             </>
           )}
 
@@ -282,7 +330,20 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", onAcc
       {/* Trigger button — sits inline next to section heading */}
       <button
         type="button"
-        onClick={() => { reset(); setOpen(true); }}
+        onClick={() => {
+          reset();
+          setOpen(true);
+          // usePageContent sections (SEO Meta Data) skip the mode-picker —
+          // check pageContent right away and act on it. hasPageContent is
+          // recomputed from the latest pageContent prop on every render, so
+          // this always reflects whatever's currently filled in elsewhere
+          // on the page, not a stale snapshot from when the button first
+          // mounted.
+          if (usePageContent && hasPageContent) {
+            setMode("from_page");
+            generate("from_page");
+          }
+        }}
         style={{
           background: "linear-gradient(135deg, #1b5793, #3ec5cb)",
           color: "#fff",

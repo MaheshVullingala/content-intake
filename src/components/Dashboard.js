@@ -46,8 +46,15 @@ export default function Dashboard({ go, user }) {
       tab2: { label: "Assigned to Team", icon: FaUsers,          key: "tab2" },
       tab3: { label: "All Requests",     icon: FaClipboardList,  key: "tab3" },
     };
-    // Regular operational member (brand_team/seo_team/editorial_team/design_team
-    // now fall through to isLead above or the member path below — no special branch)
+    // General (read-only, 2026-09-11 role consolidation) has no tasks of
+    // its own to be "assigned to" -- a single browse-everything tab,
+    // rather than reusing the operational-member config below whose
+    // tab1 ("Assigned to Me") would always be empty for this role.
+    if (user.role === "general") return {
+      tab1: { label: "All Requests",     icon: FaClipboardList,  key: "tab1" },
+    };
+    // Regular operational member (editorial_team now falls through to
+    // isLead above or the member path below — no special branch)
     return {
       tab1: { label: "Assigned to Me",   icon: FaBolt,           key: "tab1" },
       tab2: { label: "All Requests",     icon: FaClipboardList,  key: "tab2" },
@@ -217,7 +224,10 @@ export default function Dashboard({ go, user }) {
       return requests; // tab3 — full visibility
     }
 
-    // Regular operational member (editorial_qa, design_qa, web_team without can_assign)
+    // General (read-only) — single tab, everything.
+    if (user.role === "general") return requests;
+
+    // Regular operational member (editorial_team without can_assign)
     if (tabKey === "tab1") return requests.filter(r => {
       if (r.myTask) return r.myTask.assigned_to === user.id;
       return myStage && !r.overall_status && r.status === myStage && r.assigned_to === user.id;

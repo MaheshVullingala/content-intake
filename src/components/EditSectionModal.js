@@ -1,10 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { FaTimes, FaArrowLeft } from "react-icons/fa";
 import { CHAR_LIMITS, AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 import { useCharLimits } from "@/lib/charLimits";
+import RichTextEditor from "@/components/RichTextEditor";
+import { sanitizeRichText } from "@/lib/richText";
+import TagPicker from "@/components/TagPicker";
+
+// Others section's per-item limits — mirrors src/components/sections/Others.js's
+// LIMITS constant (kept local there per the app's per-item-limits-live-in-the-
+// component convention; duplicated here rather than imported since this
+// modal already keeps its own DEFAULT_ITEM_LIMITS below for the same reason).
+const OTHERS_ITEM_LIMITS = { label: 40, impact_statement: 100, description: 800, explanation: 300 };
 
 // Sub-field char limits for JSONB card/item arrays — not covered by the
 // top-level CHAR_LIMITS map in constants.js, so kept local to this modal.
@@ -25,6 +34,7 @@ export const SECTION_CONFIG = {
   banner: {
     title: "Banner",
     fields: [
+      { key: "seo_page_location", label: "Page Location" },
       { key: "page_title", label: "Page Title" },
       { key: "sub_title",  label: "Sub Title" },
       { key: "cta1_label", label: "CTA 1 Label" },
@@ -129,11 +139,15 @@ export const SECTION_CONFIG = {
   seo_meta: {
     title: "SEO Meta Data",
     fields: [
-      { key: "seo_page_location",        label: "Page Location" },
       { key: "seo_meta_title",           label: "Meta Title" },
       { key: "seo_meta_description",     label: "Meta Description",  multiline: true },
       { key: "seo_meta_keywords",        label: "Meta Keywords",     multiline: true },
     ],
+  },
+  others: {
+    title: "Others",
+    fields: [],
+    custom: "others", // description is rich text (RichTextEditor) — needs the dedicated renderer below, not generic EditField
   },
 };
 
@@ -193,6 +207,8 @@ export default function EditSectionModal({
   const [faColumns, setFaColumns] = useState([]);
   const [faRows,    setFaRows]    = useState([]);
   const [appItems,  setAppItems]  = useState([]);
+  const [othItems,  setOthItems]  = useState([]);
+  const [bannerTags, setBannerTags] = useState([]);
   const [saving,    setSaving]    = useState(false);
   const [error,     setError]     = useState("");
 
@@ -214,6 +230,12 @@ export default function EditSectionModal({
     }
     if (config.custom === "applications") {
       setAppItems(parseJSON(data.app_items));
+    }
+    if (config.custom === "others") {
+      setOthItems(parseJSON(data.oth_items));
+    }
+    if (pickedSection === "banner") {
+      setBannerTags(parseJSON(data.banner_tags));
     }
     setError("");
   }, [pickedSection]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -291,6 +313,7 @@ export default function EditSectionModal({
   const updateFaColumnHeader = (idx, v)      => setFaColumns(prev => prev.map((c, i) => i === idx ? { ...c, header: v } : c));
   const updateFaCell         = (rowIdx, colId, v) => setFaRows(prev => prev.map((r, i) => i === rowIdx ? { ...r, [colId]: v } : r));
   const updateAppItem        = (idx, key, v) => setAppItems(prev => prev.map((it, i) => i === idx ? { ...it, [key]: v } : it));
+  const updateOthItem        = (idx, key, v) => setOthItems(prev => prev.map((it, i) => i === idx ? { ...it, [key]: v } : it));
 
   const hasArrayItems = config.arrayField && items.length > 0;
   const isFeaturesApps = config.custom === "features_apps";
@@ -300,7 +323,10 @@ export default function EditSectionModal({
   const isApplications  = config.custom === "applications";
   const appViewType     = data.app_view_type || "";
   const appHasContent   = isApplications && appItems.length > 0;
-  const isEmpty = visible.length === 0 && !hasArrayItems && !faHasContent && !appHasContent;
+  const isOthers        = config.custom === "others";
+  const othHasContent   = isOthers && othItems.length > 0;
+  const isBanner        = pickedSection === "banner";
+  const isEmpty = visible.length === 0 && !hasArrayItems && !faHasContent && !appHasContent && !othHasContent && !(isBanner && bannerTags.length > 0);
 
   const handleSave = async () => {
     setSaving(true);
@@ -313,6 +339,17 @@ export default function EditSectionModal({
     }
     if (isApplications) {
       payload.app_items = appItems;
+    }
+    if (isBanner) {
+      payload.banner_tags = bannerTags;
+    }
+    if (isOthers) {
+      // This modal writes straight to `requests` (or hands off via
+      // deferApply) rather than going through NewRequest.js's
+      // sanitizePayload(..., ["description"]) path — sanitize the rich-text
+      // description here so editorial-team direct edits get the same
+      // allowlist treatment as a stakeholder's own save.
+      payload.oth_items = othItems.map(it => ({ ...it, description: sanitizeRichText(it.description || "") }));
     }
 
     if (deferApply) {
@@ -382,15 +419,28 @@ export default function EditSectionModal({
             </div>
           )}
 
+          {/* Tags renders right after Page Location, matching where it
+              lives in NewRequest.js/ProposeChangeWizard.js — but if
+              Page Location itself has no value yet (so isn't in
+              `visible`), fall back to showing it first so editorial QA
+              can still add tags to an otherwise-empty Banner section. */}
+          {isBanner && !visible.some(f => f.key === "seo_page_location") && (
+            <TagPicker value={bannerTags} onChange={setBannerTags} user={user} />
+          )}
+
           {visible.map(f => (
-            <EditField
-              key={f.key}
-              label={f.label}
-              value={values[f.key] || ""}
-              multiline={f.multiline}
-              limit={CHAR_LIMITS[f.key]}
-              onChange={v => updateValue(f.key, v)}
-            />
+            <Fragment key={f.key}>
+              <EditField
+                label={f.label}
+                value={values[f.key] || ""}
+                multiline={f.multiline}
+                limit={CHAR_LIMITS[f.key]}
+                onChange={v => updateValue(f.key, v)}
+              />
+              {isBanner && f.key === "seo_page_location" && (
+                <TagPicker value={bannerTags} onChange={setBannerTags} user={user} />
+              )}
+            </Fragment>
           ))}
 
           {hasArrayItems && (
@@ -491,6 +541,26 @@ export default function EditSectionModal({
                   <EditField label="Description" value={item.description || ""} onChange={v => updateAppItem(idx, "description", v)} multiline />
                   <EditField label="CTA Label"   value={item.cta_label || ""}   onChange={v => updateAppItem(idx, "cta_label", v)} />
                   <EditField label="CTA Link"    value={item.cta_link || ""}    onChange={v => updateAppItem(idx, "cta_link", v)} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {othHasContent && (
+            <div style={{ marginTop: visible.length ? 8 : 0 }}>
+              {othItems.map((item, idx) => (
+                <div key={item.id || idx} style={{
+                  border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)",
+                  padding: "0.9rem 1rem", background: "var(--color-ghost)", marginBottom: 10,
+                }}>
+                  <div className="text-xs text-uppercase text-muted" style={{ marginBottom: 8, fontWeight: 600 }}>
+                    Custom Section {idx + 1}
+                  </div>
+                  <EditField label="Label" value={item.label || ""} limit={OTHERS_ITEM_LIMITS.label} onChange={v => updateOthItem(idx, "label", v)} />
+                  <EditField label="Impact Statement" value={item.impact_statement || ""} limit={OTHERS_ITEM_LIMITS.impact_statement} onChange={v => updateOthItem(idx, "impact_statement", v)} />
+                  <RichTextEditor label="Description" charLimit={OTHERS_ITEM_LIMITS.description}
+                    value={item.description || ""} onChange={v => updateOthItem(idx, "description", v)} minHeight={100} />
+                  <EditField label="Explanation" value={item.explanation || ""} multiline limit={OTHERS_ITEM_LIMITS.explanation} onChange={v => updateOthItem(idx, "explanation", v)} />
                 </div>
               ))}
             </div>

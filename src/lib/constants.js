@@ -1,7 +1,7 @@
 import {
   FaUser, FaPenNib, FaImage, FaGlobe, FaCog, FaPalette, FaSearch, FaBolt,
   FaClipboardList, FaStar, FaTools, FaPuzzlePiece, FaQuoteRight, FaBullhorn,
-  FaFileAlt, FaBook, FaBoxOpen, FaGraduationCap,
+  FaFileAlt, FaBook, FaBoxOpen, FaGraduationCap, FaEllipsisH, FaEye,
 } from "react-icons/fa";
 
 export const PAGE_TYPES = ["Product", "Solutions", "Glossary", "On-demand Webinar"];
@@ -19,32 +19,31 @@ export const STATUS_FLOW = [
 // was an emoji string, which read as unofficial/inconsistent across OSes
 // and clashed with the teal/monochrome palette. Consumers render it as
 // <meta.icon /> (member-expression JSX tags work fine as components).
+//
+// Consolidated to 4 roles (2026-09-11, see sql/29-role-consolidation.sql):
+// stakeholder / editorial_team / admin / general. brand_team, seo_team,
+// design_team, web_team, design_qa, editorial_qa and super_admin are
+// retired -- real accounts holding them were migrated by that SQL file
+// (editorial_qa -> editorial_team, super_admin -> admin, everything else
+// -> general), so no live user row can hold those values anymore. Left
+// out of this map entirely rather than kept dormant, since ROLE_META is
+// keyed by exactly the role strings the DB can now contain.
 export const ROLE_META = {
-  stakeholder:  { label: "Stakeholder",  color: "#181313", icon: FaUser },
-  editorial_qa: { label: "Editorial QA", color: "#646464", icon: FaPenNib },
-  design_qa:    { label: "Design QA",    color: "#3C3C3C", icon: FaImage },
-  web_team:     { label: "Web Team",     color: "#06b6d4", icon: FaGlobe },
-  admin:        { label: "Admin",        color: "#181313", icon: FaCog },
-  brand_team:   { label: "Brand Team",   color: '#d97706', bg: '#fffbeb', icon: FaPalette },
-  seo_team:     { label: "SEO Team",     color: '#1b5793', bg: '#eff6ff', icon: FaSearch },
-  // v2 parallel-workflow roles
-  editorial_team: { label: 'Editorial Team', icon: FaPenNib, color: '#2a7a4b', bg: '#ecfdf5' },
-  design_team:    { label: 'Design Team',    icon: FaImage,  color: '#ea580c', bg: '#fff7ed' },
-  super_admin:    { label: 'Super Admin',    icon: FaBolt,   color: '#7e22ce', bg: '#faf5ff' },
+  stakeholder:    { label: "Stakeholder", color: "#181313", icon: FaUser },
+  editorial_team: { label: "Editorial",   color: "#2a7a4b", bg: "#ecfdf5", icon: FaPenNib },
+  admin:          { label: "Admin",       color: "#181313", icon: FaCog },
+  // Read-only role: views every request + page preview, can still post
+  // section-scoped comments, cannot edit content or change status.
+  general:        { label: "General",     color: "#646464", bg: "#F3F3F3", icon: FaEye },
 };
 
-// Drives Navbar.js's "View as" impersonation dropdown (super_admin
-// only). Brand/SEO/Design/Web hidden for phase 1 -- no tasks are ever
-// created for those roles anymore (see AdminReviewGate.js), so
-// impersonating them would just land on an empty "no task assigned"
-// screen. Not deleted from the role system itself -- see ROLES in
-// AdminPanel.js for why those roles still need to work for accounts
-// that already have them.
+// Drives Navbar.js's "View as" impersonation dropdown (admin only, now
+// that super_admin has been folded into admin).
 export const ROLE_OPTIONS = [
-  { value: "super_admin",    label: "Super Admin"    },
   { value: "admin",          label: "Admin"          },
   { value: "stakeholder",    label: "Stakeholder"    },
-  { value: "editorial_team", label: "Editorial Team" },
+  { value: "editorial_team", label: "Editorial"      },
+  { value: "general",        label: "General"        },
 ];
 
 export const getStatus = (key) =>
@@ -249,6 +248,17 @@ export const SECTIONS = {
       "On-demand Webinar": { required: false },
     },
   },
+  others: {
+    label: "Others",
+    icon: FaEllipsisH,
+    description: "Custom section requests that don't fit an existing section — label, impact statement, rich-text description and layout explanation",
+    pageTypes: {
+      "Product":           { required: false },
+      "Solutions":         { required: false },
+      "Glossary":          { required: false },
+      "On-demand Webinar": { required: false },
+    },
+  },
 };
 
 // ─── v2 Parallel Workflow Constants ──────────────────────────────────────────
@@ -277,23 +287,29 @@ export const OVERALL_STATUS_META = {
   published:           { label: 'Published',            color: '#2a7a4b', bg: '#ecfdf5' },
 };
 
-// Ordered list of all task teams
+// Ordered list of all task teams -- trimmed to editorial_team only
+// (2026-09-11 role consolidation; see sql/29-role-consolidation.sql).
+// brand_team/seo_team/design_team/web_team are retired: AdminTaskSetup.js
+// no longer creates task rows for them, so nothing new will ever hold
+// those team_role values. Historical task rows on old requests keep
+// their original team_role (tasks.team_role's DB constraint was
+// deliberately left untouched -- see that SQL file's header comment) --
+// this array only controls what happens going forward.
 export const TASK_TEAMS = [
-  'editorial_team', 'brand_team', 'seo_team', 'design_team', 'web_team',
+  'editorial_team',
 ];
 
-// Teams that run in parallel (all must complete before web_team unlocks)
+// Teams that run in parallel (all must complete before web_team
+// unlocks) -- moot now that web_team is retired, but kept as a
+// single-entry array rather than removed outright since taskUtils.js's
+// sync logic is written generically against this list.
 export const PARALLEL_TEAMS = [
-  'editorial_team', 'brand_team', 'seo_team', 'design_team',
+  'editorial_team',
 ];
 
 // Which teams must complete before a given team can start
 export const TASK_DEPENDENCY_MAP = {
   editorial_team: [],
-  brand_team:     [],
-  seo_team:       [],
-  design_team:    [],
-  web_team:       ['editorial_team', 'brand_team', 'seo_team', 'design_team'],
 };
 
 export const PRIORITY_META = {

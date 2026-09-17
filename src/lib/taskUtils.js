@@ -14,16 +14,23 @@ import { PARALLEL_TEAMS } from './constants';
 // <team.icon/> in rich JSX contexts. The one plain-text <option> consumer
 // (TaskPanel.js's team picker) can't render a component, so it skips this
 // field entirely rather than trying to stringify it.
+//
+// Trimmed to editorial_team only (2026-09-11 role consolidation -- see
+// sql/29-role-consolidation.sql). brand_team/seo_team/design_team/
+// web_team are retired: AdminTaskSetup.js no longer creates task rows
+// for them, so no request will ever get one going forward. The
+// web_team-specific logic further down this file (createTasksForRequest's
+// locked-start status, tryUnlockWebTeam, syncOverallStatus's web_team
+// branches) is deliberately left untouched rather than ripped out --
+// it already no-ops cleanly when no web_team task row exists (see
+// AdminReviewGate.js's comment on the same point), and historical
+// requests that DO have a real web_team task row from before this
+// change still need it to keep working.
 export const TASK_TEAMS = [
   // selfCompletes: true — editorial_team marks its own task complete
-  // directly (TaskPanel.js's handleComplete), same as seo_team. No
-  // stakeholder approval gate exists for this team today; this flag
-  // previously said false, which didn't match the actual behavior.
-  { role: 'editorial_team', label: 'Editorial Team', icon: FaPenNib, color: '#2a7a4b', bg: '#ecfdf5', alwaysRequired: true,  webLocked: false, selfCompletes: true },
-  { role: 'brand_team',     label: 'Brand Team',     icon: FaPalette, color: '#d97706', bg: '#fffbeb', alwaysRequired: false, webLocked: false, selfCompletes: false },
-  { role: 'seo_team',       label: 'SEO Team',       icon: FaSearch,  color: '#1b5793', bg: '#eff6ff', alwaysRequired: true,  webLocked: false, selfCompletes: true  },
-  { role: 'design_team',    label: 'Design Team',    icon: FaImage,   color: '#ea580c', bg: '#fff7ed', alwaysRequired: true,  webLocked: false, selfCompletes: false },
-  { role: 'web_team',       label: 'Web Team',       icon: FaGlobe,   color: '#0f2744', bg: '#F5F5F5', alwaysRequired: true,  webLocked: true,  selfCompletes: true  },
+  // directly (TaskPanel.js's handleComplete). No stakeholder approval
+  // gate exists for this team today.
+  { role: 'editorial_team', label: 'Editorial Team', icon: FaPenNib, color: '#2a7a4b', bg: '#ecfdf5', alwaysRequired: true, webLocked: false, selfCompletes: true },
 ];
 
 // ─── Status / overall-status metadata ────────────────────────────────────────

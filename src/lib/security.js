@@ -1,4 +1,5 @@
 // ── Security utilities ────────────────────────────────────────────────────
+import { sanitizeRichText } from "./richText";
 
 // 1. XSS sanitization — strip HTML tags and dangerous characters from text input
 export const sanitizeText = (str) => {
@@ -11,15 +12,28 @@ export const sanitizeText = (str) => {
     .trim();
 };
 
-// Sanitize an object recursively (for payloads before saving)
-export const sanitizePayload = (obj) => {
+// Sanitize an object recursively (for payloads before saving).
+//
+// `richTextKeys` is an optional list of object keys (e.g. ["description"])
+// that hold hand-built rich-text HTML (see src/lib/richText.js — used by
+// the Others section) rather than plain text. Those keys are routed
+// through the allowlist-based sanitizeRichText() instead of sanitizeText(),
+// which would otherwise strip every <p>/<ul>/<li>/<strong> tag along with
+// anything actually dangerous. The key match applies at every nesting
+// level, so it works whether the rich-text field sits at the top of the
+// payload or inside an array of card/item objects (e.g. oth_items[].description).
+export const sanitizePayload = (obj, richTextKeys = []) => {
   if (!obj || typeof obj !== "object") return obj;
-  if (Array.isArray(obj)) return obj.map(sanitizePayload);
+  if (Array.isArray(obj)) return obj.map((item) => sanitizePayload(item, richTextKeys));
   const result = {};
   for (const [k, v] of Object.entries(obj)) {
-    if (typeof v === "string") result[k] = sanitizeText(v);
-    else if (typeof v === "object" && v !== null) result[k] = sanitizePayload(v);
-    else result[k] = v;
+    if (typeof v === "string") {
+      result[k] = richTextKeys.includes(k) ? sanitizeRichText(v) : sanitizeText(v);
+    } else if (typeof v === "object" && v !== null) {
+      result[k] = sanitizePayload(v, richTextKeys);
+    } else {
+      result[k] = v;
+    }
   }
   return result;
 };

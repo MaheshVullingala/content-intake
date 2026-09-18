@@ -66,9 +66,9 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
       </div>
       {multiline
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly}
-            style={fieldStyle || (over ? { borderColor: "#c0392b" } : {})} />
+            maxLength={limit || undefined} style={fieldStyle || (over ? { borderColor: "#c0392b" } : {})} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly}
-            style={fieldStyle || (over ? { borderColor: "#c0392b" } : {})} />
+            maxLength={limit || undefined} style={fieldStyle || (over ? { borderColor: "#c0392b" } : {})} />
       }
       {over && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}><FaExclamationTriangle size={10} /> Exceeds {limit} character limit</div>}
       {hint && !over && <div className="field-hint">{hint}</div>}
@@ -674,6 +674,21 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       if (alsoDownload) {
         try { await downloadRequestDocx(payload); } catch { /* non-fatal */ }
       }
+
+      // Auto-create the Jira ticket the moment the request is submitted
+      // (see src/app/api/jira/create-ticket/route.js). Fail-open by
+      // design: a missing/expired Jira token, a down Jira instance, or
+      // Jira not being configured at all must never block a stakeholder's
+      // submission, which has already succeeded above. If this fails,
+      // admin links the ticket manually later via the Jira Ticket card on
+      // the request detail view — nothing here is the only way to do it.
+      try {
+        await fetch("/api/jira/create-ticket", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json", Authorization: authHeaders.Authorization },
+          body:    JSON.stringify({ requestId }),
+        });
+      } catch { /* non-fatal */ }
 
       go("detail", requestId, { submitted: true });
     } catch (e) {

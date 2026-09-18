@@ -91,8 +91,8 @@ function Field({ label, value, onChange, placeholder, multiline, required, hint,
         )}
       </div>
       {multiline
-        ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" style={over ? { borderColor: "#c0392b" } : {}} />
-        : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input"    style={over ? { borderColor: "#c0392b" } : {}} />
+        ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" maxLength={limit || undefined} style={over ? { borderColor: "#c0392b" } : {}} />
+        : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input"    maxLength={limit || undefined} style={over ? { borderColor: "#c0392b" } : {}} />
       }
       {hint && <div className="field-hint">{hint}</div>}
     </div>

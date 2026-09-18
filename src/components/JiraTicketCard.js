@@ -4,13 +4,17 @@ import { FaTicketAlt, FaExternalLinkAlt } from "react-icons/fa";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 
-// Manual v1 of the Jira handoff: admin creates the ticket themselves in
-// Jira (referencing this request's id in the ticket description/title),
-// then pastes the resulting id/url back here so it's tracked on the
-// request. No Jira API integration — see PHASE1-EDITORIAL-REVIEW-PLAN.md,
-// Decision C. Editable any time, not a one-shot "create" action, so
-// admin can fix a typo or link it later if they created the ticket
-// before this field existed.
+// Two paths land here now:
+//   1. Auto-created at submit time by src/app/api/jira/create-ticket
+//      (see PHASE1-EDITORIAL-REVIEW-PLAN.md, Decision C — this used to be
+//      the deferred "automatic" option; it's live once JIRA_BASE_URL etc.
+//      are configured).
+//   2. Manual v1 fallback: admin creates the ticket themselves in Jira,
+//      pastes the resulting id/url back here — still how it works when
+//      Jira isn't configured, auto-creation failed, or this is an older
+//      request from before auto-create existed.
+// Editable any time either way, not a one-shot "create" action, so admin
+// can always fix a typo or relink.
 export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
   const [editing,  setEditing]  = useState(false);
   const [ticketId, setTicketId] = useState(req.jira_ticket_id || "");
@@ -19,6 +23,11 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
   const [error,    setError]    = useState("");
 
   const hasTicket = !!req.jira_ticket_id;
+  // The auto-create route always sets jira_created_by to the submitting
+  // stakeholder (same as created_by) — a manual link set by an admin will
+  // almost always differ. Not a stored flag, just an inference from the
+  // two existing columns, so it's a "likely" label, not a guarantee.
+  const wasAutoCreated = hasTicket && req.jira_created_by && req.jira_created_by === req.created_by;
 
   const handleSave = async () => {
     if (!ticketId.trim()) { setError("Ticket ID is required."); return; }
@@ -51,11 +60,17 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
       {!editing && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
           {hasTicket ? (
-            ticketUrl
-              ? <a href={ticketUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 500, color: "#3ec5cb", display: "inline-flex", alignItems: "center", gap: 5 }}>
-                  {req.jira_ticket_id} <FaExternalLinkAlt size={10} />
-                </a>
-              : <span style={{ fontSize: 13, fontWeight: 500 }}>{req.jira_ticket_id}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {ticketUrl
+                ? <a href={ticketUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 500, color: "#3ec5cb", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                    {req.jira_ticket_id} <FaExternalLinkAlt size={10} />
+                  </a>
+                : <span style={{ fontSize: 13, fontWeight: 500 }}>{req.jira_ticket_id}</span>
+              }
+              <span style={{ fontSize: 10, fontWeight: 500, padding: "2px 8px", borderRadius: 999, background: "var(--color-ghost)", color: "var(--color-silver)" }}>
+                {wasAutoCreated ? "Auto-created at submission" : "Linked manually"}
+              </span>
+            </div>
           ) : (
             <span className="text-sm text-muted">No ticket linked yet</span>
           )}

@@ -174,8 +174,8 @@ function EditField({ label, value, onChange, multiline, limit }) {
         <CharCount value={value} limit={limit} />
       </div>
       {multiline
-        ? <textarea className="textarea" rows={3} value={value} onChange={e => onChange(e.target.value)} />
-        : <input className="input" type="text" value={value} onChange={e => onChange(e.target.value)} />
+        ? <textarea className="textarea" rows={3} value={value} onChange={e => onChange(e.target.value)} maxLength={limit || undefined} />
+        : <input className="input" type="text" value={value} onChange={e => onChange(e.target.value)} maxLength={limit || undefined} />
       }
     </div>
   );

@@ -353,6 +353,7 @@ export const AUDIT_ACTIONS = {
   CONTENT_CHANGE_REJECTED:   'content_change.rejected',
   CONTENT_CHANGE_FAST_LANED: 'content_change.fast_laned',
   JIRA_TICKET_LINKED:     'jira_ticket.linked',
+  JIRA_TICKET_CREATED:    'jira_ticket.created', // auto-created at stakeholder submit — see /api/jira/create-ticket
   REVIEW_STARTED:         'review.started',
 };
 

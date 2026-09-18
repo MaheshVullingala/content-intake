@@ -65,6 +65,22 @@ NEXT_PUBLIC_OKTA_ENABLED=       # "true" to show the Okta button on the login sc
 NEXT_PUBLIC_OKTA_SSO_DOMAIN=    # domain used for supabase.auth.signInWithSSO({ domain }) — must match the domain registered against the Okta SAML connection, e.g. cadence.com
 ```
 
+Optional — Jira auto-create (`src/lib/jira.js`, `/api/jira/create-ticket`).
+When unset, ticket creation just skips (the route returns
+`{ skipped: true, reason: "not_configured" }` and the stakeholder's
+submission is unaffected either way — see the Jira changelog entry).
+Supports either Jira Server/Data Center (a Personal Access Token) or
+Jira Cloud (account email + API token); set whichever pair applies,
+`JIRA_PAT` takes priority if both are present:
+```
+JIRA_BASE_URL=      # e.g. https://jira.ourorg.com (Server/DC) or https://yourorg.atlassian.net (Cloud) — no trailing slash needed
+JIRA_PROJECT_KEY=   # the project the auto-created ticket lands in, e.g. CIP
+JIRA_ISSUE_TYPE=    # defaults to "Task" if unset — must match an issue type that exists on JIRA_PROJECT_KEY
+JIRA_PAT=           # Server/Data Center: a Personal Access Token, sent as a Bearer token
+JIRA_EMAIL=         # Cloud only: the account email tied to JIRA_API_TOKEN
+JIRA_API_TOKEN=     # Cloud only: an API token (id.atlassian.com/manage-profile/security/api-tokens), sent as HTTP Basic auth with JIRA_EMAIL
+```
+
 ## Architecture
 
 Single-page Next.js 14 app (App Router). The entire UI lives in `src/app/page.js`, which manages auth state and renders one of four views (`dashboard`, `new`, `edit`, `detail`, `admin`) based on a `view` state variable — there is no client-side routing. Navigation is done by calling `go(viewName, optionalId)`.

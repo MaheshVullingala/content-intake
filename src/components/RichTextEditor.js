@@ -91,8 +91,30 @@ export default function RichTextEditor({
   const handlePaste = (e) => {
     if (inert) return;
     e.preventDefault();
-    const text = e.clipboardData.getData("text/plain");
+    let text = e.clipboardData.getData("text/plain");
+    if (charLimit) {
+      const currentLen = htmlToPlainText(editorRef.current?.innerHTML || "").length;
+      const remaining = charLimit - currentLen;
+      if (remaining <= 0) return;
+      if (text.length > remaining) text = text.slice(0, remaining);
+    }
     document.execCommand("insertText", false, text);
+  };
+
+  // contentEditable has no native maxLength, so typing past the limit has
+  // to be blocked by hand -- mirrors <input maxLength> behavior: character
+  // keys and Enter are swallowed once the plain-text length hits the cap,
+  // but navigation/deletion/shortcuts (and replacing an active selection,
+  // which can shrink the text) are always let through.
+  const handleKeyDown = (e) => {
+    if (!charLimit || inert) return;
+    const isShortcut = e.ctrlKey || e.metaKey || e.altKey;
+    const isInsertingKey = (e.key.length === 1 || e.key === "Enter") && !isShortcut;
+    if (!isInsertingKey) return;
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed) return;
+    const currentLen = htmlToPlainText(editorRef.current?.innerHTML || "").length;
+    if (currentLen >= charLimit) e.preventDefault();
   };
 
   // Sanitize on blur too, not just on save -- catches anything odd that
@@ -144,6 +166,7 @@ export default function RichTextEditor({
           onBlur={handleBlur}
           onInput={handleInput}
           onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
           style={{
             minHeight,
             overflowY: "auto",

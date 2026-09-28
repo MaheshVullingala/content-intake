@@ -112,13 +112,40 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   };
   useEffect(() => { fetchComments(); }, [req.id, supabase]);
 
+  // Taggable users for @mentions — deliberately the same set that
+  // comments_select/comments_insert RLS already grants access to this
+  // thread (see sql/29-role-consolidation.sql): admin + general +
+  // editorial_team see every request's comments, a stakeholder only
+  // their own. Tagging someone who couldn't otherwise see the comment
+  // would be a dead-end mention, so the candidate list mirrors that rule
+  // exactly rather than offering every user in the org.
+  const [taggableUsers, setTaggableUsers] = useState([]);
+  useEffect(() => {
+    if (!supabase || !req.id) return;
+    let cancelled = false;
+    (async () => {
+      const [{ data: roleUsers }, stakeholderRes] = await Promise.all([
+        supabase.from("users").select("id, name, role").in("role", ["admin", "general", "editorial_team"]),
+        req.created_by
+          ? supabase.from("users").select("id, name, role").eq("id", req.created_by).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+      if (cancelled) return;
+      const merged = [...(roleUsers || [])];
+      const stakeholder = stakeholderRes?.data;
+      if (stakeholder && !merged.some(u => u.id === stakeholder.id)) merged.push(stakeholder);
+      setTaggableUsers(merged);
+    })();
+    return () => { cancelled = true; };
+  }, [supabase, req.id, req.created_by]);
+
   const commentsBySection = {};
   allComments.forEach(c => {
     const key = c.section_key || "";
     (commentsBySection[key] ||= []).push(c);
   });
 
-  const handlePostComment = async (sectionKey, text) => {
+  const handlePostComment = async (sectionKey, text, mentionedUserIds = []) => {
     if (!supabase || !user) return;
     await supabase.from("comments").insert({
       request_id:  req.id,
@@ -127,8 +154,25 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
       user_role:   user.role,
       text,
       section_key: sectionKey || null,
+      mentioned_user_ids: mentionedUserIds,
     });
     fetchComments();
+
+    // Fire-and-forget, same pattern as AssigneeDropdown.js's notify() —
+    // a notification failure must never block the comment that already
+    // succeeded above. Self-mentions don't need a notification.
+    mentionedUserIds
+      .filter(uid => uid && uid !== user.id)
+      .forEach(uid => {
+        supabase.from("notifications").insert({
+          user_id:    uid,
+          type:       "mention",
+          title:      "You were mentioned in a comment",
+          message:    `${user.name} mentioned you on "${req.page_title || "a request"}"`,
+          request_id: req.id,
+          action_url: `/requests/${req.id}`,
+        }).then(() => {}).catch(() => {});
+      });
   };
 
   const Bubble = ({ sectionKey, label }) => {
@@ -138,8 +182,9 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
         sectionKey={sectionKey}
         label={label}
         comments={commentsBySection[sectionKey || ""] || []}
-        onPost={(text) => handlePostComment(sectionKey, text)}
+        onPost={(text, mentionedUserIds) => handlePostComment(sectionKey, text, mentionedUserIds)}
         user={user}
+        users={taggableUsers}
         hovered={hoverSection === sectionKey}
       />
     );
@@ -218,8 +263,9 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
             sectionKey=""
             label="General"
             comments={commentsBySection[""] || []}
-            onPost={(text) => handlePostComment("", text)}
+            onPost={(text, mentionedUserIds) => handlePostComment("", text, mentionedUserIds)}
             user={user}
+            users={taggableUsers}
           />
         )}
       </div>}

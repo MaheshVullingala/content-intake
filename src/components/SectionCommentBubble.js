@@ -2,6 +2,26 @@
 import { useState } from "react";
 import { FaCommentDots, FaTimes } from "react-icons/fa";
 import { ROLE_META } from "@/lib/constants";
+import MentionInput from "@/components/MentionInput";
+
+// Wraps "@Name" substrings in a posted comment's text with a highlight,
+// but only for names that are actually in that comment's
+// mentioned_user_ids — never a generic "anything starting with @" match,
+// so a stray "@" someone typed literally (not via the mention picker,
+// and not matching a real mention) never gets styled.
+function renderWithMentions(text, mentionedUserIds = [], users = []) {
+  if (!mentionedUserIds?.length || !users?.length) return text;
+  const names = users.filter(u => mentionedUserIds.includes(u.id)).map(u => u.name).filter(Boolean);
+  if (!names.length) return text;
+  const pattern = names.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const re = new RegExp(`(@(?:${pattern})(?![A-Za-z0-9]))`);
+  const mentionTexts = new Set(names.map(n => `@${n}`));
+  return text.split(re).map((part, i) =>
+    mentionTexts.has(part)
+      ? <span key={i} style={{ color: "#0f766e", fontWeight: 600, background: "rgba(62,197,203,0.15)", borderRadius: 4, padding: "0 2px" }}>{part}</span>
+      : <span key={i}>{part}</span>
+  );
+}
 
 // Replaces the dropdown-driven CommentThread sidebar panel: a small
 // chat-bubble icon sits on each section (next to the Edit button
@@ -10,15 +30,16 @@ import { ROLE_META } from "@/lib/constants";
 // from a list first. Purely presentational: PagePreview.js owns the
 // actual comments fetch/post (one query for the whole request, sliced
 // per section) and hands this component its slice + a post callback.
-export default function SectionCommentBubble({ sectionKey, label, comments = [], onPost, user, hovered, inline = false }) {
-  const [open,    setOpen]    = useState(false);
-  const [text,    setText]    = useState("");
-  const [posting, setPosting] = useState(false);
+export default function SectionCommentBubble({ sectionKey, label, comments = [], onPost, user, hovered, inline = false, users = [] }) {
+  const [open,     setOpen]     = useState(false);
+  const [text,     setText]     = useState("");
+  const [mentions, setMentions] = useState([]); // ids derived from `text`, see MentionInput
+  const [posting,  setPosting]  = useState(false);
 
   const handlePost = async () => {
     if (!text.trim()) return;
     setPosting(true);
-    await onPost?.(text.trim());
+    await onPost?.(text.trim(), mentions);
     setText("");
     setPosting(false);
   };
@@ -111,18 +132,21 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
                       <span style={{ fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{meta.icon && <meta.icon size={10} />} {c.user_name}</span>
                       <span style={{ fontSize: 10, color: "#B5B5B5", marginLeft: "auto" }}>{formatTime(c.created_at)}</span>
                     </div>
-                    <div style={{ fontSize: 12, whiteSpace: "pre-wrap", color: "#3C3C3C" }}>{c.text}</div>
+                    <div style={{ fontSize: 12, whiteSpace: "pre-wrap", color: "#3C3C3C" }}>{renderWithMentions(c.text, c.mentioned_user_ids, users)}</div>
                   </div>
                 );
               })
             )}
           </div>
 
-          <textarea
+          <MentionInput
             rows={2}
-            placeholder={`Comment on ${label}…`}
+            placeholder={`Comment on ${label}… (type @ to mention someone)`}
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={setText}
+            users={users}
+            onMentionsChange={setMentions}
+            className=""
             style={{
               width: "100%", fontSize: 12, padding: 6, borderRadius: 6,
               border: "1px solid #E0E0E0", resize: "vertical", fontFamily: "'Rubik',sans-serif",

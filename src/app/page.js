@@ -268,6 +268,20 @@ export default function App() {
     currentView.current = v;
   };
 
+  // Deep link: "<app url>/?request=<uuid>" (the link shown after submit,
+  // see ReqDetail.js) opens that request once the user is signed in. The
+  // param is stripped afterwards so a refresh doesn't keep re-navigating.
+  // Access is still enforced by RLS — a link to a request you can't see
+  // just shows "Request not found."
+  useEffect(() => {
+    if (!user || user.role === "pending" || typeof window === "undefined") return;
+    const id = new URLSearchParams(window.location.search).get("request");
+    if (!id) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    go("detail", id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   // Attach activity listeners when user is logged in
   useEffect(() => {
     if (!user) return;

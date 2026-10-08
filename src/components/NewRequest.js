@@ -616,7 +616,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       setError("Please provide a reason for High/Urgent priority before submitting.");
       return;
     }
-    const preflightIssues = runPreflightChecks(buildPayload("draft"), { checkPlaceholders: placeholderCheckEnabled });
+    const preflightIssues = runPreflightChecks(buildPayload("draft"), { checkPlaceholders: placeholderCheckEnabled, charLimits: CHAR_LIMITS });
     if (preflightIssues.length > 0) {
       setError(`Pre-flight check found ${preflightIssues.length} issue${preflightIssues.length > 1 ? "s" : ""} — see the Pre-flight Check panel above and fix ${preflightIssues.length > 1 ? "them" : "it"} before submitting.`);
       return;
@@ -1496,7 +1496,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
       {/* ── Step 3: Preview & Submit ── */}
       {step === 3 && (() => {
-        const preflightIssues = runPreflightChecks(buildPayload("draft"), { checkPlaceholders: placeholderCheckEnabled });
+        const preflightIssues = runPreflightChecks(buildPayload("draft"), { checkPlaceholders: placeholderCheckEnabled, charLimits: CHAR_LIMITS });
         return (
         <>
           <div style={{ marginBottom: 20 }}>
@@ -1533,31 +1533,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             )}
           </div>
 
-          {/* Section summary */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <h3 style={{ fontSize: 14, marginBottom: 14 }}>Section Summary</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {sections.map(s => {
-                const isNA   = naMap[s.key];
-                const isDone = s.key === "banner"
-                  ? !!banner.page_title
-                  : s.key === "overview"
-                  ? (isNA || (!!overview.overview_impact && !!overview.overview_description))
-                  : false;
-                return (
-                  <div key={s.key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#F9F9F9", borderRadius: 8, padding: "0.65rem 0.9rem", border: "1px solid #F3F3F3" }}>
-                    <div style={{ fontSize: 13, fontWeight: 500 }}>{s.label}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 10, color: s.required ? "#c0392b" : "#B5B5B5", fontWeight: 500 }}>{s.required ? "Required" : "Optional"}</span>
-                      <span style={{ fontSize: 12, color: isNA ? "#B5B5B5" : isDone ? "#2a7a4b" : "#c0392b", fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                        {isNA ? "N/A" : isDone ? <><FaCheck size={10} /> Complete</> : <><FaExclamationTriangle size={10} /> Incomplete</>}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          {/* Section Summary card removed (2026-10-08) -- hidden per request; pre-flight check above covers blocking issues. */}
 
           {error && <div className="alert alert-error">{error}</div>}
           <div className="alert alert-info" style={{ marginBottom: 22, display: "flex", alignItems: "center", gap: 8 }}>

@@ -41,8 +41,10 @@ const SECTION_PREFIXES = [
   ["rp_", "related_products"],
   ["ts_", "training_support"],
   ["overview_", "overview"],
+  ["oth_", "others"],
 ];
 const sectionForField = (key) => {
+  if (key === "seo_page_location") return "banner"; // Page Location lives at the top of Banner now
   const hit = SECTION_PREFIXES.find(([prefix]) => key.startsWith(prefix));
   if (hit) return hit[1];
   if (["page_title", "sub_title", "cta1_label", "cta1_link", "cta2_label", "cta2_link", "banner_image_ref"].includes(key)) return "banner";
@@ -62,6 +64,13 @@ const FIELD_LABELS = {
   rc_impact: "Related Content Impact Statement",
   rp_impact: "Related Products Impact Statement", rp_description: "Related Products Description",
   seo_meta_title: "SEO Meta Title", seo_meta_description: "SEO Meta Description",
+  seo_meta_keywords: "SEO Meta Keywords", seo_page_location: "Page Location",
+  cta1_link: "CTA 1 Link", cta2_link: "CTA 2 Link",
+  overview_label: "Overview Label", kb_label: "Key Benefits Label", fa_label: "Features Label",
+  app_label: "Applications Label", cs_label: "Customer Stories Label", promo_label: "Promo Label",
+  promo_btn_label: "Promo Button Label", promo_btn_link: "Promo Button Link",
+  rc_label: "Related Content Label", res_label: "Resources Label", res_impact: "Resources Impact Statement",
+  rp_label: "Related Products Label", ts_label: "Training & Support Label", ts_impact: "Training & Support Impact Statement",
   kb_cards: "Key Benefits Cards", fa_items: "Features Items", fa_columns: "Features Table Columns", fa_rows: "Features Table Rows",
   app_items: "Applications Items",
   cs_items: "Customer Stories", rc_cards: "Related Content Cards", rp_cards: "Related Products Cards",
@@ -148,6 +157,82 @@ function findCtaMismatches(payload) {
   return issues;
 }
 
+// Top-level fields whose section form enforces a different limit than the
+// shared CHAR_LIMITS map (PromoSection.js hardcodes these) -- the check
+// must match what the stakeholder actually saw in the counter.
+const FORM_LIMIT_OVERRIDES = { promo_title: 100, promo_btn_label: 25 };
+
+// Per-item limits for repeatable cards/tabs/items, hardcoded in each
+// section form (see the charLimit props in src/components/sections/*).
+// Same numbers as the forms -- keep in sync if those change.
+const ITEM_LIMITS = {
+  kb_cards:    { title: 50, description: 150 },
+  fa_items:    { title: 50, description: 200, image_alt: 150, text: 200 }, // tabs use title/description/alt, list view uses text
+  app_items:   { title: 50, description: 200, image_alt: 150 },
+  cs_items:    { customer: 100 },
+};
+const ITEM_FIELD_NAMES = { title: "Title", description: "Description", image_alt: "Alt Text", text: "Text", customer: "Customer Details" };
+const ITEM_SECTION = { kb_cards: "key_benefits", fa_items: "features_apps", app_items: "applications", cs_items: "customer_stories" };
+
+const OTHERS_LIMITS = { label: 40, impact_statement: 100, description: 800, explanation: 300 };
+const stripTags = (html) => String(html || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ");
+
+/**
+ * Flags any field over its character limit. The inputs now hard-block
+ * typing past the limit, but content can still arrive over-limit via
+ * AI Assist, Fill Test Data, drafts saved before a limit was tightened,
+ * or an admin lowering a limit in Settings -- so submit re-checks.
+ * `charLimits` is the live map (constants defaults + admin overrides).
+ */
+function findCharLimitIssues(payload, charLimits = {}) {
+  const issues = [];
+  const over = (len, limit) => limit && len > limit;
+
+  Object.entries(payload || {}).forEach(([key, val]) => {
+    const limit = FORM_LIMIT_OVERRIDES[key] ?? charLimits[key];
+    if (typeof val === "string" && over(val.length, limit)) {
+      issues.push({
+        type: "char_limit",
+        section: sectionForField(key),
+        message: `"${fieldLabel(key)}" is ${val.length - limit} character${val.length - limit > 1 ? "s" : ""} over the ${limit}-character limit (${val.length}/${limit}).`,
+      });
+    }
+  });
+
+  Object.entries(ITEM_LIMITS).forEach(([key, limits]) => {
+    const items = Array.isArray(payload?.[key]) ? payload[key] : [];
+    items.forEach((item, i) => {
+      Object.entries(limits).forEach(([field, limit]) => {
+        const v = item?.[field];
+        if (typeof v === "string" && over(v.length, limit)) {
+          issues.push({
+            type: "char_limit",
+            section: ITEM_SECTION[key],
+            message: `${fieldLabel(key)} #${i + 1}: ${ITEM_FIELD_NAMES[field]} is ${v.length - limit} character${v.length - limit > 1 ? "s" : ""} over the ${limit}-character limit (${v.length}/${limit}).`,
+          });
+        }
+      });
+    });
+  });
+
+  (Array.isArray(payload?.oth_items) ? payload.oth_items : []).forEach((item, i) => {
+    Object.entries(OTHERS_LIMITS).forEach(([field, limit]) => {
+      const raw = item?.[field];
+      if (typeof raw !== "string") return;
+      const len = field === "description" ? stripTags(raw).length : raw.length;
+      if (over(len, limit)) {
+        issues.push({
+          type: "char_limit",
+          section: "others",
+          message: `Others #${i + 1}: ${field.replace("_", " ")} is ${len - limit} character${len - limit > 1 ? "s" : ""} over the ${limit}-character limit (${len}/${limit}).`,
+        });
+      }
+    });
+  });
+
+  return issues;
+}
+
 /**
  * Run every pre-flight check against an assembled request payload (the
  * same shape buildPayload() produces). Returns a flat list of issues —
@@ -158,10 +243,15 @@ function findCtaMismatches(payload) {
  * just the Lorem-Ipsum check (AdminPanel → Settings, settings.
  * placeholder_check_enabled) — e.g. for a QA pass that deliberately pushes
  * Fill Test Data content through Submit rather than stopping at preview.
- * The CTA-mismatch check always runs regardless — it catches real
- * mistakes, not test content, so there's no scenario where turning it off
- * is the right call.
+ * The CTA-mismatch and character-limit checks always run regardless —
+ * they catch real mistakes, not test content.
+ *
+ * `charLimits` is the live limits map (NewRequest.js's useCharLimits()).
  */
-export function runPreflightChecks(payload, { checkPlaceholders = true } = {}) {
-  return [...(checkPlaceholders ? findPlaceholderIssues(payload) : []), ...findCtaMismatches(payload)];
+export function runPreflightChecks(payload, { checkPlaceholders = true, charLimits = {} } = {}) {
+  return [
+    ...(checkPlaceholders ? findPlaceholderIssues(payload) : []),
+    ...findCtaMismatches(payload),
+    ...findCharLimitIssues(payload, charLimits),
+  ];
 }

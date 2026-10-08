@@ -68,7 +68,7 @@ function buildTicketContent({ req, submittedByEmail }) {
     `Submitted by: ${submittedByEmail || "(unknown)"}`,
     "",
     appUrl
-      ? `Open the portal (${appUrl}) and find request ${displayId} to review.`
+      ? `Open request ${displayId}: ${appUrl}/?request=${req.id}`
       : `Open the Content Intake Portal and find request ${displayId} to review.`,
   ].join("\n");
 

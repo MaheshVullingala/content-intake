@@ -336,14 +336,18 @@ export default function TaskBoard({
             <div className="alert alert-info mt-12" style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <FaHourglassHalf size={12} />
               {req.jira_ticket_id
-                ? <span>An administrator is reviewing your request and will set up tasks shortly. Jira ticket{" "}
+                ? <span>An administrator is reviewing your request and will set up tasks shortly. Your Jira ticket{" "}
                     {req.jira_ticket_url
                       ? <a href={req.jira_ticket_url} target="_blank" rel="noopener noreferrer"><strong>{req.jira_ticket_id}</strong></a>
                       : <strong>{req.jira_ticket_id}</strong>}{" "}
-                    has been created from this request's details.</span>
-                : <span>An administrator is reviewing your request. They will create a Jira ticket using this request's details and set up tasks shortly.</span>}
+                    is linked to this request.</span>
+                : <span>An administrator is reviewing your request and will set up tasks shortly. Please create a Jira ticket for this request using the request details below (request number and link), then add the ticket ID here.</span>}
             </div>
             {submittedBanner}
+            {/* Stakeholder creates the Jira ticket in Jira, then links it here. */}
+            <div style={{ marginTop: 12 }}>
+              <JiraTicketCard req={req} user={user} supabase={supabase} onRefresh={handleRefresh} />
+            </div>
           </>
         ) : (hasPendingApproval || hasNeedsInfo) ? (
           <div style={TWO_COL}>

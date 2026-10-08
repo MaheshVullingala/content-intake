@@ -101,6 +101,13 @@ export async function POST(request) {
     // until someone plugs in real Jira credentials. Not an error: skip
     // quietly so the caller doesn't log noise for a feature that's simply
     // not turned on yet.
+    // Auto-create is opt-in (JIRA_AUTO_CREATE=true). Default flow: the
+    // stakeholder creates the ticket in Jira and links it from the request
+    // page (JiraTicketCard) — auto-creating as well would duplicate it.
+    if (process.env.JIRA_AUTO_CREATE !== "true") {
+      return NextResponse.json({ skipped: true, reason: "auto_create_disabled" });
+    }
+
     if (!isJiraConfigured()) {
       return NextResponse.json({ skipped: true, reason: "not_configured" });
     }

@@ -73,6 +73,7 @@ Supports either Jira Server/Data Center (a Personal Access Token) or
 Jira Cloud (account email + API token); set whichever pair applies,
 `JIRA_PAT` takes priority if both are present:
 ```
+JIRA_AUTO_CREATE=   # "true" to auto-create the ticket at submit. Off by default: stakeholders create the Jira ticket themselves and link it on the request page, and auto-create would duplicate it
 JIRA_BASE_URL=      # e.g. https://jira.ourorg.com (Server/DC) or https://yourorg.atlassian.net (Cloud) — no trailing slash needed
 JIRA_PROJECT_KEY=   # the project the auto-created ticket lands in, e.g. CIP
 JIRA_ISSUE_TYPE=    # defaults to "Task" if unset — must match an issue type that exists on JIRA_PROJECT_KEY

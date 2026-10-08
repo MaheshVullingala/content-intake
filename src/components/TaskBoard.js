@@ -33,6 +33,9 @@ export default function TaskBoard({
   req, user, supabase,
   tasks = [], attachments = [],
   onRefresh, go,
+  // Rendered right below the stakeholder's "administrator is reviewing"
+  // notice — used by ReqDetail for the post-submit request number/link.
+  submittedBanner = null,
 }) {
   const [localTasks, setLocalTasks] = useState(tasks);
   const [loading,    setLoading]    = useState(false);
@@ -329,9 +332,12 @@ export default function TaskBoard({
       <div>
         <Header />
         {isPendingAdmin ? (
-          <div className="alert alert-info mt-12" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <FaHourglassHalf size={12} /> An administrator is reviewing your request and will set up tasks shortly.
-          </div>
+          <>
+            <div className="alert alert-info mt-12" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <FaHourglassHalf size={12} /> An administrator is reviewing your request and will set up tasks shortly.
+            </div>
+            {submittedBanner}
+          </>
         ) : (hasPendingApproval || hasNeedsInfo) ? (
           <div style={TWO_COL}>
             <div style={{ overflowY: "auto" }}>

@@ -27,7 +27,7 @@ function SubmittedBanner({ req }) {
     </div>
   );
   return (
-    <div style={{ background: "#ecfdf5", border: "1px solid #2a7a4b44", borderRadius: 10, padding: "0.9rem 1.1rem", margin: "1rem 1.5rem 0", fontFamily: "'Rubik',sans-serif" }}>
+    <div style={{ background: "#ecfdf5", border: "1px solid #2a7a4b44", borderRadius: 10, padding: "0.9rem 1.1rem", marginTop: 12, fontFamily: "'Rubik',sans-serif" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <strong style={{ fontSize: 14, color: "#2a7a4b" }}>Request submitted</strong>
         <button type="button" onClick={() => setDismissed(true)} style={{ background: "none", border: "none", cursor: "pointer", color: "#646464", fontSize: 12 }}>Dismiss</button>
@@ -74,18 +74,16 @@ export default function ReqDetail({ reqId, user, go, navParams }) {
 
   if (req?.overall_status) {
     return (
-      <>
-        {navParams?.submitted && <SubmittedBanner req={req} />}
-        <TaskBoard
-          req={req}
-          user={user}
-          supabase={supabase}
-          tasks={[]}
-          attachments={attachments}
-          onRefresh={fetchAll}
-          go={go}
-        />
-      </>
+      <TaskBoard
+        req={req}
+        user={user}
+        supabase={supabase}
+        tasks={[]}
+        attachments={attachments}
+        onRefresh={fetchAll}
+        go={go}
+        submittedBanner={navParams?.submitted ? <SubmittedBanner req={req} /> : null}
+      />
     );
   }
 

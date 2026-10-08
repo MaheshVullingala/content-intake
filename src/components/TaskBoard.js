@@ -334,7 +334,14 @@ export default function TaskBoard({
         {isPendingAdmin ? (
           <>
             <div className="alert alert-info mt-12" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <FaHourglassHalf size={12} /> An administrator is reviewing your request and will set up tasks shortly.
+              <FaHourglassHalf size={12} />
+              {req.jira_ticket_id
+                ? <span>An administrator is reviewing your request and will set up tasks shortly. Jira ticket{" "}
+                    {req.jira_ticket_url
+                      ? <a href={req.jira_ticket_url} target="_blank" rel="noopener noreferrer"><strong>{req.jira_ticket_id}</strong></a>
+                      : <strong>{req.jira_ticket_id}</strong>}{" "}
+                    has been created from this request's details.</span>
+                : <span>An administrator is reviewing your request. They will create a Jira ticket using this request's details and set up tasks shortly.</span>}
             </div>
             {submittedBanner}
           </>

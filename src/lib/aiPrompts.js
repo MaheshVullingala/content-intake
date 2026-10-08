@@ -72,8 +72,10 @@ OUTPUT RULES:
 - For descriptions: 2-3 focused paragraphs, no bullet points in prose fields`;
 
 // One schema per section, reused by all three modes below. Sections not
-// listed here (resources, related_products) are not yet AI-generatable —
-// same as before this consolidation, not a new gap introduced by it.
+// listed here are deliberately NOT AI-assisted: banner, customer_stories,
+// training_support, related_products (removed 2026-10-08 — "don't require
+// AI assistance"), plus resources which was never supported. The /api/ai
+// route rejects anything not in this map, so this is enforced server-side.
 const SECTION_SCHEMAS = {
   seo_meta: {
     context: "SEO meta data for a Cadence product page",
@@ -81,15 +83,6 @@ const SECTION_SCHEMAS = {
   "seo_meta_title": "max 60 chars - keyword-rich, includes product name",
   "seo_meta_description": "max 155 chars - compelling with clear value proposition",
   "seo_meta_keywords": "8-12 comma-separated EDA/technical keywords relevant to this product"
-}`,
-  },
-  banner: {
-    context: "banner section for a Cadence product page",
-    fields: `{
-  "page_title": "max 70 chars - Product Name + short powerful descriptor, Title Case, e.g. 'Xcelium Logic Simulator | Accelerate Verification Closure'",
-  "sub_title": "max 120 chars - one sentence expanding on the title with the primary engineering benefit, e.g. 'High-speed simulation for functional verification of complex IP, SoC, and system-level designs'",
-  "cta1_label": "max 30 chars - primary CTA, action verb e.g. 'Request Demo', 'Download Datasheet', 'Start Free Trial'",
-  "cta2_label": "max 30 chars - secondary CTA e.g. 'Watch Overview', 'View Technical Brief', 'Explore Features'"
 }`,
   },
   overview: {
@@ -160,13 +153,6 @@ const SECTION_SCHEMAS = {
   ]
 }`,
   },
-  customer_stories: {
-    context: "customer stories section header for a Cadence product page",
-    fields: `{
-  "cs_label": "max 30 chars - e.g. CUSTOMER SUCCESS",
-  "cs_impact": "max 100 chars - headline showing customer outcomes"
-}`,
-  },
   promo_section: {
     context: "promo section for a Cadence product page",
     fields: `{
@@ -181,13 +167,6 @@ const SECTION_SCHEMAS = {
     fields: `{
   "rc_label": "max 30 chars - e.g. RELATED CONTENT",
   "rc_impact": "max 100 chars - headline inviting exploration"
-}`,
-  },
-  training_support: {
-    context: "training and support section header for a Cadence product page",
-    fields: `{
-  "ts_label": "max 40 chars - e.g. TRAINING & SUPPORT",
-  "ts_impact": "max 80 chars - headline about Cadence support"
 }`,
   },
 };

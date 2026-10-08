@@ -1203,9 +1203,6 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 <div className="card">
                   <div className="card-header">
                     <div><h3>Banner Section</h3><p>Common to all page types · Required</p></div>
-                    <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                      <SectionAIAssist sectionKey="banner" currentContent={`${banner.page_title} ${banner.sub_title}`} onAccept={(d) => setBanner(p => ({ ...p, ...d }))} />
-                    </div>
                   </div>
                   <Field label="Page Location" charLimit={CHAR_LIMITS.seo_page_location} value={seoData.seo_page_location} onChange={v => updSeo("seo_page_location", v)} placeholder="e.g. /products/xcelium-logic-simulator" hint="The URL path where this page will live on the site" />
                   <TagPicker value={banner.banner_tags || []} onChange={v => updBanner("banner_tags", v)} user={user} />
@@ -1320,7 +1317,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Customer Stories marked as Not Applicable</div><button onClick={() => toggleNA("customer_stories")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
-                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="customer_stories" currentContent={csData.cs_impact} onAccept={(d) => setCsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
+                    <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} requestId={draftId || "draft"} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
                 )}
@@ -1402,7 +1399,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
-                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="training_support" currentContent={tsData.ts_impact} onAccept={(d) => setTsData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("training_support")} className={`btn-na${naMap["training_support"] ? " active" : ""}`}>{naMap["training_support"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
+                      <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} requestId={draftId || "draft"} naButton={<button onClick={() => toggleNA("training_support")} className={`btn-na${naMap["training_support"] ? " active" : ""}`}>{naMap["training_support"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
                     </div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}>
                       <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -1561,14 +1558,12 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       {step === 2 && (
         <AIAssistant
           availableSections={[
-            "seo_meta", "banner", "overview",
+            "seo_meta", "overview",
             ...(sections.some(s => s.key === "key_benefits")     ? ["key_benefits"]     : []),
             ...(sections.some(s => s.key === "features_apps")    ? ["features_apps"]    : []),
             ...(sections.some(s => s.key === "applications")     ? ["applications"]     : []),
-            ...(sections.some(s => s.key === "customer_stories") ? ["customer_stories"] : []),
             ...(sections.some(s => s.key === "promo_section")    ? ["promo_section"]    : []),
             ...(sections.some(s => s.key === "related_content")  ? ["related_content"]  : []),
-            ...(sections.some(s => s.key === "training_support") ? ["training_support"] : []),
           ]}
           onGenerate={handleAIGenerate}
         />

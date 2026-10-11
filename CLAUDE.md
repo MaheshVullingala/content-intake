@@ -65,15 +65,15 @@ NEXT_PUBLIC_OKTA_ENABLED=       # "true" to show the Okta button on the login sc
 NEXT_PUBLIC_OKTA_SSO_DOMAIN=    # domain used for supabase.auth.signInWithSSO({ domain }) — must match the domain registered against the Okta SAML connection, e.g. cadence.com
 ```
 
-Optional — Jira auto-create (`src/lib/jira.js`, `/api/jira/create-ticket`).
-When unset, ticket creation just skips (the route returns
-`{ skipped: true, reason: "not_configured" }` and the stakeholder's
-submission is unaffected either way — see the Jira changelog entry).
+Optional — Jira ticket creation (`src/lib/jira.js`, `/api/jira/create-ticket`).
+Triggered by the "Create Jira Ticket" button shown after a request is
+submitted (and on the Jira Ticket card) — not automatically. When unset,
+the button shows a "not configured" message and the manual "Link
+existing" option still works (see the Jira changelog entries).
 Supports either Jira Server/Data Center (a Personal Access Token) or
 Jira Cloud (account email + API token); set whichever pair applies,
 `JIRA_PAT` takes priority if both are present:
 ```
-JIRA_AUTO_CREATE=   # "true" to auto-create the ticket at submit. Off by default: stakeholders create the Jira ticket themselves and link it on the request page, and auto-create would duplicate it
 JIRA_BASE_URL=      # e.g. https://jira.ourorg.com (Server/DC) or https://yourorg.atlassian.net (Cloud) — no trailing slash needed
 JIRA_PROJECT_KEY=   # the project the auto-created ticket lands in, e.g. CIP
 JIRA_ISSUE_TYPE=    # defaults to "Task" if unset — must match an issue type that exists on JIRA_PROJECT_KEY

@@ -60,12 +60,12 @@ function buildTicketContent({ req, submittedByEmail }) {
   // the honest version of "referencing this request's id" from the plan,
   // until the app grows real routes.
   const description = [
-    "Auto-created from the Content Intake Portal when the stakeholder submitted this request.",
+    "Created from the Content Intake Portal for a submitted content request.",
     "",
     `Request: ${displayId}`,
     `Page type: ${req.page_type || "(not set)"}`,
     `Page title: ${req.page_title || "(not set)"}`,
-    `Submitted by: ${submittedByEmail || "(unknown)"}`,
+    `Created by: ${submittedByEmail || "(unknown)"}`,
     "",
     appUrl
       ? `Open request ${displayId}: ${appUrl}/?request=${req.id}`
@@ -101,13 +101,8 @@ export async function POST(request) {
     // until someone plugs in real Jira credentials. Not an error: skip
     // quietly so the caller doesn't log noise for a feature that's simply
     // not turned on yet.
-    // Auto-create is opt-in (JIRA_AUTO_CREATE=true). Default flow: the
-    // stakeholder creates the ticket in Jira and links it from the request
-    // page (JiraTicketCard) — auto-creating as well would duplicate it.
-    if (process.env.JIRA_AUTO_CREATE !== "true") {
-      return NextResponse.json({ skipped: true, reason: "auto_create_disabled" });
-    }
-
+    // Called when the user clicks "Create Jira Ticket" (post-submit banner
+    // or the Jira Ticket card) — not automatically at submit.
     if (!isJiraConfigured()) {
       return NextResponse.json({ skipped: true, reason: "not_configured" });
     }
@@ -122,11 +117,9 @@ export async function POST(request) {
       return NextResponse.json({ error: "Request not found." }, { status: 404 });
     }
 
-    // Only the submitting stakeholder can trigger auto-creation for their
-    // own request — this route is called right at submit time, not a
-    // general-purpose "create a ticket for any request" endpoint. Admins
-    // still have the manual Jira Ticket card for every other case.
-    if (req.created_by !== identity.id) {
+    // Only the request's own stakeholder (or an admin) can create its
+    // ticket — not a general "create a ticket for any request" endpoint.
+    if (req.created_by !== identity.id && identity.role !== "admin") {
       return NextResponse.json({ error: "Not authorized for this request." }, { status: 403 });
     }
 
@@ -155,6 +148,8 @@ export async function POST(request) {
       jira_created_at: nowIso,
       jira_created_by: identity.id,
     }).eq("id", requestId);
+    // (jira_created_by = whoever clicked the button. The "Auto-created" /
+    // "Linked manually" badge in JiraTicketCard infers from this — see there.)
 
     if (updateErr) {
       // The ticket exists in Jira but we couldn't record it — surface this

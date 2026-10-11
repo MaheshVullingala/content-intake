@@ -675,20 +675,10 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         try { await downloadRequestDocx(payload); } catch { /* non-fatal */ }
       }
 
-      // Auto-create the Jira ticket the moment the request is submitted
-      // (see src/app/api/jira/create-ticket/route.js). Fail-open by
-      // design: a missing/expired Jira token, a down Jira instance, or
-      // Jira not being configured at all must never block a stakeholder's
-      // submission, which has already succeeded above. If this fails,
-      // admin links the ticket manually later via the Jira Ticket card on
-      // the request detail view — nothing here is the only way to do it.
-      try {
-        await fetch("/api/jira/create-ticket", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json", Authorization: authHeaders.Authorization },
-          body:    JSON.stringify({ requestId }),
-        });
-      } catch { /* non-fatal */ }
+      // Jira ticket creation is NOT automatic any more: after submit, the
+      // request page shows a "Create Jira Ticket" button (ReqDetail.js's
+      // SubmittedBanner / JiraTicketCard.js) that calls
+      // /api/jira/create-ticket on click.
 
       go("detail", requestId, { submitted: true });
     } catch (e) {

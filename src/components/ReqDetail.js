@@ -3,15 +3,26 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import TaskBoard from "@/components/TaskBoard";
+import { createJiraTicket } from "@/lib/jiraClient";
 
 // Shown once, right after a stakeholder submits (NewRequest.js passes
 // { submitted: true } through go()). Request number + a link that opens
 // this request directly (handled by the ?request= deep-link effect in
 // page.js), each with a copy button.
-function SubmittedBanner({ req }) {
+function SubmittedBanner({ req, onJiraCreated }) {
   const [copied, setCopied] = useState("");
   const [dismissed, setDismissed] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [jiraError, setJiraError] = useState("");
   if (dismissed) return null;
+
+  const createTicket = async () => {
+    setCreating(true); setJiraError("");
+    const r = await createJiraTicket(supabase, req.id);
+    setCreating(false);
+    if (!r.ok) { setJiraError(r.error); return; }
+    onJiraCreated?.();
+  };
   const number = req.request_display_id || req.id;
   const url = `${typeof window !== "undefined" ? window.location.origin : ""}/?request=${req.id}`;
   const copy = async (key, text) => {
@@ -34,6 +45,21 @@ function SubmittedBanner({ req }) {
       </div>
       {row("number", "Request number", number, true)}
       {row("url", "Request link", url, false)}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+        {req.jira_ticket_id ? (
+          <span style={{ fontSize: 13 }}>
+            Jira ticket:{" "}
+            {req.jira_ticket_url
+              ? <a href={req.jira_ticket_url} target="_blank" rel="noopener noreferrer"><strong>{req.jira_ticket_id}</strong></a>
+              : <strong>{req.jira_ticket_id}</strong>}
+          </span>
+        ) : (
+          <button type="button" className="btn-primary" style={{ fontSize: 13 }} onClick={createTicket} disabled={creating}>
+            {creating ? "Creating Jira ticket…" : "Create Jira Ticket"}
+          </button>
+        )}
+        {jiraError && <span style={{ fontSize: 12, color: "#c0392b" }}>{jiraError}</span>}
+      </div>
     </div>
   );
 }
@@ -43,8 +69,11 @@ export default function ReqDetail({ reqId, user, go, navParams }) {
   const [attachments,  setAttachments]  = useState([]);
   const [loading,      setLoading]      = useState(true);
 
-  const fetchAll = async () => {
-    setLoading(true);
+  // silent=true refreshes the data without swapping the whole page for the
+  // loading spinner (used after creating a Jira ticket so the banner and
+  // its Dismiss/copy state aren't torn down).
+  const fetchAll = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [{ data: r }, { data: atts }] = await Promise.all([
         supabase.from("requests").select("*, users!requests_created_by_fkey(name, role)").eq("id", reqId).single(),
@@ -82,7 +111,7 @@ export default function ReqDetail({ reqId, user, go, navParams }) {
         attachments={attachments}
         onRefresh={fetchAll}
         go={go}
-        submittedBanner={navParams?.submitted ? <SubmittedBanner req={req} /> : null}
+        submittedBanner={navParams?.submitted ? <SubmittedBanner req={req} onJiraCreated={() => fetchAll(true)} /> : null}
       />
     );
   }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { FaTicketAlt, FaExternalLinkAlt } from "react-icons/fa";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
+import { createJiraTicket as createJiraTicketViaApi } from "@/lib/jiraClient";
 
 // Two paths land here now:
 //   1. Auto-created at submit time by src/app/api/jira/create-ticket
@@ -22,7 +23,19 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState("");
 
+  const [creating, setCreating] = useState(false);
   const hasTicket = !!req.jira_ticket_id;
+  // Only the request's own stakeholder or an admin may create it (the
+  // route enforces this too) — don't offer a button that would just 403.
+  const canCreate = user.role === "admin" || req.created_by === user.id;
+
+  const createTicket = async () => {
+    setCreating(true); setError("");
+    const r = await createJiraTicketViaApi(supabase, req.id);
+    setCreating(false);
+    if (!r.ok) { setError(r.error); return; }
+    onRefresh?.();
+  };
   // The auto-create route always sets jira_created_by to the submitting
   // stakeholder (same as created_by) — a manual link set by an admin will
   // almost always differ. Not a stored flag, just an inference from the
@@ -68,17 +81,25 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
                 : <span style={{ fontSize: 13, fontWeight: 500 }}>{req.jira_ticket_id}</span>
               }
               <span style={{ fontSize: 10, fontWeight: 500, padding: "2px 8px", borderRadius: 999, background: "var(--color-ghost)", color: "var(--color-silver)" }}>
-                {wasAutoCreated ? "Auto-created at submission" : "Linked manually"}
+                {wasAutoCreated ? "Created from portal" : "Linked manually"}
               </span>
             </div>
           ) : (
             <span className="text-sm text-muted">No ticket linked yet</span>
           )}
-          <button className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }} onClick={() => setEditing(true)}>
-            {hasTicket ? "Edit" : "Link Ticket"}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            {!hasTicket && canCreate && (
+              <button className="btn-primary" style={{ fontSize: 12, padding: "5px 10px" }} onClick={createTicket} disabled={creating}>
+                {creating ? "Creating…" : "Create Jira Ticket"}
+              </button>
+            )}
+            <button className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }} onClick={() => setEditing(true)}>
+              {hasTicket ? "Edit" : "Link existing"}
+            </button>
+          </div>
         </div>
       )}
+      {!editing && error && <div className="alert alert-error mb-8" style={{ marginTop: 8 }}>{error}</div>}
 
       {editing && (
         <div>

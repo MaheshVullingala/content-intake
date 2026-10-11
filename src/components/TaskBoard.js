@@ -341,10 +341,10 @@ export default function TaskBoard({
                       ? <a href={req.jira_ticket_url} target="_blank" rel="noopener noreferrer"><strong>{req.jira_ticket_id}</strong></a>
                       : <strong>{req.jira_ticket_id}</strong>}{" "}
                     is linked to this request.</span>
-                : <span>An administrator is reviewing your request and will set up tasks shortly. Please create a Jira ticket for this request using the request details below (request number and link), then add the ticket ID here.</span>}
+                : <span>An administrator is reviewing your request and will set up tasks shortly. Use the Create Jira Ticket button below to raise a Jira ticket from this request's details.</span>}
             </div>
             {submittedBanner}
-            {/* Stakeholder creates the Jira ticket in Jira, then links it here. */}
+            {/* Create (button) or link an existing Jira ticket. */}
             <div style={{ marginTop: 12 }}>
               <JiraTicketCard req={req} user={user} supabase={supabase} onRefresh={handleRefresh} />
             </div>

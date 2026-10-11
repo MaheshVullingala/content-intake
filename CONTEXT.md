@@ -2006,3 +2006,13 @@ Requested: those sections "don't require AI assistance." Removed the per-section
 ## Jira: stakeholder creates the ticket (2026-10-08)
 
 Direction changed: the **stakeholder** creates the Jira ticket (not admin, not the system). After submit, the stakeholder's pending view says to create a ticket in Jira using the request number/link shown in the banner, and shows the existing `JiraTicketCard` so they can paste the ticket ID/URL back (stakeholders can already UPDATE their own request under `requests_update`, so no RLS change). The card also shows the linked ticket to the admin afterwards. Server-side auto-create (`/api/jira/create-ticket`) is now **opt-in via `JIRA_AUTO_CREATE=true`** (default off) so it can't duplicate the stakeholder's ticket; the code and `JIRA_*` env vars are otherwise unchanged. Note the card's helper text ("Create the ticket in Jira yourself…") already fits this flow. Nothing forces the stakeholder to link a ticket — it's not a submit blocker.
+
+## Jira: "Create Jira Ticket" button (2026-10-11) — supersedes the auto-create / stakeholder-pastes entries above
+
+Final requirement: after submit, next to the request number/URL there's a **Create Jira Ticket** button; clicking it creates the ticket. Implementation:
+- `ReqDetail.js` `SubmittedBanner` — button below the number/link rows; on success shows the ticket ID as a link (refreshes silently via `fetchAll(true)` so the banner isn't torn down). Errors (incl. "Jira isn't configured yet") show inline.
+- `JiraTicketCard.js` — same button when no ticket exists (for later visits; shown only to the request's owner or an admin, matching the route), plus "Link existing" for the manual paste fallback. Badge now reads "Created from portal" / "Linked manually" (still inferred from `jira_created_by === created_by`, so a ticket an admin creates via the button will show "Linked manually" — cosmetic).
+- `src/lib/jiraClient.js` (new) — browser helper calling `/api/jira/create-ticket`; never throws.
+- `/api/jira/create-ticket` — now click-triggered: the `JIRA_AUTO_CREATE` gate is removed (env var no longer exists), owner **or admin** may call it, idempotent (won't create a second ticket), returns `not_configured` until the `JIRA_*` env vars are set.
+- `NewRequest.js` — the submit-time auto call is removed; nothing creates tickets without a click.
+- Stakeholder pending notice now points at the button. Not tested against a real Jira (no credentials yet) and not build-verified (sandbox SIGBUS); esbuild syntax check passes.

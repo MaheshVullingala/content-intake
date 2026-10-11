@@ -2027,3 +2027,10 @@ Final requirement: after submit, next to the request number/URL there's a **Crea
 - `src/lib/fieldMeta.js` (new) — `sectionForField` / `fieldLabel` moved out of `preflightCheck.js` so both modules share them. `runPreflightChecks` runs blocking checks on the auto-cleaned payload (trimming can bring a field back under its char limit) and suggestions on the raw payload.
 - Tunable lists live at the top of `contentChecks.js`; `DISABLED_RULES` switches individual rules off. Seed `BRAND_TERMS` are guesses — edit to the approved names. Heuristics (sentence case, passive voice) can produce false positives; that's why they are suggestions only.
 - Verified with esbuild + a Node behavioural test (messy sample trips each rule; clean sample yields no warnings). Not build-verified (sandbox SIGBUS) or tested in the browser.
+
+### Content checks extended to the edit paths (2026-10-11)
+- `EditSectionModal.js` (editorial direct edits + `deferApply` staging): payload is now built by `buildSectionPayload()` and passed through `autoCleanPayload()` before saving; a collapsible `ContentSuggestions` panel (new `src/components/ContentSuggestions.js`) shows advisory suggestions for the section being edited.
+- `ProposeChangeWizard.js` (stakeholder post-submit changes, fast lane and admin-review paths): changed fields are auto-cleaned before the diff is built (only fields the user actually changed, so untouched legacy content isn't turned into a change; a change that cleans back to the original is dropped). Suggestions panel shows for the changed fields only.
+- Edit surfaces are advisory + auto-clean only; the blocking pre-flight errors (placeholder, CTA mismatch) still apply only to the new-request Submit.
+- Fix: system-set section eyebrow labels (`overview_label`="OVERVIEW", `kb_label`="KEY BENEFITS", ...) are now excluded from the content checks (they were being flagged as ALL CAPS).
+- esbuild syntax check + Node behavioural test only; not build-verified or browser-tested.

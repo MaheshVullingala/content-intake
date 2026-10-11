@@ -8,6 +8,8 @@ import { useCharLimits } from "@/lib/charLimits";
 import RichTextEditor from "@/components/RichTextEditor";
 import { sanitizeRichText } from "@/lib/richText";
 import TagPicker from "@/components/TagPicker";
+import ContentSuggestions from "@/components/ContentSuggestions";
+import { autoCleanPayload } from "@/lib/contentChecks";
 
 // Others section's per-item limits — mirrors src/components/sections/Others.js's
 // LIMITS constant (kept local there per the app's per-item-limits-live-in-the-
@@ -328,9 +330,9 @@ export default function EditSectionModal({
   const isBanner        = pickedSection === "banner";
   const isEmpty = visible.length === 0 && !hasArrayItems && !faHasContent && !appHasContent && !othHasContent && !(isBanner && bannerTags.length > 0);
 
-  const handleSave = async () => {
-    setSaving(true);
-    setError("");
+  // Assembles the section's payload from current form state (shared by
+  // Save and the live content-suggestions panel).
+  const buildSectionPayload = () => {
     const payload = { ...values };
     if (config.arrayField) payload[config.arrayField.key] = items;
     if (isFeaturesApps) {
@@ -351,6 +353,15 @@ export default function EditSectionModal({
       // allowlist treatment as a stakeholder's own save.
       payload.oth_items = othItems.map(it => ({ ...it, description: sanitizeRichText(it.description || "") }));
     }
+    return payload;
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+    // Repairs extra/hidden spaces etc. (see lib/contentChecks.js) -- same
+    // auto-clean the new-request form applies at Submit.
+    const payload = autoCleanPayload(buildSectionPayload());
 
     if (deferApply) {
       // Staged mode — nothing written yet, caller (ProposeChangePanel)
@@ -566,6 +577,7 @@ export default function EditSectionModal({
             </div>
           )}
 
+          {!isEmpty && <ContentSuggestions payload={buildSectionPayload()} />}
           {error && <div className="alert alert-error mt-8">{error}</div>}
         </div>
 

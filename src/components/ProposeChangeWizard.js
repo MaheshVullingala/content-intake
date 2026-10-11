@@ -20,6 +20,8 @@ import TrainingSupport from "@/components/sections/TrainingSupport";
 import Others from "@/components/sections/Others";
 import TagPicker from "@/components/TagPicker";
 import { sanitizeRichText } from "@/lib/richText";
+import ContentSuggestions from "@/components/ContentSuggestions";
+import { autoCleanPayload } from "@/lib/contentChecks";
 
 // Same section forms NewRequest.js uses to create a request in the first
 // place — reused here (instead of EditSectionModal's field-only-if-
@@ -200,6 +202,11 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
       if (key === "oth_items" && Array.isArray(newVal)) {
         newVal = newVal.map(it => ({ ...it, description: sanitizeRichText(it.description || "") }));
       }
+      if (isEqualValue(original[key], newVal)) return;
+      // Only fields the user actually changed are cleaned (so untouched
+      // legacy content isn't turned into a "change"); if cleaning brings the
+      // value back to the original there is nothing to submit.
+      newVal = autoCleanPayload({ [key]: newVal })[key];
       if (!isEqualValue(original[key], newVal)) {
         const meta = fieldMeta(key);
         fields.push({ section: meta.section, key, label: meta.label, old_value: original[key] ?? null, new_value: newVal ?? null });
@@ -331,6 +338,11 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
       </div>
 
       {error && <div className="alert alert-error mb-12">{error}</div>}
+      {changedFields.length > 0 && (
+        <div style={{ marginBottom: 12 }}>
+          <ContentSuggestions payload={Object.fromEntries(changedFields.map(f => [f.key, f.new_value]))} />
+        </div>
+      )}
 
       {/* Section tab bar */}
       <div style={{

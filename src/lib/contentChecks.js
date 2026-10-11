@@ -108,8 +108,13 @@ const leafOf = (topKey, path) => {
   return topKey;
 };
 
+// Section eyebrow labels (overview_label = "OVERVIEW", kb_label = "KEY BENEFITS", ...)
+// are set by the app in capitals on purpose -- never user copy.
+const SECTION_LABEL_RE = /^[a-z]+_label$/;
+
 const isEligible = (topKey, path, val) =>
   sectionForField(topKey) !== null &&
+  !(path.length === 0 && SECTION_LABEL_RE.test(topKey)) &&
   !skipName(topKey) &&
   !path.some((p) => typeof p === "string" && skipName(p)) &&
   !SKIP_VALUE.test(val.trim());

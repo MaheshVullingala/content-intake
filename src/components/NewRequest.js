@@ -12,7 +12,7 @@ import { PAGE_TYPES, getSectionsForPageType, CHAR_LIMITS as DEFAULT_CHAR_LIMITS 
 import { useCharLimits } from "@/lib/charLimits";
 import { generateTestData } from "@/lib/testData";
 import { htmlToPlainText } from "@/lib/richText";
-import { runPreflightChecks } from "@/lib/preflightCheck";
+import { runPreflightChecks, autoCleanPayload } from "@/lib/preflightCheck";
 import { downloadRequestDocx } from "@/lib/wordExport";
 import PagePreview from "@/components/PagePreview";
 import AIAssistant from "@/components/AIAssistant";
@@ -616,9 +616,11 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       setError("Please provide a reason for High/Urgent priority before submitting.");
       return;
     }
-    const preflightIssues = runPreflightChecks(buildPayload("draft"), { checkPlaceholders: placeholderCheckEnabled, charLimits: CHAR_LIMITS });
-    if (preflightIssues.length > 0) {
-      setError(`Pre-flight check found ${preflightIssues.length} issue${preflightIssues.length > 1 ? "s" : ""} — see the Pre-flight Check panel above and fix ${preflightIssues.length > 1 ? "them" : "it"} before submitting.`);
+    // Only blocking errors stop Submit; content-format suggestions
+    // (severity "warning") are advisory.
+    const blockingIssues = runPreflightChecks(buildPayload("draft"), { checkPlaceholders: placeholderCheckEnabled, charLimits: CHAR_LIMITS }).filter(i => i.severity !== "warning");
+    if (blockingIssues.length > 0) {
+      setError(`Pre-flight check found ${blockingIssues.length} issue${blockingIssues.length > 1 ? "s" : ""} — see the Pre-flight Check panel above and fix ${blockingIssues.length > 1 ? "them" : "it"} before submitting.`);
       return;
     }
     setSaving(true);
@@ -629,7 +631,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
     try {
       const designFlags = computeDesignFlags();
-      const payload = sanitizePayload({ ...buildPayload("draft"), overall_status: "pending_admin", needs_brand: needsBrand, ...designFlags }, ["description"]);
+      const payload = sanitizePayload({ ...autoCleanPayload(buildPayload("draft")), overall_status: "pending_admin", needs_brand: needsBrand, ...designFlags }, ["description"]);
       let requestId = draftDbId;
 
       if (draftDbId) {
@@ -1505,9 +1507,17 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {preflightIssues.map((issue, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "#fef2f2", border: "1px solid #c0392b33", borderRadius: 8, padding: "0.65rem 0.9rem" }}>
-                    <div style={{ fontSize: 13, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}><FaExclamationTriangle size={11} /> {issue.message}</div>
+                {preflightIssues.some(i => i.severity === "warning") && (
+                  <div style={{ fontSize: 11, color: "#646464" }}>
+                    {preflightIssues.filter(i => i.severity !== "warning").length > 0 && <>Red items must be fixed before submitting. </>}
+                    Amber items are suggestions &mdash; they won&apos;t block submission.
+                  </div>
+                )}
+                {[...preflightIssues].sort((a, b) => (a.severity === "warning") - (b.severity === "warning")).map((issue, i) => {
+                  const warn = issue.severity === "warning";
+                  return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: warn ? "#fffbeb" : "#fef2f2", border: warn ? "1px solid #f59e0b44" : "1px solid #c0392b33", borderRadius: 8, padding: "0.65rem 0.9rem" }}>
+                    <div style={{ fontSize: 13, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}><FaExclamationTriangle size={11} color={warn ? "#d97706" : "#c0392b"} /> {issue.message}</div>
                     {issue.section && (
                       <button type="button" onClick={() => { setStep(2); handleSectionChange(issue.section); }}
                         style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, fontWeight: 500, color: "#181313", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
@@ -1515,7 +1525,8 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                       </button>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

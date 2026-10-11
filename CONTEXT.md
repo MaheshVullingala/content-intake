@@ -2016,3 +2016,14 @@ Final requirement: after submit, next to the request number/URL there's a **Crea
 - `/api/jira/create-ticket` — now click-triggered: the `JIRA_AUTO_CREATE` gate is removed (env var no longer exists), owner **or admin** may call it, idempotent (won't create a second ticket), returns `not_configured` until the `JIRA_*` env vars are set.
 - `NewRequest.js` — the submit-time auto call is removed; nothing creates tickets without a click.
 - Stakeholder pending notice now points at the button. Not tested against a real Jira (no credentials yet) and not build-verified (sandbox SIGBUS); esbuild syntax check passes.
+
+## Content format checks & suggestions (2026-10-11)
+- New `src/lib/contentChecks.js` — advisory checks (severity `"warning"`, never block Submit), grouped one issue per rule per section. Shown in amber in the step-3 Pre-flight panel; blocking errors (placeholder, CTA mismatch, char limits) stay red and now carry `severity: "error"`.
+- **Spacing:** extra spaces, leading/trailing spaces, hidden/non-breaking characters, line breaks/tabs in single-line fields (all four are **auto-fixed at Submit** via `autoCleanPayload`, applied in `NewRequest.submit()`), space before punctuation, missing space after punctuation.
+- **Capitalization:** title not in sentence case (brand/proper-noun/acronym aware), ALL CAPS, sentence not starting with a capital, mixed CTA/button label case across the request.
+- **Punctuation:** title/button ending in a period, description without end punctuation, repeated punctuation, "!" in titles/buttons, hyphen used as dash, unmatched brackets/quotes, mixed straight/curly quotes.
+- **Wording:** common-typo list (not a dictionary spell-check), repeated words, brand/product spelling (`BRAND_TERMS`), discouraged words (`BANNED_WORDS`), passive-voice heuristic, sentences over 25 words, contractions (**off** by default: `CHECK_CONTRACTIONS`).
+- Only copy fields are checked: link/url/ref/id/type/slug/keywords/etc. are skipped by key-name token (`SKIP_TOKENS`). Rich-text HTML is reduced to plain text first.
+- `src/lib/fieldMeta.js` (new) — `sectionForField` / `fieldLabel` moved out of `preflightCheck.js` so both modules share them. `runPreflightChecks` runs blocking checks on the auto-cleaned payload (trimming can bring a field back under its char limit) and suggestions on the raw payload.
+- Tunable lists live at the top of `contentChecks.js`; `DISABLED_RULES` switches individual rules off. Seed `BRAND_TERMS` are guesses — edit to the approved names. Heuristics (sentence case, passive voice) can produce false positives; that's why they are suggestions only.
+- Verified with esbuild + a Node behavioural test (messy sample trips each rule; clean sample yields no warnings). Not build-verified (sandbox SIGBUS) or tested in the browser.

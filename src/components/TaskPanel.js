@@ -188,9 +188,46 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
     const ok = await doUpdate({ status: "completed" });
     if (ok) {
       logAudit(supabase, user, AUDIT_ACTIONS.TASK_COMPLETED, "task", myTask.id);
-      // Fire-and-forget secondary sync; never block the UI on it.
-      syncOverallStatus(req.id, supabase).then(() => onRefresh?.()).catch(() => {});
+      // Fire-and-forget secondary sync; never block the UI on it. When it
+      // reports the request as completed (all tasks done), tell the
+      // stakeholder and admins.
+      syncOverallStatus(req.id, supabase)
+        .then(async ({ data: overall }) => {
+          if (overall === "completed") await notifyRequestCompleted();
+          onRefresh?.();
+        })
+        .catch(() => onRefresh?.());
     }
+  };
+
+  // Notification failure must never block or fail completion.
+  const notifyRequestCompleted = async () => {
+    try {
+      const notifications = [];
+      if (req.created_by) {
+        notifications.push({
+          user_id:    req.created_by,
+          type:       "request_completed",
+          title:      "Your request is complete",
+          message:    `"${req.page_title}" has been completed by the Editorial Team.`,
+          request_id: req.id,
+          action_url: `/?request=${req.id}`,
+        });
+      }
+      const { data: admins } = await supabase.from("users").select("id").in("role", ["admin", "super_admin"]);
+      (admins || []).forEach(a => {
+        if (a.id === req.created_by) return;
+        notifications.push({
+          user_id:    a.id,
+          type:       "request_completed",
+          title:      "Request completed",
+          message:    `"${req.page_title}" has been completed.`,
+          request_id: req.id,
+          action_url: `/?request=${req.id}`,
+        });
+      });
+      if (notifications.length) await supabase.from("notifications").insert(notifications);
+    } catch { /* notification failure must not block completion */ }
   };
 
   // ── SEO team: AI generation + save-and-complete ─────────────────────────────

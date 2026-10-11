@@ -45,6 +45,7 @@ export const OVERALL_STATUS_META = {
   pending_admin:       { label: 'Pending Admin Review', color: '#d97706', bg: '#fffbeb' },
   in_progress:         { label: 'In Progress',          color: '#1b5793', bg: '#eff6ff' },
   pending_stakeholder: { label: 'Needs Approval',       color: '#9333ea', bg: '#faf5ff' },
+  completed:           { label: 'Completed',            color: '#2a7a4b', bg: '#ecfdf5' },
   published:           { label: 'Published',            color: '#2a7a4b', bg: '#ecfdf5' },
 };
 
@@ -100,11 +101,13 @@ export async function createTasksForRequest(requestId, selectedRoles, adminId, s
 /**
  * Recalculate and write overall_status on the request after any task change.
  *
+ *   completed          ← every task on the request is completed
  *   pending_stakeholder← any parallel task needs stakeholder approval
  *   in_progress        ← default while work is active
  *
- * (The web_team publish branches were removed 2026-10-12: no web_team task
- * rows exist and the role is retired.)
+ * Editorial-only workflow: when the editorial task is marked completed the
+ * whole request is completed. Re-opening a task recomputes this to
+ * in_progress. (The web_team publish branches were removed 2026-10-12.)
  */
 export async function syncOverallStatus(requestId, supabase) {
   const { data: tasks, error: fetchError } = await supabase
@@ -117,9 +120,11 @@ export async function syncOverallStatus(requestId, supabase) {
 
   const parallelTasks = tasks.filter(t => PARALLEL_TEAMS.includes(t.team_role));
 
-  const overall_status = parallelTasks.some(t => t.status === 'pending_approval')
-    ? 'pending_stakeholder'
-    : 'in_progress';
+  const overall_status = tasks.every(t => t.status === 'completed')
+    ? 'completed'
+    : parallelTasks.some(t => t.status === 'pending_approval')
+      ? 'pending_stakeholder'
+      : 'in_progress';
 
   const { error: updateError } = await supabase
     .from('requests')

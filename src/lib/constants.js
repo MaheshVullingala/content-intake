@@ -283,6 +283,7 @@ export const OVERALL_STATUS_META = {
   pending_admin:       { label: 'Pending Admin Review', color: '#d97706', bg: '#fffbeb' },
   in_progress:         { label: 'In Progress',          color: '#1b5793', bg: '#eff6ff' },
   pending_stakeholder: { label: 'Needs Approval',       color: '#9333ea', bg: '#faf5ff' },
+  completed:           { label: 'Completed',            color: '#2a7a4b', bg: '#ecfdf5' },
   published:           { label: 'Published',            color: '#2a7a4b', bg: '#ecfdf5' },
 };
 
@@ -329,6 +330,7 @@ export const NOTIFICATION_TYPES = {
   PRIORITY_CHANGED:  'priority_changed',
   CHANGES_REQUESTED: 'changes_requested',
   PUBLISHED:         'published',
+  REQUEST_COMPLETED: 'request_completed',
   CONTENT_CHANGE_SUBMITTED: 'content_change_submitted',
   CONTENT_CHANGE_REJECTED:  'content_change_rejected',
   CONTENT_UPDATED:          'content_updated',

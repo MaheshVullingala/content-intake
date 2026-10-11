@@ -386,7 +386,7 @@ export default function TaskBoard({
             <div style={{ overflowY: "auto",
                           borderLeft: "1px solid var(--color-border)",
                           paddingLeft: "1.5rem" }}>
-              {req.overall_status && req.overall_status !== "published" && (
+              {req.overall_status && !["published", "completed"].includes(req.overall_status) && (
                 <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
                   <button className="btn-ghost" onClick={() => setComposingChange(true)} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <FaPen size={11} /> Suggest a Change

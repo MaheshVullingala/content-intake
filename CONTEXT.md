@@ -2046,3 +2046,10 @@ Final requirement: after submit, next to the request number/URL there's a **Crea
 - **Left alone on purpose:** `web_team` role strings in `constants.js` role lists/comments, `BrandFilesPanel.js`, `Dashboard.js` role constants, and DB leftovers (`check_web_team_unlock()` RPC, the `tasks_update_web_team_request_changes` policy) — harmless, and worth a separate DB cleanup.
 - **Observation (not changed):** with editorial as the only task, `syncOverallStatus` never sets `published` — a request stays `in_progress` after the editorial task completes. If a "published/completed" end state is wanted, that needs a product decision.
 - Whole app bundles with esbuild (all imports resolve) and every touched file syntax-checks; not build-verified (sandbox SIGBUS) or browser-tested.
+
+### Request completes when the editorial task is completed (2026-10-12)
+- `syncOverallStatus` (`taskUtils.js`): if every task on the request is `completed`, `overall_status` becomes **`completed`** (new `OVERALL_STATUS_META.completed`, label "Completed", in both `taskUtils.js` and `constants.js`). Re-opening a task recomputes back to `in_progress`. No DB check constraint exists on `overall_status`, so no migration was needed.
+- `TaskPanel.handleComplete`: when the sync reports `completed`, notifies the stakeholder and admins (`request_completed`, link `/?request=<id>`; `NOTIFICATION_TYPES.REQUEST_COMPLETED` added). Notification failure never blocks completion.
+- `TaskBoard.js`: "Suggest a Change" is hidden once the request is `completed` (same as `published`).
+- Stakeholder DB rule unchanged: only editorial/admin sessions complete tasks, so the stakeholder status lock is unaffected.
+- Behaviour-tested `syncOverallStatus` with a mocked client (completed / in progress / reopened / no tasks); not browser-tested or build-verified.

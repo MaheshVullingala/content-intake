@@ -100,7 +100,7 @@ const skipName = (name) => String(name).toLowerCase().split("_").some((t) => SKI
 const SKIP_VALUE = /^(https?:\/\/|mailto:|\/|#)\S*$|^[\w.+-]+@[\w-]+\.[\w.-]+$|^[0-9a-f]{8}-[0-9a-f]{4}-/i;
 
 const HTML_RE = /<\/?[a-z][^>]*>/i;
-const INVISIBLE_RE = /[​-‍⁠﻿­]/g;
+const INVISIBLE_RE = /[\u200B-\u200D\u2060\uFEFF\u00AD]/g;
 const URL_RE = /(?:https?:\/\/|www\.)\S+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+/gi;
 
 const leafOf = (topKey, path) => {
@@ -152,7 +152,7 @@ export function autoCleanPayload(payload) {
   return mapPayload(payload, (val, topKey, path) => {
     const html = HTML_RE.test(val);
     let s = val.replace(INVISIBLE_RE, "");
-    if (!html) s = s.replace(/ /g, " ");
+    if (!html) s = s.replace(/\u00A0/g, " ");
     if (!html && SINGLE_LINE.has(kindOf(topKey, path))) s = s.replace(/[\r\n\t]+/g, " ");
     return s.replace(/[ \t]{2,}/g, " ").trim();
   });
@@ -290,7 +290,7 @@ export function findContentSuggestions(payload, { disabledRules = DISABLED_RULES
     // 1. Spacing
     if (/\S[ \t]{2,}\S/.test(text)) add("double_space", e);
     if (lines.some((l) => l !== l.trim())) add("edge_space", e);
-    if (INVISIBLE_RE.test(raw) || (!html && / /.test(raw))) add("invisible_char", e);
+    if (INVISIBLE_RE.test(raw) || (!html && /\u00A0/.test(raw))) add("invisible_char", e);
     INVISIBLE_RE.lastIndex = 0;
     if (singleLine && !html && /[\r\n\t]/.test(raw.trim())) add("line_break", e);
     if (/\s[,;:!?]|\s\.(?=\s|$)/.test(noUrl)) add("space_before_punct", e);
@@ -331,7 +331,8 @@ export function findContentSuggestions(payload, { disabledRules = DISABLED_RULES
     if ((kind === "title" || kind === "button" || kind === "impact") && trimmed.includes("!")) add("exclamation", e);
     if (/\s-\s|--/.test(noUrl)) add("dash_style", e);
     {
-      const count = (re) => (noUrl.match(re) || []).length;
+      const bracketText = noUrl.replace(/(^|\n)\s*\(?[A-Za-z0-9]{1,2}\)/g, "$1"); // ignore list markers like "a)" or "1)"
+      const count = (re) => (bracketText.match(re) || []).length;
       const bad = count(/\(/g) !== count(/\)/g) || count(/\[/g) !== count(/\]/g) || count(/\{/g) !== count(/\}/g) ||
         count(/“/g) !== count(/”/g) || count(/"/g) % 2 === 1;
       if (bad) add("unbalanced", e);

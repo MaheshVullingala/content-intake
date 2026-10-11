@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { safeHttpUrl } from "@/lib/safeUrl";
 import AdminReviewGate   from "@/components/AdminReviewGate";
 import TaskBoardOverview from "@/components/TaskBoardOverview";
 import TaskPanel         from "@/components/TaskPanel";
@@ -337,8 +338,8 @@ export default function TaskBoard({
               <FaHourglassHalf size={12} />
               {req.jira_ticket_id
                 ? <span>An administrator is reviewing your request and will set up tasks shortly. Your Jira ticket{" "}
-                    {req.jira_ticket_url
-                      ? <a href={req.jira_ticket_url} target="_blank" rel="noopener noreferrer"><strong>{req.jira_ticket_id}</strong></a>
+                    {safeHttpUrl(req.jira_ticket_url)
+                      ? <a href={safeHttpUrl(req.jira_ticket_url)} target="_blank" rel="noopener noreferrer"><strong>{req.jira_ticket_id}</strong></a>
                       : <strong>{req.jira_ticket_id}</strong>}{" "}
                     is linked to this request.</span>
                 : <span>An administrator is reviewing your request and will set up tasks shortly. Use the Create Jira Ticket button below to raise a Jira ticket from this request's details.</span>}

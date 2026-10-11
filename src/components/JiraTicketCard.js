@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaTicketAlt, FaExternalLinkAlt } from "react-icons/fa";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 import { createJiraTicket as createJiraTicketViaApi } from "@/lib/jiraClient";
+import { safeHttpUrl } from "@/lib/safeUrl";
 
 // Two paths land here now:
 //   1. Auto-created at submit time by src/app/api/jira/create-ticket
@@ -24,6 +25,12 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
   const [error,    setError]    = useState("");
 
   const [creating, setCreating] = useState(false);
+  // Keep the edit fields in step with the request after a refresh (e.g. a
+  // ticket was just created) so the link doesn't show stale/empty.
+  useEffect(() => {
+    setTicketId(req.jira_ticket_id || "");
+    setTicketUrl(req.jira_ticket_url || "");
+  }, [req.jira_ticket_id, req.jira_ticket_url]);
   const hasTicket = !!req.jira_ticket_id;
   // Only the request's own stakeholder or an admin may create it (the
   // route enforces this too) — don't offer a button that would just 403.
@@ -44,11 +51,12 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
 
   const handleSave = async () => {
     if (!ticketId.trim()) { setError("Ticket ID is required."); return; }
+    if (ticketUrl.trim() && !safeHttpUrl(ticketUrl)) { setError("Ticket URL must start with http:// or https://"); return; }
     setSaving(true);
     setError("");
     const payload = {
       jira_ticket_id:  ticketId.trim(),
-      jira_ticket_url: ticketUrl.trim() || null,
+      jira_ticket_url: ticketUrl.trim() ? safeHttpUrl(ticketUrl) : null,
       jira_created_at: req.jira_created_at || new Date().toISOString(),
       jira_created_by: req.jira_created_by || user.id,
     };
@@ -74,8 +82,8 @@ export default function JiraTicketCard({ req, user, supabase, onRefresh }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
           {hasTicket ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              {ticketUrl
-                ? <a href={ticketUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 500, color: "#3ec5cb", display: "inline-flex", alignItems: "center", gap: 5 }}>
+              {safeHttpUrl(req.jira_ticket_url)
+                ? <a href={safeHttpUrl(req.jira_ticket_url)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 500, color: "#3ec5cb", display: "inline-flex", alignItems: "center", gap: 5 }}>
                     {req.jira_ticket_id} <FaExternalLinkAlt size={10} />
                   </a>
                 : <span style={{ fontSize: 13, fontWeight: 500 }}>{req.jira_ticket_id}</span>

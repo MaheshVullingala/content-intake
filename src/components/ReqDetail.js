@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { safeHttpUrl } from "@/lib/safeUrl";
 import { supabase } from "@/lib/supabase";
 import { PCBLoader } from "@/components/PCBLoader";
 import TaskBoard from "@/components/TaskBoard";
@@ -49,8 +50,8 @@ function SubmittedBanner({ req, onJiraCreated }) {
         {req.jira_ticket_id ? (
           <span style={{ fontSize: 13 }}>
             Jira ticket:{" "}
-            {req.jira_ticket_url
-              ? <a href={req.jira_ticket_url} target="_blank" rel="noopener noreferrer"><strong>{req.jira_ticket_id}</strong></a>
+            {safeHttpUrl(req.jira_ticket_url)
+              ? <a href={safeHttpUrl(req.jira_ticket_url)} target="_blank" rel="noopener noreferrer"><strong>{req.jira_ticket_id}</strong></a>
               : <strong>{req.jira_ticket_id}</strong>}
           </span>
         ) : (

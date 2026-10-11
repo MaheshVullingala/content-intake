@@ -4,7 +4,7 @@ import {
   FaClipboardList, FaLock, FaCheckCircle, FaChevronDown, FaChevronRight,
   FaPaperclip, FaUndo, FaBolt, FaPen,
 } from "react-icons/fa";
-import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
+import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 import AssigneeDropdown from "@/components/AssigneeDropdown";
@@ -95,14 +95,10 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
         .eq("id", req.id);
       if (reqErr) { setError(reqErr.message); return; }
 
-      // Fire-and-forget — stakeholder approving may unlock web_team;
-      // never block the UI on this secondary sync. onRefresh must fire
-      // AFTER these DB writes land, not before, or the refetch reads
-      // stale overall_status/task rows.
-      Promise.all([
-        syncOverallStatus(req.id, supabase),
-        tryUnlockWebTeam(req.id, supabase),
-      ]).then(() => onRefresh?.()).catch(() => onRefresh?.());
+      // Fire-and-forget — never block the UI on this secondary sync.
+      // onRefresh must fire AFTER the DB write lands, not before, or the
+      // refetch reads stale overall_status/task rows.
+      syncOverallStatus(req.id, supabase).then(() => onRefresh?.()).catch(() => onRefresh?.());
 
       logAudit(supabase, user, AUDIT_ACTIONS.APPROVAL_GIVEN, "task", task.id, {
         field_name: task.team_role,

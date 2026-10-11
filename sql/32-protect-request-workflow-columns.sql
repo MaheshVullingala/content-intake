@@ -1,4 +1,5 @@
--- Applied 2026-10-12 via Supabase MCP (migration: protect_request_workflow_columns_for_stakeholders)
+-- Applied 2026-10-12 via Supabase MCP (migrations: protect_request_workflow_columns_for_stakeholders,
+-- then simplify_stakeholder_status_rule_editorial_only)
 -- requests_update lets a stakeholder update any column of their own request. Keep that for
 -- content, but stop stakeholders driving the workflow directly. Role 'stakeholder' with a JWT
 -- only; admin / editorial_team / service role / SQL editor are unaffected.
@@ -21,25 +22,16 @@ begin
     raise exception 'You do not have permission to assign requests' using errcode = '42501';
   end if;
 
+  -- Editorial-only workflow (simplified 2026-10-12): the only status write a
+  -- stakeholder may make is the submit transition. Writes that leave the
+  -- status unchanged (e.g. syncOverallStatus re-writing 'in_progress') are not
+  -- a change and stay allowed.
   if new.overall_status is distinct from old.overall_status then
-    if new.overall_status = 'pending_admin' then
-      if old.overall_status is not null and old.overall_status <> 'pending_admin' then
-        raise exception 'A request cannot be moved back to Pending Admin Review' using errcode = '42501';
-      end if;
-    elsif new.overall_status in ('in_progress', 'pending_stakeholder') then
-      if not exists (select 1 from public.tasks where request_id = new.id) then
-        raise exception 'Status change not allowed before admin review' using errcode = '42501';
-      end if;
-    elsif new.overall_status = 'pending_web' then
-      if not exists (select 1 from public.tasks where request_id = new.id and team_role = 'web_team' and status in ('pending','in_progress')) then
-        raise exception 'Status change not allowed: Web Team task is not active' using errcode = '42501';
-      end if;
-    elsif new.overall_status = 'published' then
-      if not exists (select 1 from public.tasks where request_id = new.id and team_role = 'web_team' and status = 'completed') then
-        raise exception 'Status change not allowed: Web Team has not completed' using errcode = '42501';
-      end if;
+    if new.overall_status = 'pending_admin'
+       and (old.overall_status is null or old.overall_status = 'pending_admin') then
+      null;
     else
-      raise exception 'Invalid status change' using errcode = '42501';
+      raise exception 'Stakeholders cannot change the request status' using errcode = '42501';
     end if;
   end if;
   return new;

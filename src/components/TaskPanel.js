@@ -7,7 +7,7 @@ import {
   FaLink, FaExternalLinkAlt, FaGlobe, FaUndo, FaCircle, FaPlay, FaEdit,
   FaPauseCircle,
 } from "react-icons/fa";
-import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus, tryUnlockWebTeam } from "@/lib/taskUtils";
+import { TASK_TEAMS, TASK_STATUS_META, updateTask, syncOverallStatus } from "@/lib/taskUtils";
 import { AUDIT_ACTIONS } from "@/lib/constants";
 import { logAudit } from "@/lib/auditLogger";
 import { getFlaggedImageFields } from "@/lib/imageFields";
@@ -87,10 +87,6 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   const [uploading,   setUploading]   = useState(false);
   const [myFiles,     setMyFiles]     = useState([]);
   const [error,       setError]       = useState("");
-  // Web team request-changes modal
-  const [showChanges, setShowChanges] = useState(false);
-  const [changeTeam,  setChangeTeam]  = useState("editorial_team");
-  const [changeNote,  setChangeNote]  = useState("");
   // Design team: which flagged field a mapped-image upload targets
   const [mappingField, setMappingField] = useState(null);
   // SEO team — pre-filled from existing DB values on mount
@@ -103,12 +99,6 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
   }));
   const [generating, setGenerating] = useState(false);
   const [genError,   setGenError]   = useState("");
-  // Web team — shown once, right after this session's own publish action.
-  // Lives outside the isActive-gated web_team card, since publishing
-  // flips the task to "completed" and that whole card unmounts on the
-  // next render once onRefresh() lands.
-  const [publishSuccess, setPublishSuccess] = useState(false);
-
   const fileRef       = useRef();
   const mappedFileRef = useRef();
 
@@ -198,12 +188,8 @@ export default function TaskPanel({ req, user, supabase, tasks, onRefresh }) {
     const ok = await doUpdate({ status: "completed" });
     if (ok) {
       logAudit(supabase, user, AUDIT_ACTIONS.TASK_COMPLETED, "task", myTask.id);
-      // Fire-and-forget — a parallel task completing may unlock web_team;
-      // never block the UI on this secondary sync.
-      Promise.all([
-        syncOverallStatus(req.id, supabase),
-        tryUnlockWebTeam(req.id, supabase),
-      ]).then(() => onRefresh?.()).catch(() => {});
+      // Fire-and-forget secondary sync; never block the UI on it.
+      syncOverallStatus(req.id, supabase).then(() => onRefresh?.()).catch(() => {});
     }
   };
 
@@ -418,108 +404,6 @@ Return this exact format:
     } catch (e) { setError(e.message || "Failed to delete file."); }
   };
 
-  // ── Web team: request changes from another team ─────────────────────────────
-  const handleRequestChanges = async () => {
-    const note = changeNote.trim();
-    if (!note || !changeTeam) return;
-    setSaving(true); setError("");
-    try {
-      const targetTask = tasks.find(t => t.team_role === changeTeam);
-      if (!targetTask) { setError("That team has no task for this request."); return; }
-      // Cross-team update — requires the tasks_update_web_team_request_changes
-      // RLS policy (sql/07-tasks-web-team-request-changes.sql); the base
-      // tasks_update policy only allows a team to update its own task rows.
-      const { error: err } = await supabase
-        .from("tasks")
-        .update({
-          status:              "pending_action",
-          pending_action_note: note,
-          pending_action_at:   new Date().toISOString(),
-          pending_action_by:   user.id,
-        })
-        .eq("id", targetTask.id);
-      if (err) { setError(err.message); return; }
-      // Also pause web_team's own task while waiting for resolution
-      const targetLabel = TASK_TEAMS.find(t => t.role === changeTeam)?.label ?? changeTeam;
-      await supabase
-        .from("tasks")
-        .update({
-          status:              "pending_action",
-          pending_action_note: `Waiting for ${targetLabel} to resolve changes`,
-        })
-        .eq("request_id", req.id)
-        .eq("team_role",  "web_team");
-      // Notify the target team — fire and forget, never let a notification
-      // failure (e.g. RLS 403) block or delay the request-changes flow.
-      try {
-        const { data: targetUsers } = await supabase
-          .from("users").select("id").eq("role", changeTeam);
-        if (targetUsers?.length) {
-          supabase.from("notifications").insert(
-            targetUsers.map(u => ({
-              user_id:    u.id,
-              type:       "changes_requested",
-              title:      "Web Team requested changes",
-              message:    `Web Team needs changes for "${req.page_title}": "${note}"`,
-              request_id: req.id,
-              action_url: `/requests/${req.id}`,
-            }))
-          ).then(() => {}).catch(() => {});
-        }
-      } catch { /* notification failure must not block the request-changes flow */ }
-      setShowChanges(false);
-      setChangeNote("");
-      onRefresh?.();
-    } catch (e) { setError(e.message || "Failed to request changes."); }
-    finally     { setSaving(false); }
-  };
-
-  // ── Web team: mark published ────────────────────────────────────────────────
-  const handlePublish = async () => {
-    setSaving(true); setError("");
-    try {
-      const { error: taskErr } = await updateTask(myTask.id, { status: "completed" }, supabase);
-      if (taskErr) { setError(taskErr.message); return; }
-      const { error: reqErr } = await supabase
-        .from("requests")
-        .update({ overall_status: "published", published_at: new Date().toISOString() })
-        .eq("id", req.id);
-      if (reqErr) { setError(reqErr.message); return; }
-
-      // Notify stakeholder + admins — fire and forget, never let a
-      // notification failure block the publish flow.
-      try {
-        const notifications = [];
-        if (req.created_by) {
-          notifications.push({
-            user_id:    req.created_by,
-            type:       "published",
-            title:      "Your page has been published!",
-            message:    `"${req.page_title}" has been published to AEM by the Web Team.`,
-            request_id: req.id,
-            action_url: `/requests/${req.id}`,
-          });
-        }
-        const { data: admins } = await supabase.from("users").select("id").in("role", ["admin", "super_admin"]);
-        (admins || []).forEach(a => notifications.push({
-          user_id:    a.id,
-          type:       "published",
-          title:      "Page published",
-          message:    `"${req.page_title}" has been published.`,
-          request_id: req.id,
-          action_url: `/requests/${req.id}`,
-        }));
-        if (notifications.length) {
-          supabase.from("notifications").insert(notifications).then(() => {}).catch(() => {});
-        }
-      } catch { /* notification failure must not block publish */ }
-
-      setPublishSuccess(true);
-      onRefresh?.();
-    } catch (e) { setError(e.message || "Failed to publish."); }
-    finally     { setSaving(false); }
-  };
-
   // ── Shared file list renderer (brand + design) ─────────────────────────────
   const canDelete = myTask.status !== "pending_approval";
   const FileList = () => myFiles.length === 0 ? null : (
@@ -590,12 +474,6 @@ Return this exact format:
 
   return (
     <div className="flex-col gap-12">
-
-      {publishSuccess && (
-        <div className="alert alert-success" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <FaCheckCircle /> Page published successfully! The stakeholder has been notified.
-        </div>
-      )}
 
       {/* ── Status card ──────────────────────────────────────────────── */}
       <div className="card">
@@ -1064,122 +942,6 @@ Return this exact format:
         </div>
       )}
 
-      {/* ── WEB TEAM ─────────────────────────────────────────────────── */}
-      {user.role === "web_team" && isActive && (
-        <div className="card">
-          <h3 style={{ margin: "0 0 12px", fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-            <FaGlobe size={13} /> Web Implementation
-          </h3>
-          <CompletenessIndicator req={req} />
-          <div className="divider" />
-          {/* Request changes */}
-          <button
-            className="btn-ghost btn-full"
-            style={{ marginBottom: showChanges ? 12 : 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-            onClick={() => setShowChanges(v => !v)}
-            disabled={saving}
-          >
-            <FaUndo size={10} /> Request Changes from a Team
-          </button>
-          {showChanges && (
-            <div style={{
-              background: "var(--color-ghost)", borderRadius: "var(--radius-lg)",
-              border: "1px solid var(--color-border)", padding: "1rem", marginBottom: 12,
-            }}>
-              <div className="field-wrap">
-                <label className="field-label">Team</label>
-                <select className="select" value={changeTeam}
-                        onChange={e => setChangeTeam(e.target.value)}>
-                  {/* Native <option> can't render a component -- icon
-                      dropped here on purpose, label text only. */}
-                  {TASK_TEAMS.filter(t => t.role !== "web_team").map(t => (
-                    <option key={t.role} value={t.role}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="field-wrap">
-                <label className="field-label">Note</label>
-                <textarea
-                  className="textarea" rows={2}
-                  placeholder="Describe what needs to be changed…"
-                  value={changeNote}
-                  onChange={e => setChangeNote(e.target.value)}
-                />
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  className="btn-primary"
-                  style={{ flex: 1, justifyContent: "center" }}
-                  onClick={handleRequestChanges}
-                  disabled={saving || !changeNote.trim()}
-                >
-                  {saving ? "Sending…" : "Send Request"}
-                </button>
-                <button
-                  className="btn-ghost"
-                  style={{ flex: 1, justifyContent: "center" }}
-                  onClick={() => { setShowChanges(false); setChangeNote(""); }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-          {/* Publish */}
-          <button className="btn-primary btn-full" onClick={handlePublish} disabled={saving} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            {saving ? "Publishing…" : <><FaGlobe size={11} /> Mark as Published</>}
-          </button>
-        </div>
-      )}
-
-    </div>
-  );
-}
-
-// ── Content completeness soft check (web team only) ────────────────────────────
-function CompletenessIndicator({ req }) {
-  const checks = [
-    { label: "Page title",       pass: !!req.page_title?.trim() },
-    { label: "Banner headline",  pass: !!req.banner_headline?.trim() },
-    { label: "Overview text",    pass: !!(req.overview_impact?.trim() || req.overview_description?.trim()) },
-    { label: "SEO meta title",   pass: !!req.seo_title?.trim() },
-    { label: "SEO meta desc",    pass: !!req.seo_description?.trim() },
-  ];
-  const passed = checks.filter(c => c.pass).length;
-  const pct    = Math.round((passed / checks.length) * 100);
-
-  return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between",
-                    alignItems: "center", marginBottom: 6 }}>
-        <span className="text-xs text-uppercase text-muted">Content Completeness</span>
-        <span className="text-xs" style={{
-          fontWeight: 600,
-          color: pct === 100 ? "var(--color-success)" : "var(--color-dim)",
-        }}>
-          {passed}/{checks.length}
-        </span>
-      </div>
-      <div style={{ height: 6, background: "var(--color-smoke)",
-                    borderRadius: 6, overflow: "hidden", marginBottom: 8 }}>
-        <div style={{
-          height: "100%", width: `${pct}%`,
-          background: pct === 100 ? "var(--color-success)" : "var(--color-primary)",
-          borderRadius: 6, transition: "width 0.3s",
-        }} />
-      </div>
-      <div className="flex-col gap-4">
-        {checks.map(c => (
-          <div key={c.label} style={{
-            display: "flex", alignItems: "center", gap: 6,
-            fontSize: "var(--text-xs)",
-            color: c.pass ? "var(--color-success)" : "var(--color-silver)",
-          }}>
-            <span style={{ display: "flex" }}>{c.pass ? <FaCheck size={9} /> : <FaCircle size={6} />}</span>
-            <span>{c.label}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

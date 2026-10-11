@@ -5,7 +5,6 @@ import AdminReviewGate   from "@/components/AdminReviewGate";
 import TaskBoardOverview from "@/components/TaskBoardOverview";
 import TaskPanel         from "@/components/TaskPanel";
 import PagePreview       from "@/components/PagePreview";
-import WebTeamView       from "@/components/WebTeamView";
 import EditSectionModal  from "@/components/EditSectionModal";
 import ProposeChangeWizard from "@/components/ProposeChangeWizard";
 import PendingChangeCard   from "@/components/PendingChangeCard";
@@ -244,26 +243,16 @@ export default function TaskBoard({
         <Header />
         <div style={TWO_COL}>
           <div style={{ overflowY: "auto" }}>
-            {user.role === "web_team" ? (
-              <WebTeamView
-                req={req}
-                user={user}
-                supabase={supabase}
-                attachments={attachments}
-                onRefresh={handleRefresh}
-              />
-            ) : (
-              <PagePreview
-                req={req}
-                pageType={req.page_type}
-                editorialMode={user.role === "editorial_team"}
-                activeEditSection={editModal?.section}
-                onEditSection={(section) => setEditModal({ section, data: req })}
-                attachments={designAttachments}
-                user={user}
-                supabase={supabase}
-              />
-            )}
+            <PagePreview
+              req={req}
+              pageType={req.page_type}
+              editorialMode={user.role === "editorial_team"}
+              activeEditSection={editModal?.section}
+              onEditSection={(section) => setEditModal({ section, data: req })}
+              attachments={designAttachments}
+              user={user}
+              supabase={supabase}
+            />
           </div>
           <div style={{ overflowY: "auto",
                         borderLeft: "1px solid var(--color-border)",

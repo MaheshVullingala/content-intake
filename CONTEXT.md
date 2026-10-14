@@ -2066,3 +2066,10 @@ Final requirement: after submit, next to the request number/URL there's a **Crea
 
 ### Temporary @testuser.com allowance (2026-10-14, `sql/34-allow-testuser-domain.sql`, applied)
 - For the closed test, `enforce_email_domain()` (trigger on `auth.users`) and `invite_user()` accept `@cadence.com` and `@testuser.com` only. Self-registration UI (`Register.js`) is unchanged and still cadence.com-only. **Revert after testing** (instructions in the SQL file).
+
+## Video Carousel removed from Resources (2026-10-14)
+Manager request: the Video Carousel resource option is no longer required.
+- Removed from the Resources form (Resources.js), preview (ResourcesPreview.js, PagePreview.js), NewRequest/ProposeChangeWizard payloads, test data, field labels, and the section description.
+- Legacy `video_carousel` in saved `res_selected` is filtered out everywhere (UI ignores it).
+- DB column `res_video_carousel` and the existing requests' video data intentionally left untouched.
+- Not build-verified/browser-tested (esbuild syntax + whole-app bundle OK).

@@ -138,7 +138,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
   const [csData,    setCsData]    = useState({ cs_label:"CUSTOMER STORIES", cs_impact:"", cs_items:[] });
   const [promoData, setPromoData] = useState({ promo_bg_image_ref:null, promo_label:"", promo_title:"", promo_description:"", promo_btn_label:"", promo_btn_link:"" });
   const [rcData,    setRcData]    = useState({ rc_label:"RELATED CONTENT", rc_impact:"", rc_cards:[] });
-  const [resData,   setResData]   = useState({ res_label:"", res_impact:"", res_selected:[], res_video_carousel:{}, res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
+  const [resData,   setResData]   = useState({ res_label:"", res_impact:"", res_selected:[], res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
   const [rpData,    setRpData]    = useState({ rp_label:"RELATED PRODUCTS", rp_impact:"", rp_description:"", rp_cards:[] });
   const [tsData,    setTsData]    = useState({});
   const [othersData, setOthersData] = useState({ oth_items: [] });
@@ -171,7 +171,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
     setCsData({ cs_label: "CUSTOMER STORIES", cs_impact: req.cs_impact||"", cs_items: parseJSONB(req.cs_items,[]) });
     setPromoData({ promo_bg_image_ref: req.promo_bg_image_ref||null, promo_label: req.promo_label||"", promo_title: req.promo_title||"", promo_description: req.promo_description||"", promo_btn_label: req.promo_btn_label||"", promo_btn_link: req.promo_btn_link||"" });
     setRcData({ rc_label: "RELATED CONTENT", rc_impact: req.rc_impact||"", rc_cards: parseJSONB(req.rc_cards,[]) });
-    setResData({ res_label: req.res_label||"", res_impact: req.res_impact||"", res_selected: parseJSONB(req.res_selected,[]), res_video_carousel: req.res_video_carousel||{}, res_mixed_carousel: req.res_mixed_carousel||{}, res_resources: req.res_resources||{}, res_news: req.res_news||{}, res_blogs: req.res_blogs||{} });
+    setResData({ res_label: req.res_label||"", res_impact: req.res_impact||"", res_selected: parseJSONB(req.res_selected,[]).filter(k => k !== "video_carousel"), res_mixed_carousel: req.res_mixed_carousel||{}, res_resources: req.res_resources||{}, res_news: req.res_news||{}, res_blogs: req.res_blogs||{} });
     setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: req.rp_impact||"", rp_description: req.rp_description||"", rp_cards: parseJSONB(req.rp_cards,[]) });
     setTsData({
       ts_label: "TRAINING AND SUPPORT", ts_impact: req.ts_impact||"",
@@ -180,7 +180,9 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
       ts_card3_icon: req.ts_card3_icon||"", ts_card3_title: req.ts_card3_title||"", ts_card3_description: req.ts_card3_description||"", ts_card3_cta_label: req.ts_card3_cta_label||"", ts_card3_cta_link: req.ts_card3_cta_link||"",
     });
     setOthersData({ oth_items: parseJSONB(req.oth_items, []) });
-    originalRef.current = { ...req };
+    // Compare against the cleaned res_selected too, so older requests that still
+    // carry the retired "video_carousel" option don't show a phantom change.
+    originalRef.current = { ...req, res_selected: parseJSONB(req.res_selected, []).filter(k => k !== "video_carousel") };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [req.id]);
 

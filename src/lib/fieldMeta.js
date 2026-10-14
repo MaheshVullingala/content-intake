@@ -52,7 +52,7 @@ export const FIELD_LABELS = {
   kb_cards: "Key Benefits Cards", fa_items: "Features Items", fa_columns: "Features Table Columns", fa_rows: "Features Table Rows",
   app_items: "Applications Items",
   cs_items: "Customer Stories", rc_cards: "Related Content Cards", rp_cards: "Related Products Cards",
-  res_video_carousel: "Resources Video Carousel", res_mixed_carousel: "Resources Mixed Media Carousel",
+  res_mixed_carousel: "Resources Mixed Media Carousel",
   res_resources: "Resources Cards", res_news: "Resources News Links", res_blogs: "Resources Blog Links",
   oth_items: "Others",
 };

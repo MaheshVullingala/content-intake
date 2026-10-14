@@ -60,8 +60,8 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
   const rc_cards  = p(req.rc_cards, []);
   const res_label    = req.res_label    || "";
   const res_impact   = req.res_impact   || "";
-  const res_selected = p(req.res_selected, []);
-  const res_video_carousel = p(req.res_video_carousel, {});
+  // Ignore the retired "video_carousel" option left in older saved requests.
+  const res_selected = p(req.res_selected, []).filter(k => k !== "video_carousel");
   const res_mixed_carousel = p(req.res_mixed_carousel, {});
   const res_resources      = p(req.res_resources,      {});
   const res_news           = p(req.res_news,           {});
@@ -86,7 +86,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
     cs_label, cs_impact, cs_items,
     promo_title, promo_btn_label,
     rc_label, rc_impact, rc_cards,
-    res_label, res_impact, res_selected, res_video_carousel, res_mixed_carousel, res_resources, res_news, res_blogs,
+    res_label, res_impact, res_selected, res_mixed_carousel, res_resources, res_news, res_blogs,
     rp_label, rp_impact, rp_description, rp_cards,
     ts_label, ts_card1_cta_link, ts_card2_cta_link, ts_card3_cta_link,
     oth_items,

@@ -1,7 +1,7 @@
 "use client";
 import ImageField from "@/components/ImageField";
 import { useState } from "react";
-import { FaTimes, FaNewspaper, FaPen, FaFilm, FaFolder, FaFileAlt, FaCheck, FaExclamationTriangle } from "react-icons/fa";
+import { FaTimes, FaNewspaper, FaPen, FaFolder, FaFileAlt, FaCheck, FaExclamationTriangle } from "react-icons/fa";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint, charLimit }) => {
   const len  = (value || "").length;
@@ -70,20 +70,18 @@ function TagSelector({ selected = [], onChange }) {
   );
 }
 
-// Video / Mixed Media Carousel
-function CarouselForm({ data = {}, onChange, type, requestId = "draft" }) {
+// Mixed Media Carousel (the Video Carousel option was removed 2026-10-14)
+function CarouselForm({ data = {}, onChange, type = "mixed", requestId = "draft" }) {
   const items  = data.items || [];
   const upd    = (key, val) => onChange({ ...data, [key]: val });
   const addItem    = () => { if (items.length >= 9) return; upd("items", [...items, { id: `item-${Date.now()}`, title: "", url: "", thumbnail_ref: null }]); };
   const updateItem = (id, field, val) => upd("items", items.map(i => i.id === id ? { ...i, [field]: val } : i));
   const removeItem = (id) => upd("items", items.filter(i => i.id !== id));
 
-  const isVideo = type === "video";
-
   return (
     <div>
       <Field label="Carousel Title" required value={data.title || ""} onChange={v => upd("title", v)}
-        placeholder={isVideo ? 'e.g. "Watch Our Latest Videos"' : 'e.g. "Browse Recommended Resources"'} />
+        placeholder='e.g. "Browse Recommended Resources"' />
 
       <div className="field-wrap">
         <label className="field-label">Product Tags</label>
@@ -92,7 +90,7 @@ function CarouselForm({ data = {}, onChange, type, requestId = "draft" }) {
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <label className="field-label" style={{ margin: 0 }}>
-          {isVideo ? "Video Items" : "Resource Items"} <span className="req">*</span>
+          Resource Items <span className="req">*</span>
         </label>
         <button onClick={addItem} disabled={items.length >= 9}
           style={{ background: items.length >= 9 ? "#F3F3F3" : "#181313", color: items.length >= 9 ? "#B5B5B5" : "#fff", border: "none", borderRadius: 7, padding: "0.35rem 0.8rem", fontSize: 11, fontWeight: 500, cursor: items.length >= 9 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
@@ -102,7 +100,7 @@ function CarouselForm({ data = {}, onChange, type, requestId = "draft" }) {
 
       {items.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.2rem", textAlign: "center", marginBottom: 8 }}>
-          <div style={{ fontSize: 12, color: "#B5B5B5" }}>Add at least 1 {isVideo ? "video" : "resource"} item</div>
+          <div style={{ fontSize: 12, color: "#B5B5B5" }}>Add at least 1 resource item</div>
         </div>
       )}
 
@@ -116,14 +114,14 @@ function CarouselForm({ data = {}, onChange, type, requestId = "draft" }) {
                   placeholder="Item title..." className="input" />
               </div>
               <div>
-                <label className="field-label">{isVideo ? "Video URL" : "Resource URL"}</label>
+                <label className="field-label">Resource URL</label>
                 <input value={item.url} onChange={e => updateItem(item.id, "url", e.target.value)}
                   placeholder="https://..." className="input" />
               </div>
               <button onClick={() => removeItem(item.id)} style={{ marginTop: 20, background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.6rem", fontSize: 11, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
             </div>
             <ImageField
-              label={isVideo ? "Video Thumbnail" : "Item Thumbnail"}
+              label="Item Thumbnail"
               value={item.thumbnail_ref || null}
               onChange={v => updateItem(item.id, "thumbnail_ref", v)}
               fieldKey={`resources_${type}-item-${idx + 1}_thumbnail`}
@@ -246,7 +244,6 @@ function NewsBlogsForm({ news = {}, blogs = {}, onNewsChange, onBlogsChange }) {
 
 // Main Resources Component
 const SUB_ITEMS = [
-  { key: "video_carousel",  label: "Video Carousel",       icon: FaFilm, desc: "Video thumbnails with play button" },
   { key: "mixed_carousel",  label: "Mixed Media Carousel", icon: FaFolder, desc: "Mixed resource thumbnails" },
   { key: "resources",       label: "Resources",            icon: FaFileAlt, desc: "Featured + 3 resource cards" },
   { key: "news_blogs",      label: "News & Blogs",         icon: FaNewspaper, desc: "News and blog links with tags" },
@@ -255,7 +252,8 @@ const SUB_ITEMS = [
 export default function Resources({ data = {}, onChange, isNA, onToggleNA, requestId = "draft" }) {
   const [activeTab, setActiveTab] = useState(null);
   const upd      = (key, val) => onChange({ ...data, [key]: val });
-  const selected = data.res_selected || [];
+  // Ignore the retired "video_carousel" option left in older saved requests.
+  const selected = (data.res_selected || []).filter(k => k !== "video_carousel");
 
   const toggleSub = (key) => {
     if (selected.includes(key)) {
@@ -323,9 +321,6 @@ export default function Resources({ data = {}, onChange, isNA, onToggleNA, reque
 
           {/* Active form */}
           <div className="card">
-            {activeTab === "video_carousel" && (
-              <CarouselForm type="video" data={data.res_video_carousel || {}} onChange={v => upd("res_video_carousel", v)} requestId={requestId} />
-            )}
             {activeTab === "mixed_carousel" && (
               <CarouselForm type="mixed" data={data.res_mixed_carousel || {}} onChange={v => upd("res_mixed_carousel", v)} requestId={requestId} />
             )}

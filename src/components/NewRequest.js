@@ -103,7 +103,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const [csData,        setCsData]       = useState({ cs_label:"CUSTOMER STORIES", cs_impact:"", cs_items:[] });
   const [promoData,     setPromoData]    = useState({ promo_bg_image:"", promo_bg_note:"", promo_label:"", promo_title:"", promo_description:"", promo_btn_label:"", promo_btn_link:"" });
   const [rcData,        setRcData]       = useState({ rc_label:"RELATED CONTENT", rc_impact:"", rc_cards:[] });
-  const [resData,       setResData]      = useState({ res_label:"", res_impact:"", res_selected:[], res_video_carousel:{}, res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
+  const [resData,       setResData]      = useState({ res_label:"", res_impact:"", res_selected:[], res_mixed_carousel:{}, res_resources:{}, res_news:{}, res_blogs:{} });
   const [rpData,        setRpData]       = useState({ rp_label:"RELATED PRODUCTS", rp_impact:"", rp_description:"", rp_cards:[] });
   const [tsData,        setTsData]       = useState({});
   const [othersData,    setOthersData]   = useState({ oth_items: [] });
@@ -203,7 +203,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         if (data.cs_impact || data.cs_items?.length) setCsData({ cs_label: "CUSTOMER STORIES", cs_impact: data.cs_impact||"", cs_items: data.cs_items||[] });
         if (data.promo_title) setPromoData({ promo_bg_image: data.promo_bg_image||"", promo_bg_note: data.promo_bg_note||"", promo_label: data.promo_label||"", promo_title: data.promo_title||"", promo_description: data.promo_description||"", promo_btn_label: data.promo_btn_label||"", promo_btn_link: data.promo_btn_link||"" });
         if (data.rc_impact || data.rc_cards?.length) setRcData({ rc_label: "RELATED CONTENT", rc_impact: data.rc_impact||"", rc_cards: data.rc_cards||[] });
-        if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: data.res_selected||[], res_video_carousel: data.res_video_carousel||{}, res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
+        if (data.res_impact || data.res_selected?.length) setResData({ res_label: data.res_label||"", res_impact: data.res_impact||"", res_selected: (data.res_selected||[]).filter(k => k !== "video_carousel"), res_mixed_carousel: data.res_mixed_carousel||{}, res_resources: data.res_resources||{}, res_news: data.res_news||{}, res_blogs: data.res_blogs||{} });
         if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
         if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link });
         if (data.oth_items?.length) setOthersData({ oth_items: data.oth_items||[] });
@@ -393,8 +393,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
     ...(!naMap["resources"] ? {
       res_label:          resData.res_label,
       res_impact:         resData.res_impact,
-      res_selected:       resData.res_selected,
-      res_video_carousel: resData.res_video_carousel,
+      res_selected:       (resData.res_selected || []).filter(k => k !== "video_carousel"),
       res_mixed_carousel: resData.res_mixed_carousel,
       res_resources:      resData.res_resources,
       res_news:           resData.res_news,

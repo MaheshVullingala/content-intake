@@ -118,7 +118,9 @@ function NewsBlogsPreview({ news = {}, blogs = {} }) {
 }
 
 export default function ResourcesPreview({ data = {} }) {
-  const { res_label = "", res_impact = "", res_selected = [], res_video_carousel = {}, res_mixed_carousel = {}, res_resources = {}, res_news = {}, res_blogs = {} } = data;
+  const { res_label = "", res_impact = "", res_mixed_carousel = {}, res_resources = {}, res_news = {}, res_blogs = {} } = data;
+  // Ignore the retired "video_carousel" option left in older saved requests.
+  const res_selected = (data.res_selected || []).filter(k => k !== "video_carousel");
 
   if (!res_impact && res_selected.length === 0) return null;
 
@@ -136,7 +138,6 @@ export default function ResourcesPreview({ data = {} }) {
           </h2>
         )}
 
-        {res_selected.includes("video_carousel") && <CarouselPreview data={res_video_carousel} />}
         {res_selected.includes("mixed_carousel") && <CarouselPreview data={res_mixed_carousel} />}
         {res_selected.includes("resources") && <ResourceCardsPreview data={res_resources} />}
         {res_selected.includes("news_blogs") && <NewsBlogsPreview news={res_news} blogs={res_blogs} />}

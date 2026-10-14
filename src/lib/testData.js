@@ -173,14 +173,7 @@ export function generateTestData(pageType, sectionKeys = [], limits = {}) {
     out.resData = {
       res_label:  "RESOURCES",
       res_impact: gen(limits, "res_impact", 100, () => sentence(6, 10)),
-      res_selected: ["video_carousel", "resources", "news_blogs"],
-      res_video_carousel: {
-        title: "Watch Our Latest Videos",
-        tags: [],
-        items: Array.from({ length: 2 }, () => ({
-          id: testId("vid"), title: truncate(title(3, 6), 60), url: testUrl(), thumbnail_ref: null,
-        })),
-      },
+      res_selected: ["resources", "news_blogs"],
       res_mixed_carousel: {},
       res_resources: {
         r1_title: truncate(title(4, 7), 90), r1_link: testUrl(), r1_image_ref: null, r1_tag: pick(tags),

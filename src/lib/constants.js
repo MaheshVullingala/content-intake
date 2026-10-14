@@ -218,7 +218,7 @@ export const SECTIONS = {
   resources: {
     label: "Resources",
     icon: FaBook,
-    description: "Video carousel, mixed media, resource cards, news and blogs",
+    description: "Mixed media carousel, resource cards, news and blogs",
     pageTypes: {
       "Product":           { required: false },
       "Solutions":         { required: false },

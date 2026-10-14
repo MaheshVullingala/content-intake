@@ -74,5 +74,6 @@ export function getImageFields(req = {}) {
 
 // Only fields where the stakeholder actually provided something.
 export function getFlaggedImageFields(req = {}) {
-  return getImageFields(req).filter(f => f.ref?.value);
+  // Library icon picks are finished assets, so they need no Design work.
+  return getImageFields(req).filter(f => f.ref?.value && f.ref.type !== "library");
 }

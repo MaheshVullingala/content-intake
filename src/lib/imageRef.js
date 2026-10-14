@@ -17,7 +17,14 @@ export function getDesignImage(fieldId, attachments) {
 // show nothing at all.
 export function getImagePlaceholder(ref) {
   if (!ref?.value) return null;
+  if (ref.type === "library") return null; // real icon, rendered via getLibraryIcon
   if (ref.type === "description") return ref.value;
   if (ref.type === "link" || ref.type === "attachment") return "Image pending Design Team";
   return null;
+}
+
+// Approved icon picked from the icon library: unlike stakeholder refs this is
+// a real asset, so previews render it directly.
+export function getLibraryIcon(ref) {
+  return ref?.type === "library" && ref.url ? { url: ref.url, title: ref.value } : null;
 }

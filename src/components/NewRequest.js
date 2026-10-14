@@ -576,7 +576,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   // A flag is set when a stakeholder has provided ANY image reference (attachment, link, or description)
   // so Design QA knows that section needs image work.
   const computeDesignFlags = () => {
-    const hasRef = (ref) => !!(ref && ref.type && ref.value);
+    const hasRef = (ref) => !!(ref && ref.type && ref.type !== "library" && ref.value); // library picks need no design work
 
     return {
       // Banner — flagged if stakeholder provided any image reference

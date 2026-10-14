@@ -1,5 +1,5 @@
 "use client";
-import { getDesignImage, getImagePlaceholder } from "@/lib/imageRef";
+import { getDesignImage, getImagePlaceholder, getLibraryIcon } from "@/lib/imageRef";
 import { FaPalette, FaRegSquare } from "react-icons/fa";
 
 function getGridCols(count) {
@@ -42,13 +42,14 @@ export default function KeyBenefitsPreview({ data = {}, attachments = [] }) {
         {kb_cards.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: getGridCols(kb_cards.length), gap: "2rem 3rem", marginTop: kb_impact ? 40 : 0 }}>
             {kb_cards.map((card, idx) => {
-              const iconUrl         = getDesignImage(`kb_card_${idx + 1}_image`, attachments);
+              const libIcon         = getLibraryIcon(card.image_ref);
+              const iconUrl         = getDesignImage(`kb_card_${idx + 1}_image`, attachments) || libIcon?.url;
               const iconPlaceholder = getImagePlaceholder(card.image_ref);
               return (
               <div key={card.id || idx}>
                 <div style={{ width: 48, height: 48, marginBottom: 20, background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                   {iconUrl ? (
-                    <img src={iconUrl} alt={iconPlaceholder || "icon"} style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                    <img src={iconUrl} alt={libIcon?.title || iconPlaceholder || "icon"} style={{ width: "100%", height: "100%", objectFit: "contain" }}
                       onError={e => { e.target.style.display = "none"; }} />
                   ) : iconPlaceholder ? (
                     <span style={{ fontSize: 10, color: "#B5B5B5", display: "flex" }}><FaPalette /></span>

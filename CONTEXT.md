@@ -2078,3 +2078,10 @@ Manager request: the Video Carousel resource option is no longer required.
 Manager request: section is fixed; edits need a stakeholder justification.
 - TrainingSupport.js: text/icon fields read-only until "Request to edit" + justification (>=15 chars); stored in `requests.ts_edit_justification` (sql/35, must be applied). CTA links stay editable (defaults blank). "Revert to standard" re-locks and clears the justification. Content that differs from defaults with no justification (old drafts) shows unlocked and fails preflight (`ts_justification`).
 - Wired into NewRequest load/payload, ProposeChangeWizard, preflightCheck. EditSectionModal (editorial) unchanged.
+
+## Key Benefits icon library (2026-10-15)
+Manager request: pick card icons from the DAM list; request a new one if missing.
+- sql/36-icon-library.sql (applied): `icon_library` table (title, keywords = related key benefit titles, public_url) + public `icon-library` storage bucket; admin-only write. Files live in our Supabase, not hotlinked from Cadence.
+- Admin -> Icons (AdminIconsPanel.js): multi-file SVG/PNG upload (SVGs with scripts rejected), inline edit of title/related titles, hide/delete.
+- Picker (IconPicker.js, IconField.js, lib/icons.js): search matches icon title + related titles; shows "Suggested" icons from the card's own title first. Chosen icon stored in card `image_ref` as `{type:"library", value, url, icon_id}` and rendered in the preview. "Request a new icon" reuses ImageField (description / link / attachment) and flags Design QA; library picks do not (computeDesignFlags, getFlaggedImageFields).
+- Only the KeyBenefits form uses it (also in ProposeChangeWizard); editorial EditSectionModal unchanged. Test icons in icons-test/. Not browser-tested.

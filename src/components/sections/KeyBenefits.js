@@ -1,5 +1,5 @@
 "use client";
-import ImageField from "@/components/ImageField";
+import IconField from "@/components/IconField";
 import { FaExclamationTriangle, FaArrowUp, FaArrowDown, FaTimes } from "react-icons/fa";
 
 const Field = ({ label, value, onChange, placeholder, multiline, required, hint, disabled, readOnly, style: fieldStyle, charLimit }) => {
@@ -157,10 +157,10 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
                 maxLength={150}
                 className="textarea" style={{ minHeight: 70 }} />
             </div>
-            <ImageField
-              label="Card Image / Icon"
+            <IconField
               value={card.image_ref || null}
               onChange={v => updateCard(card.id, "image_ref", v)}
+              cardTitle={card.title || ""}
               fieldKey={`key-benefits_card-${idx + 1}_image`}
               requestId={requestId}
             />

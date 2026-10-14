@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { getStatus, ROLE_META, STATUS_FLOW, AUDIT_ACTIONS } from "@/lib/constants";
 import { OKTA_ENABLED } from "@/lib/authConfig";
 import AdminTagsPanel from "@/components/AdminTagsPanel";
+import AdminIconsPanel from "@/components/AdminIconsPanel";
 
 // Mirrors Register.js's own local DEPARTMENTS list — kept in sync
 // manually since there's no shared constants entry for it today.
@@ -418,7 +419,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
 
       {/* Tabs */}
       <div className="tab-bar" style={{ marginBottom: 16 }}>
-        {["requests","users","activity","audit_log","settings","char_limits","tags"].map(t => (
+        {["requests","users","activity","audit_log","settings","char_limits","tags","icons"].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`tab-btn${tab === t ? " active" : ""}`} style={{ textTransform: "capitalize" }}>{t === "char_limits" ? "Char Limits" : t === "audit_log" ? "Audit Log" : t}</button>
         ))}
       </div>
@@ -679,6 +680,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           {tab === "char_limits" && (
             <CharLimitsPanel user={user} />
           )}
+          {tab === "icons" && <AdminIconsPanel />}
           {tab === "tags" && (
             <AdminTagsPanel user={user} />
           )}

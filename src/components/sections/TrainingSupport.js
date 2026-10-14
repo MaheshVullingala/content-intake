@@ -1,5 +1,6 @@
 "use client";
-import { FaExclamationTriangle, FaInfoCircle, FaUndo } from "react-icons/fa";
+import { useState } from "react";
+import { FaExclamationTriangle, FaLock, FaUnlock, FaUndo } from "react-icons/fa";
 
 const DEFAULTS = {
   ts_label: "TRAINING AND SUPPORT",
@@ -20,6 +21,17 @@ const DEFAULTS = {
   ts_card3_cta_label: "FIND ANSWERS",
   ts_card3_cta_link: "",
 };
+
+// Standard section: text/icon fields are locked. CTA links stay editable
+// (their defaults are blank and are page-specific). Unlocking the rest
+// requires a written justification, stored in ts_edit_justification.
+export const TS_LOCKED_KEYS = Object.keys(DEFAULTS).filter(k => !k.endsWith("_cta_link"));
+export const MIN_JUSTIFICATION = 15;
+export const tsIsEdited = (data = {}) =>
+  TS_LOCKED_KEYS.some(k => data[k] != null && data[k] !== "" && data[k] !== DEFAULTS[k]);
+// True when content deviates from the standard without a justification.
+export const tsNeedsJustification = (data = {}) =>
+  tsIsEdited(data) && !(data.ts_edit_justification || "").trim();
 
 const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled, readOnly, style: fieldStyle, charLimit, required }) => {
   const len  = (value || "").length;
@@ -45,7 +57,18 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
   const d   = { ...DEFAULTS, ...data };
   const upd = (key, val) => onChange({ ...d, [key]: val });
 
-  const resetToDefault = () => onChange({ ...DEFAULTS });
+  const resetToDefault = () => onChange({ ...DEFAULTS, ts_edit_justification: "" });
+
+  const [asking, setAsking] = useState(false);
+  const [draftReason, setDraftReason] = useState("");
+  const unlocked = !!(d.ts_edit_justification || "").trim() || tsIsEdited(d);
+  const lock = unlocked ? {} : { readOnly: true, disabled: true };
+  const lockStyle = unlocked ? undefined : { background: "#F5F5F5", color: "#8a8a8a", cursor: "not-allowed" };
+  const confirmUnlock = () => {
+    if (draftReason.trim().length < MIN_JUSTIFICATION) return;
+    onChange({ ...d, ts_edit_justification: draftReason.trim() });
+    setAsking(false); setDraftReason("");
+  };
 
   if (isNA) return (
     <div className="na-placeholder">
@@ -57,18 +80,46 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
 
   return (
     <div style={{ fontFamily: "'Rubik', sans-serif" }}>
-      {/* Info banner */}
-      <div style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 10, padding: "0.85rem 1.1rem", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 16, display: "flex", color: "#646464" }}><FaInfoCircle /></span>
-          <span style={{ fontSize: 13, color: "#646464" }}>
-            Pre-filled with default content. Edit any field to customise for this page.
-          </span>
+      {/* Lock banner */}
+      <div style={{ background: unlocked ? "#FFF8E6" : "#F9F9F9", border: `1px solid ${unlocked ? "#F0D890" : "#E0E0E0"}`, borderRadius: 10, padding: "0.85rem 1.1rem", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 15, display: "flex", color: unlocked ? "#856404" : "#646464" }}>{unlocked ? <FaUnlock /> : <FaLock />}</span>
+            <span style={{ fontSize: 13, color: unlocked ? "#856404" : "#646464" }}>
+              {unlocked
+                ? "Standard content unlocked for editing. Your justification is shared with the editorial team."
+                : "This section uses fixed standard content and can't be edited. Need changes? Request to edit and give a justification."}
+            </span>
+          </div>
+          {unlocked ? (
+            <button onClick={resetToDefault}
+              style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.35rem 0.8rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", color: "#646464", whiteSpace: "nowrap", flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
+              <FaUndo size={10} /> Revert to standard
+            </button>
+          ) : !asking && (
+            <button onClick={() => setAsking(true)}
+              style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.35rem 0.8rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", color: "#181313", whiteSpace: "nowrap", flexShrink: 0 }}>
+              Request to edit
+            </button>
+          )}
         </div>
-        <button onClick={resetToDefault}
-          style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 7, padding: "0.35rem 0.8rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", color: "#646464", whiteSpace: "nowrap", flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
-          <FaUndo size={10} /> Reset to default
-        </button>
+        {!unlocked && asking && (
+          <div style={{ marginTop: 12 }}>
+            <label className="field-label">Justification <span className="req">*</span></label>
+            <textarea className="textarea" value={draftReason} onChange={e => setDraftReason(e.target.value)} placeholder="Why does this page need different Training & Support content?" style={{ minHeight: 70 }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
+              <button className="btn-primary" onClick={confirmUnlock} disabled={draftReason.trim().length < MIN_JUSTIFICATION}>Unlock for editing</button>
+              <button className="btn-ghost" onClick={() => { setAsking(false); setDraftReason(""); }}>Cancel</button>
+              <span style={{ fontSize: 11, color: "#B5B5B5" }}>At least {MIN_JUSTIFICATION} characters</span>
+            </div>
+          </div>
+        )}
+        {unlocked && (
+          <div style={{ marginTop: 12 }}>
+            <label className="field-label">Justification <span className="req">*</span></label>
+            <textarea className="textarea" value={d.ts_edit_justification || ""} onChange={e => upd("ts_edit_justification", e.target.value)} placeholder="Why does this page need different content?" style={{ minHeight: 60 }} />
+          </div>
+        )}
       </div>
 
       {/* Header */}
@@ -81,7 +132,7 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
           </div>
         </div>
         <Field label="Label" value="TRAINING AND SUPPORT" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
-        <Field label="Impact Statement" value={d.ts_impact} onChange={v => upd("ts_impact", v)} placeholder="Need Help?" />
+        <Field label="Impact Statement" value={d.ts_impact} onChange={v => upd("ts_impact", v)} placeholder="Need Help?" {...lock} style={lockStyle} />
       </div>
 
       {/* 3 fixed cards */}
@@ -96,21 +147,21 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
             value={d[`ts_card${n}_icon`]}
             onChange={v => upd(`ts_card${n}_icon`, v)}
             placeholder="Describe the icon..."
-            hint="Design QA will source the icon from the library" />
+            hint="Design QA will source the icon from the library" {...lock} style={lockStyle} />
           <Field label="Title"
             value={d[`ts_card${n}_title`]}
             onChange={v => upd(`ts_card${n}_title`, v)}
-            placeholder={`Card ${n} title`} />
+            placeholder={`Card ${n} title`} {...lock} style={lockStyle} />
           <Field label="Description"
             value={d[`ts_card${n}_description`]}
             onChange={v => upd(`ts_card${n}_description`, v)}
             placeholder="Card description..."
-            multiline />
+            multiline {...lock} style={unlocked ? undefined : { ...lockStyle, minHeight: 70 }} />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Field label="CTA Label"
               value={d[`ts_card${n}_cta_label`]}
               onChange={v => upd(`ts_card${n}_cta_label`, v)}
-              placeholder="BROWSE TRAINING" />
+              placeholder="BROWSE TRAINING" {...lock} style={lockStyle} />
             <Field label="CTA Link"
               value={d[`ts_card${n}_cta_link`]}
               onChange={v => upd(`ts_card${n}_cta_link`, v)}

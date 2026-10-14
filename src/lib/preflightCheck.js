@@ -27,6 +27,7 @@ const containsPlaceholder = (val) => {
 };
 
 import { sectionForField, fieldLabel } from "./fieldMeta";
+import { tsNeedsJustification } from "@/components/sections/TrainingSupport";
 import { findContentSuggestions, autoCleanPayload } from "./contentChecks";
 
 /**
@@ -83,6 +84,14 @@ function findCtaMismatches(payload) {
   checkPair(payload.cta1_label, payload.cta1_link, "banner", "Banner CTA 1");
   checkPair(payload.cta2_label, payload.cta2_link, "banner", "Banner CTA 2");
   checkPair(payload.promo_btn_label, payload.promo_btn_link, "promo_section", "Promo Button");
+
+  if (payload.ts_card1_title !== undefined && tsNeedsJustification(payload)) {
+    issues.push({
+      type: "ts_justification",
+      section: "training_support",
+      message: "Training & Support: the standard content was changed without a justification — add one, or revert to the standard content.",
+    });
+  }
 
   [1, 2, 3].forEach((n) => {
     checkPair(payload[`ts_card${n}_cta_label`], payload[`ts_card${n}_cta_link`], "training_support", `Training & Support Card ${n}`);

@@ -2073,3 +2073,8 @@ Manager request: the Video Carousel resource option is no longer required.
 - Legacy `video_carousel` in saved `res_selected` is filtered out everywhere (UI ignores it).
 - DB column `res_video_carousel` and the existing requests' video data intentionally left untouched.
 - Not build-verified/browser-tested (esbuild syntax + whole-app bundle OK).
+
+## Training & Support locked (2026-10-14)
+Manager request: section is fixed; edits need a stakeholder justification.
+- TrainingSupport.js: text/icon fields read-only until "Request to edit" + justification (>=15 chars); stored in `requests.ts_edit_justification` (sql/35, must be applied). CTA links stay editable (defaults blank). "Revert to standard" re-locks and clears the justification. Content that differs from defaults with no justification (old drafts) shows unlocked and fails preflight (`ts_justification`).
+- Wired into NewRequest load/payload, ProposeChangeWizard, preflightCheck. EditSectionModal (editorial) unchanged.

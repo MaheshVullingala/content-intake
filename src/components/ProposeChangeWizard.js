@@ -177,7 +177,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
       ts_label: "TRAINING AND SUPPORT", ts_impact: req.ts_impact||"",
       ts_card1_icon: req.ts_card1_icon||"", ts_card1_title: req.ts_card1_title||"", ts_card1_description: req.ts_card1_description||"", ts_card1_cta_label: req.ts_card1_cta_label||"", ts_card1_cta_link: req.ts_card1_cta_link||"",
       ts_card2_icon: req.ts_card2_icon||"", ts_card2_title: req.ts_card2_title||"", ts_card2_description: req.ts_card2_description||"", ts_card2_cta_label: req.ts_card2_cta_label||"", ts_card2_cta_link: req.ts_card2_cta_link||"",
-      ts_card3_icon: req.ts_card3_icon||"", ts_card3_title: req.ts_card3_title||"", ts_card3_description: req.ts_card3_description||"", ts_card3_cta_label: req.ts_card3_cta_label||"", ts_card3_cta_link: req.ts_card3_cta_link||"",
+      ts_card3_icon: req.ts_card3_icon||"", ts_card3_title: req.ts_card3_title||"", ts_card3_description: req.ts_card3_description||"", ts_card3_cta_label: req.ts_card3_cta_label||"", ts_card3_cta_link: req.ts_card3_cta_link||"", ts_edit_justification: req.ts_edit_justification||"",
     });
     setOthersData({ oth_items: parseJSONB(req.oth_items, []) });
     // Compare against the cleaned res_selected too, so older requests that still

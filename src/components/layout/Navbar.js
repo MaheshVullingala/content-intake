@@ -3,10 +3,12 @@ import { useState } from "react";
 import { FaExchangeAlt, FaChevronDown, FaCheck } from "react-icons/fa";
 import { ROLE_OPTIONS } from "@/lib/constants";
 import NotificationBell from "@/components/NotificationBell";
+import ChangePasswordModal from "@/components/ChangePasswordModal";
 
 export default function Navbar({ go, view, user, supabase, logout, onLogout, onNavigate, impersonatedRole, onSwitchRole }) {
   const [loggingOut,   setLoggingOut]   = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showChangePw, setShowChangePw] = useState(false);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -179,6 +181,12 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
             <div style={{ fontSize: 13, fontWeight: 500, color: "#f1f5f9", fontFamily: "'Rubik', sans-serif" }}>{user.name}</div>
             <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Rubik', sans-serif" }}>{user.role?.replace(/_/g, " ")}</div>
           </div>
+          <button onClick={() => setShowChangePw(true)}
+            style={{ background: "none", border: "1px solid #1e4f8a", borderRadius: 6, padding: "0.3rem 0.75rem", fontSize: 12, color: "#94a3b8", cursor: "pointer", fontFamily: "'Rubik', sans-serif", transition: "all 0.15s", marginLeft: 4 }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#94a3b8"; e.currentTarget.style.color = "#f1f5f9"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#1e4f8a"; e.currentTarget.style.color = "#94a3b8"; }}>
+            Change password
+          </button>
           <button onClick={handleLogout} disabled={loggingOut}
             style={{ background: "none", border: "1px solid #1e4f8a", borderRadius: 6, padding: "0.3rem 0.75rem", fontSize: 12, color: loggingOut ? "#475569" : "#94a3b8", cursor: loggingOut ? "not-allowed" : "pointer", fontFamily: "'Rubik', sans-serif", transition: "all 0.15s", marginLeft: 4, opacity: loggingOut ? 0.6 : 1 }}
             onMouseEnter={e => { if (!loggingOut) { e.currentTarget.style.borderColor = "#94a3b8"; e.currentTarget.style.color = "#f1f5f9"; } }}
@@ -187,6 +195,7 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
           </button>
         </div>
       </div>
+      {showChangePw && <ChangePasswordModal user={user} supabase={supabase} onClose={() => setShowChangePw(false)} />}
     </nav>
   );
 }

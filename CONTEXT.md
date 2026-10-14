@@ -2053,3 +2053,8 @@ Final requirement: after submit, next to the request number/URL there's a **Crea
 - `TaskBoard.js`: "Suggest a Change" is hidden once the request is `completed` (same as `published`).
 - Stakeholder DB rule unchanged: only editorial/admin sessions complete tasks, so the stakeholder status lock is unaffected.
 - Behaviour-tested `syncOverallStatus` with a mocked client (completed / in progress / reopened / no tasks); not browser-tested or build-verified.
+
+### Change password (2026-10-14)
+- New `src/components/ChangePasswordModal.js`, opened from a "Change password" button in the Navbar (next to Sign out). Verifies the current password by re-signing-in with it, then `supabase.auth.updateUser({ password })`. Rules: min 8 chars, at least one letter and one number, different from current, confirmation must match (`validateNewPassword`, unit-tested). Other devices stay signed in. Accounts with no email/password identity (e.g. Okta SSO) see an explanation instead of the form. No `<form>` tags (Enter key handled explicitly).
+- The re-sign-in fires a redundant `SIGNED_IN` event; `app/page.js` already treats that as a no-op for an existing user.
+- Tester onboarding: accounts are created with Admin -> Invite User (or the Supabase dashboard); testers set/change their own password. Validator unit-tested + whole app bundles; not browser-tested (needs a real login) or build-verified.

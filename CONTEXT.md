@@ -2063,3 +2063,6 @@ Final requirement: after submit, next to the request number/URL there's a **Crea
 - The RPC still validated against the pre-consolidation roles, so inviting `editorial_team` or `general` failed with "Invalid role". Whitelist is now stakeholder / editorial_team / general / admin.
 - Reminder (unchanged): invites and registration are limited to `@cadence.com` (DB trigger `enforce_email_domain` on `auth.users` and the RPC check). Existing gmail test accounts predate that rule.
 - Without SMTP: create the `public.users` row first via Admin -> Invite User, then create the login in the Supabase dashboard (Authentication -> Users -> Add user, "Auto Confirm User", temporary password). `handle_new_user()` links the pre-provisioned row to the new login by email, so the invited role applies. If the login is created first the user lands as `pending` and an admin must set the role in the Admin panel.
+
+### Temporary @testuser.com allowance (2026-10-14, `sql/34-allow-testuser-domain.sql`, applied)
+- For the closed test, `enforce_email_domain()` (trigger on `auth.users`) and `invite_user()` accept `@cadence.com` and `@testuser.com` only. Self-registration UI (`Register.js`) is unchanged and still cadence.com-only. **Revert after testing** (instructions in the SQL file).

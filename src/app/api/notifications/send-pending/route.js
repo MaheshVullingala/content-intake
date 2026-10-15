@@ -42,18 +42,16 @@ export async function POST(request) {
 }
 
 async function handleSweep(request) {
+  // Fail closed: this route runs with the service-role key, so it refuses to
+  // run at all unless CRON_SECRET is configured and the caller presents it.
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const authHeader = request.headers.get("authorization") || "";
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  if (!cronSecret) {
+    return NextResponse.json({ error: "Not configured (missing CRON_SECRET)" }, { status: 503 });
   }
-  // No CRON_SECRET configured yet — allow through unauthenticated for now
-  // (matches "build it ready, add details later"), but this route does
-  // nothing destructive either way: worst case it's a no-op read + no
-  // SMTP configured, so nothing actually sends. Set CRON_SECRET before
-  // this is reachable from outside your own scheduler in production.
+  const authHeader = request.headers.get("authorization") || "";
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const supabase = getAdminClient();
   if (!supabase) {

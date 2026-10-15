@@ -2101,3 +2101,10 @@ From the infosec-style review:
 - `notifications` insert: must reference an existing request the sender can see (was: any signed-in user could notify anyone). Tested: valid request allowed; nonexistent / null request denied. All app insert sites already pass request_id.
 - `search_path` pinned on get_user_role / get_user_id / get_user_can_assign / get_password_login_enabled; dead `check_web_team_unlock` dropped.
 - Still open: CRON_SECRET must be set (send-pending is open without it); temporary @testuser.com allowance (sql/34); server-side password min length + leaked-password check in Supabase Auth settings; CSP unsafe-inline/eval; in-memory rate limiting; attachments bucket is public-read (by URL).
+
+## Pre-VM hardening round 2 (2026-10-15)
+- send-pending now fails closed: 503 unless CRON_SECRET is set, 401 without the matching Bearer token. Set CRON_SECRET (Vercel / VM env) before enabling email.
+- CSP: `unsafe-eval` dropped in production (dev only); added object-src 'none', base-uri 'self', form-action 'self'. `unsafe-inline` for scripts remains (needs nonce middleware to remove).
+- sql/38-revert-testuser-domain.sql prepared, NOT applied: run when testing ends / before moving to the VM.
+- Left as-is on purpose: in-memory rate limiter (fine for a single VM process, not on serverless); attachments bucket public-read by URL (private bucket would need signed URLs app-wide); user directory visible to signed-in users.
+- Dashboard/Auth settings to do by hand: password minimum length (Supabase Auth, or GOTRUE_PASSWORD_MIN_LENGTH on self-hosted) and leaked-password protection.

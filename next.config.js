@@ -46,12 +46,17 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js requires unsafe-eval in dev
+              // unsafe-eval is only needed by Next's dev tooling (React refresh), never in production.
+              // unsafe-inline stays for Next's inline bootstrap scripts (removing it needs a nonce middleware).
+              `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "production" ? "" : " 'unsafe-eval'"}`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               `img-src 'self' data: blob: ${supabaseOrigin}`,
               `connect-src 'self' ${supabaseOrigin} ${supabaseWsOrigin} https://api.anthropic.com`,
               "frame-ancestors 'none'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
             ].join("; "),
           },
         ],

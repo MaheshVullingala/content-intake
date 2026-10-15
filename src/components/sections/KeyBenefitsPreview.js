@@ -76,7 +76,6 @@ export default function KeyBenefitsPreview({ data = {}, attachments = [] }) {
 
         {kb_cards.length === 0 && (
           <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>🃏</div>
             <div style={{ fontSize: 12, color: "#767676" }}>Benefit cards will appear here</div>
           </div>
         )}

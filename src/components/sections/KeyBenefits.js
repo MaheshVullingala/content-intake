@@ -102,7 +102,6 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
       {/* Empty state */}
       {cards.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 12, padding: "2.5rem", textAlign: "center" }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>🃏</div>
           <div style={{ fontSize: 14, color: "#767676", marginBottom: 14 }}>No cards yet. Add at least 1 benefit card.</div>
           <button onClick={addCard} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 8, padding: "0.55rem 1.2rem", fontSize: 13, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
             + Add first card

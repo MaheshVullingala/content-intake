@@ -2085,3 +2085,6 @@ Manager request: pick card icons from the DAM list; request a new one if missing
 - Admin -> Icons (AdminIconsPanel.js): multi-file SVG/PNG upload (SVGs with scripts rejected), inline edit of title/related titles, hide/delete.
 - Picker (IconPicker.js, IconField.js, lib/icons.js): search matches icon title + related titles; shows "Suggested" icons from the card's own title first. Chosen icon stored in card `image_ref` as `{type:"library", value, url, icon_id}` and rendered in the preview. "Request a new icon" reuses ImageField (description / link / attachment) and flags Design QA; library picks do not (computeDesignFlags, getFlaggedImageFields).
 - Only the KeyBenefits form uses it (also in ProposeChangeWizard); editorial EditSectionModal unchanged. Test icons in icons-test/. Not browser-tested.
+
+## "Needs Brand Team involvement" checkbox removed (2026-10-15)
+Manager request. Removed from NewRequest step 1 (UI, state, load, payload). `requests.needs_brand` column kept (old rows); AdminTaskSetup's legacy hint is now inert.

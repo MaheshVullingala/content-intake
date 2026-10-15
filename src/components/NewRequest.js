@@ -88,7 +88,6 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const [draftDbId,     setDraftDbId]    = useState(draftId || null);
   const [pageType,      setPageType]     = useState("");
   const [activeSection, setActiveSection]= useState("banner");
-  const [needsBrand,    setNeedsBrand]   = useState(false);
   const [priority,      setPriority]     = useState("normal");
   const [priorityReason,setPriorityReason] = useState("");
   const [seoData,       setSeoData]      = useState(EMPTY_SEO);
@@ -207,7 +206,6 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
         if (data.rp_impact || data.rp_cards?.length) setRpData({ rp_label: "RELATED PRODUCTS", rp_impact: data.rp_impact||"", rp_description: data.rp_description||"", rp_cards: data.rp_cards||[] });
         if (data.ts_label || data.ts_card1_cta_link) setTsData({ ts_label: "TRAINING AND SUPPORT", ts_impact: data.ts_impact, ts_card1_icon: data.ts_card1_icon, ts_card1_title: data.ts_card1_title, ts_card1_description: data.ts_card1_description, ts_card1_cta_label: data.ts_card1_cta_label, ts_card1_cta_link: data.ts_card1_cta_link, ts_card2_icon: data.ts_card2_icon, ts_card2_title: data.ts_card2_title, ts_card2_description: data.ts_card2_description, ts_card2_cta_label: data.ts_card2_cta_label, ts_card2_cta_link: data.ts_card2_cta_link, ts_card3_icon: data.ts_card3_icon, ts_card3_title: data.ts_card3_title, ts_card3_description: data.ts_card3_description, ts_card3_cta_label: data.ts_card3_cta_label, ts_card3_cta_link: data.ts_card3_cta_link, ts_edit_justification: data.ts_edit_justification||"" });
         if (data.oth_items?.length) setOthersData({ oth_items: data.oth_items||[] });
-        if (data.needs_brand) setNeedsBrand(true);
         setPriority(data.priority || "normal");
         setPriorityReason(data.stakeholder_priority_reason || "");
         if (cancelled) return;
@@ -288,7 +286,6 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
   const buildPayload = (status, extra = {}) => ({
     page_type: pageType, status, created_by: user.id,
-    needs_brand: needsBrand,
     priority:    priority,
     // Stakeholder's own justification for High/Urgent — kept separate from
     // priority_override_reason, which is the admin's reason for changing it.
@@ -631,7 +628,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
     try {
       const designFlags = computeDesignFlags();
-      const payload = sanitizePayload({ ...autoCleanPayload(buildPayload("draft")), overall_status: "pending_admin", needs_brand: needsBrand, ...designFlags }, ["description"]);
+      const payload = sanitizePayload({ ...autoCleanPayload(buildPayload("draft")), overall_status: "pending_admin", ...designFlags }, ["description"]);
       let requestId = draftDbId;
 
       if (draftDbId) {
@@ -1039,34 +1036,6 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
               />
             </div>
           )}
-
-          {/* Brand team checkbox */}
-          <div className="field-wrap" style={{ marginTop: 4 }}>
-            <label
-              style={{ display: "flex", alignItems: "flex-start", gap: 12,
-                       cursor: "pointer", userSelect: "none" }}
-              onClick={() => setNeedsBrand(v => !v)}
-            >
-              <div style={{
-                width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 2,
-                border: `2px solid ${needsBrand ? "#1b5793" : "#D0D0D0"}`,
-                background: needsBrand ? "#1b5793" : "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.15s",
-              }}>
-                {needsBrand && <FaCheck style={{ color: "#fff", fontSize: 10 }} />}
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}>
-                  <FaPalette size={12} /> Needs Brand Team involvement
-                </div>
-                <p className="field-hint">
-                  Select if this page requires new custom images, graphics, or brand assets
-                  to be created. The admin will make the final decision on Brand Team involvement.
-                </p>
-              </div>
-            </label>
-          </div>
 
           <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
             <button disabled={!pageType} onClick={() => setStep(2)} className="btn-primary" style={{ opacity: pageType ? 1 : 0.4, display: "flex", alignItems: "center", gap: 6 }}>

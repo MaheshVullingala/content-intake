@@ -330,7 +330,7 @@ export default function Dashboard({ go, user }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#3C3C3C", display: "flex", alignItems: "center", justifyContent: "center" }}>{m?.icon && <m.icon size={18} color="#fff" />}</div>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>Welcome back, {user.name}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>Welcome, {user.name}</h1>
             <p style={{ color: "#767676", fontSize: 13, margin: 0 }}>{m.label}{isLead ? " · Team Lead" : ""} · {user.department}</p>
           </div>
         </div>

@@ -485,15 +485,11 @@ export default function Dashboard({ go, user }) {
               <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                 style={{ fontSize: 13, padding: "0.5rem 0.8rem", border: "1px solid #cddaed", borderRadius: 7, background: "rgba(255,255,255,0.8)", color: "#181313", fontFamily: "'Rubik',sans-serif", cursor: "pointer", height: 40 }}>
                 <option value="all">All Statuses</option>
-                {STATUS_FLOW.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
-                {/* Parallel-team workflow's real statuses live on overall_status,
-                    not status — STATUS_FLOW alone is the legacy list and no longer
-                    matches what any current request actually has. 'published' is
-                    already in STATUS_FLOW above, so skip it here to avoid a
-                    duplicate option. */}
-                {Object.entries(OVERALL_STATUS_META)
-                  .filter(([key]) => !STATUS_FLOW.some(s => s.key === key))
-                  .map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
+                {/* Current workflow only: a request's status is its overall_status
+                    (drafts have none, so they fall back to "draft"). The old
+                    Editorial QA / Design QA / Web Team stages no longer exist. */}
+                <option value="draft">Draft</option>
+                {Object.entries(OVERALL_STATUS_META).map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
               </select>
               <select value={filterType} onChange={e => setFilterType(e.target.value)}
                 style={{ fontSize: 13, padding: "0.5rem 0.8rem", border: "1px solid #cddaed", borderRadius: 7, background: "rgba(255,255,255,0.8)", color: "#181313", fontFamily: "'Rubik',sans-serif", cursor: "pointer", height: 40 }}>

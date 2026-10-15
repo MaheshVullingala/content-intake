@@ -2094,3 +2094,10 @@ Manager request. Removed from NewRequest step 1 (UI, state, load, payload). `req
 - Readability: all inline font sizes 9-11px raised to 12px; small `#B5B5B5` text colors darkened to `#767676` (contrast).
 - Accessibility: new styles/accessibility.css (visible focus rings, reduced-motion), aria-labels on icon-only buttons with titles, keyboard support (role/tabIndex/Enter+Space) on the return-panel toggle and TagPicker options.
 - Responsive: `.split-grid` (form + live preview) stacks <=1024px, two-column field grids collapse <=720px, navbar tightens. Not browser-tested at real device sizes.
+
+## Security hardening (2026-10-15, sql/37, applied)
+From the infosec-style review:
+- `attachments` bucket delete: only the uploader, admin or editorial_team (was: any signed-in user).
+- `notifications` insert: must reference an existing request the sender can see (was: any signed-in user could notify anyone). Tested: valid request allowed; nonexistent / null request denied. All app insert sites already pass request_id.
+- `search_path` pinned on get_user_role / get_user_id / get_user_can_assign / get_password_login_enabled; dead `check_web_team_unlock` dropped.
+- Still open: CRON_SECRET must be set (send-pending is open without it); temporary @testuser.com allowance (sql/34); server-side password min length + leaked-password check in Supabase Auth settings; CSP unsafe-inline/eval; in-memory rate limiting; attachments bucket is public-read (by URL).

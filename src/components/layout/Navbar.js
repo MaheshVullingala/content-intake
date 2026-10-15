@@ -27,7 +27,7 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
   const activeLabel    = ROLE_OPTIONS.find(r => r.value === activeRole)?.label ?? "Admin";
 
   return (
-    <nav style={{
+    <nav className="app-nav" style={{
       background: "#000000",
       borderBottom: "1px solid #1e4f8a",
       padding: "0 2.5rem",
@@ -57,14 +57,14 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
           Content Intake
         </span>
         <span style={{
-          fontSize: 10, background: "rgba(62,197,203,0.15)",
+          fontSize: 12, background: "rgba(62,197,203,0.15)",
           color: "#3ec5cb", border: "1px solid rgba(62,197,203,0.3)",
           borderRadius: 4, padding: "1px 6px", fontFamily: "'Rubik', sans-serif", fontWeight: 500,
         }}>BETA</span>
       </div>
 
       {/* Right — Nav links + user */}
-      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+      <div className="app-nav-right" style={{ display: "flex", alignItems: "center", gap: 20 }}>
         <button onClick={() => nav("dashboard")}
           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontFamily: "'Rubik', sans-serif", color: view === "dashboard" ? "#f1f5f9" : "#94a3b8", fontWeight: view === "dashboard" ? 500 : 400, transition: "color 0.15s" }}>
           Dashboard
@@ -109,7 +109,7 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
               }}
             >
               <FaExchangeAlt size={11} /> View as: <strong style={{ color: impersonatedRole ? "#3ec5cb" : "#f1f5f9" }}>{activeLabel}</strong>
-              <span style={{ fontSize: 9, opacity: 0.6, display: "flex" }}><FaChevronDown /></span>
+              <span style={{ fontSize: 12, opacity: 0.6, display: "flex" }}><FaChevronDown /></span>
             </button>
 
             {dropdownOpen && (
@@ -179,7 +179,7 @@ export default function Navbar({ go, view, user, supabase, logout, onLogout, onN
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 500, color: "#f1f5f9", fontFamily: "'Rubik', sans-serif" }}>{user.name}</div>
-            <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Rubik', sans-serif" }}>{user.role?.replace(/_/g, " ")}</div>
+            <div style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Rubik', sans-serif" }}>{user.role?.replace(/_/g, " ")}</div>
           </div>
           <button onClick={() => setShowChangePw(true)}
             style={{ background: "none", border: "1px solid #1e4f8a", borderRadius: 6, padding: "0.3rem 0.75rem", fontSize: 12, color: "#94a3b8", cursor: "pointer", fontFamily: "'Rubik', sans-serif", transition: "all 0.15s", marginLeft: 4 }}

@@ -106,13 +106,13 @@ export default function TagPicker({ value = [], onChange, user, disabled }) {
             }}>
               {formatTagLabel(tag)}
               {tag.status === "pending" && (
-                <span title="Awaiting admin approval" style={{ display: "flex", alignItems: "center", gap: 3, color: "#d97706", fontSize: 10, fontWeight: 500 }}>
+                <span title="Awaiting admin approval" style={{ display: "flex", alignItems: "center", gap: 3, color: "#d97706", fontSize: 12, fontWeight: 500 }}>
                   <FaClock size={9} /> Pending
                 </span>
               )}
               {!disabled && (
-                <button type="button" onClick={() => removeTag(tag.id)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "#B5B5B5", display: "flex", padding: 0 }}
+                <button aria-label="Remove tag" type="button" onClick={() => removeTag(tag.id)}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#767676", display: "flex", padding: 0 }}
                   title="Remove tag">
                   <FaTimes size={10} />
                 </button>
@@ -125,7 +125,7 @@ export default function TagPicker({ value = [], onChange, user, disabled }) {
       {/* Search input */}
       {!disabled && (
         <div style={{ position: "relative" }}>
-          <FaSearch size={12} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#B5B5B5" }} />
+          <FaSearch size={12} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#767676" }} />
           <input
             value={query}
             onChange={e => { setQuery(e.target.value); setOpen(true); }}
@@ -142,13 +142,13 @@ export default function TagPicker({ value = [], onChange, user, disabled }) {
               boxShadow: "0 8px 24px rgba(0,0,0,0.08)", maxHeight: 260, overflowY: "auto",
             }}>
               {loading && (
-                <div style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#B5B5B5", display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#767676", display: "flex", alignItems: "center", gap: 8 }}>
                   <FaSpinner className="fa-spin" size={11} /> Searching...
                 </div>
               )}
 
               {!loading && results.map(tag => (
-                <div key={tag.id} onClick={() => addTag(tag)}
+                <div key={tag.id} onClick={() => addTag(tag)} role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); addTag(tag); } }}
                   style={{ padding: "0.6rem 1rem", fontSize: 13, cursor: "pointer", color: "#181313", borderBottom: "1px solid #F3F3F3" }}
                   onMouseEnter={e => e.currentTarget.style.background = "#F9F9F9"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -157,13 +157,13 @@ export default function TagPicker({ value = [], onChange, user, disabled }) {
               ))}
 
               {!loading && results.length === 0 && (
-                <div style={{ padding: "0.6rem 1rem", fontSize: 12, color: "#B5B5B5" }}>
+                <div style={{ padding: "0.6rem 1rem", fontSize: 12, color: "#767676" }}>
                   No matching tags found.
                 </div>
               )}
 
               {!loading && !exactMatch && (
-                <div onClick={handleRequestNew}
+                <div onClick={handleRequestNew} role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleRequestNew(); } }}
                   style={{ padding: "0.6rem 1rem", fontSize: 13, cursor: requesting ? "default" : "pointer", color: "#14b8a6", fontWeight: 500, display: "flex", alignItems: "center", gap: 8 }}
                   onMouseEnter={e => !requesting && (e.currentTarget.style.background = "#f0fdfa")}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -176,7 +176,7 @@ export default function TagPicker({ value = [], onChange, user, disabled }) {
         </div>
       )}
 
-      {error && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 5 }}>{error}</div>}
+      {error && <div style={{ fontSize: 12, color: "#c0392b", marginTop: 5 }}>{error}</div>}
       <div className="field-hint">
         Search existing tags, or request a new one if it doesn't exist yet — new tags need admin approval before they're visible to others.
       </div>

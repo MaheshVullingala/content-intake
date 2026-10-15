@@ -180,10 +180,10 @@ export default function LoginAnimated({ onSwitch }) {
           minWidth:1200,
           textAlign:"center",
         }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#3ec5cb", marginBottom:5 }}>Cadence Design Systems</div>
+          <div style={{ fontSize: 12, fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#3ec5cb", marginBottom:5 }}>Cadence Design Systems</div>
           <div style={{ fontSize:24, fontWeight:700, color:"#fff", lineHeight:1.2, marginBottom:6 }}>Content Intake Portal</div>
           <div style={{ width:28, height:3, background:"#3ec5cb", borderRadius:2, marginBottom:8 }}/>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", lineHeight:1.7 }}>From brief to published - one structured workflow.</div>
+          <div style={{ fontSize: 12, color:"rgba(255,255,255,0.5)", lineHeight:1.7 }}>From brief to published - one structured workflow.</div>
         </div>
       </div>
 
@@ -222,7 +222,7 @@ export default function LoginAnimated({ onSwitch }) {
             </button>
 
             {/* AI badge */}
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, background:"linear-gradient(135deg,#1b5793,#3ec5cb)", borderRadius:20, padding:"8px 14px", fontSize:11, fontWeight:500, color:"#fff", margin:"16px 0" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, background:"linear-gradient(135deg,#1b5793,#3ec5cb)", borderRadius:20, padding:"8px 14px", fontSize: 12, fontWeight:500, color:"#fff", margin:"16px 0" }}>
               <span style={{ display:"flex" }}><FaMagic size={12} /></span><span>AI Assist — Cadence brand voice</span>
             </div>
 

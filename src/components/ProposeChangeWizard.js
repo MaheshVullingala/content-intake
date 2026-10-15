@@ -87,7 +87,7 @@ function Field({ label, value, onChange, placeholder, multiline, required, hint,
           {label}{required && <span className="req"> *</span>}
         </label>
         {limit && (
-          <span style={{ fontSize: 10, fontWeight: 500, color: over ? "#c0392b" : len > limit * 0.85 ? "#856404" : "#B5B5B5", fontFamily: "monospace" }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: over ? "#c0392b" : len > limit * 0.85 ? "#856404" : "#B5B5B5", fontFamily: "monospace" }}>
             {len}/{limit}
           </span>
         )}
@@ -110,7 +110,7 @@ function Field({ label, value, onChange, placeholder, multiline, required, hint,
 // bug behind "can only type one letter before needing to click back in."
 function SectionLayout({ activeSection, pageType, mergedPreview, children }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+    <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
       <div style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto", paddingRight: 4 }}>{children}</div>
       <div style={{ position: "sticky", top: 0, maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
         <p className="text-xs text-uppercase text-muted mb-8">Live Preview</p>
@@ -324,7 +324,7 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {changedFields.length > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: fastLane ? "#2a7a4b" : "#9333ea", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: fastLane ? "#2a7a4b" : "#9333ea", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 5 }}>
               {fastLane ? <><FaCheckCircle size={10} /> Small edit — applies immediately</> : <><FaEye size={10} /> Will need admin review</>}
             </span>
           )}
@@ -370,9 +370,9 @@ export default function ProposeChangeWizard({ req, user, supabase, onCancel, onS
             >
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: isActive ? "#fff" : "#181313" }}>{s.label}</span>
-                {isModified && <span style={{ fontSize: 11, color: "#3ec5cb", fontWeight: 700 }}>●</span>}
+                {isModified && <span style={{ fontSize: 12, color: "#3ec5cb", fontWeight: 700 }}>●</span>}
               </div>
-              <span style={{ fontSize: 10, color: isActive ? "#94a3b8" : (s.required ? "#c0392b" : "#94a3b8") }}>
+              <span style={{ fontSize: 12, color: isActive ? "#94a3b8" : (s.required ? "#c0392b" : "#94a3b8") }}>
                 {s.required ? "Required" : "Optional"}
               </span>
             </button>

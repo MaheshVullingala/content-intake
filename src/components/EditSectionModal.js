@@ -404,7 +404,7 @@ export default function EditSectionModal({
         }}>
           <h3 style={{ margin: 0, fontSize: "var(--text-base)", fontWeight: 600, display: "flex", alignItems: "center", gap: 10 }}>
             {allowPicker && (
-              <button
+              <button aria-label="Back to section list"
                 onClick={() => setPickedSection(null)}
                 title="Back to section list"
                 style={{ background: "none", border: "none", fontSize: 14, cursor: "pointer", color: "var(--color-silver)", padding: 0, display: "flex" }}

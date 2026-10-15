@@ -59,7 +59,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
           {label}{required && <span className="req"> *</span>}
         </label>
         {limit && (
-          <span style={{ fontSize: 10, fontWeight: 500, color: over ? "#c0392b" : len > limit * 0.85 ? "#856404" : "#B5B5B5", fontFamily: "monospace" }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: over ? "#c0392b" : len > limit * 0.85 ? "#856404" : "#B5B5B5", fontFamily: "monospace" }}>
             {len}/{limit}
           </span>
         )}
@@ -70,7 +70,7 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly}
             maxLength={limit || undefined} style={fieldStyle || (over ? { borderColor: "#c0392b" } : {})} />
       }
-      {over && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}><FaExclamationTriangle size={10} /> Exceeds {limit} character limit</div>}
+      {over && <div style={{ fontSize: 12, color: "#c0392b", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}><FaExclamationTriangle size={10} /> Exceeds {limit} character limit</div>}
       {hint && !over && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -260,29 +260,34 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
   const sections   = pageType ? getSectionsForPageType(pageType) : [];
   const hasContent = banner.page_title || overview.overview_impact;
 
-  const isValid = () => {
-    if (!banner.page_title) return false;
-    // SEO fields are optional — no required validation
-    const ov = sections.find(s => s.key === "overview");
-    if (ov && ov.required && !naMap["overview"]) {
-      if (!overview.overview_impact || !overview.overview_description) return false;
+  // Everything still blocking "Preview & Submit", as {section, label}. Drives
+  // the button's disabled state, its tooltip, the "To continue" list under
+  // the tab bar and the red dots on the section tabs.
+  const missingRequired = () => {
+    const m = [];
+    const add = (section, label) => m.push({ section, label });
+    if (!banner.page_title) add("banner", "Banner — Page Title");
+    const req = (key) => { const x = sections.find(sec => sec.key === key); return x && x.required && !naMap[key]; };
+    if (req("overview")) {
+      if (!overview.overview_impact) add("overview", "Overview — Impact Statement");
+      if (!overview.overview_description) add("overview", "Overview — Description");
     }
-    const kb = sections.find(s => s.key === "key_benefits");
-    if (kb && kb.required && !naMap["key_benefits"]) {
-      if (!kbData.kb_impact) return false;
-      if (kbData.kb_cards.length === 0) return false;
-      if (kbData.kb_cards.some(c => !c.title || !c.description)) return false;
+    if (req("key_benefits")) {
+      if (!kbData.kb_impact) add("key_benefits", "Key Benefits — Impact Statement");
+      if (kbData.kb_cards.length === 0) add("key_benefits", "Key Benefits — add at least one card");
+      else if (kbData.kb_cards.some(c => !c.title || !c.description)) add("key_benefits", "Key Benefits — every card needs a title and description");
     }
-    const fa = sections.find(s => s.key === "features_apps");
-    if (fa && fa.required && !naMap["features_apps"]) {
-      if (!faData.fa_impact || !faData.fa_view_type) return false;
+    if (req("features_apps")) {
+      if (!faData.fa_impact) add("features_apps", "Features — Impact Statement");
+      if (!faData.fa_view_type) add("features_apps", "Features — choose a view type");
     }
-    const app = sections.find(s => s.key === "applications");
-    if (app && app.required && !naMap["applications"]) {
-      if (!appData.app_impact || !appData.app_view_type) return false;
+    if (req("applications")) {
+      if (!appData.app_impact) add("applications", "Applications — Impact Statement");
+      if (!appData.app_view_type) add("applications", "Applications — choose a view type");
     }
-    return true;
+    return m;
   };
+  const isValid = () => missingRequired().length === 0;
 
   const buildPayload = (status, extra = {}) => ({
     page_type: pageType, status, created_by: user.id,
@@ -816,7 +821,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       {draftId && returnComments.length > 0 && (
         <div style={{ position:"fixed", bottom:24, right:24, zIndex:500, width:showReturnPanel ? 340 : "auto",
           background:"#fff", borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.18)", border:"2px solid #ffc107", overflow:"hidden" }}>
-          <div onClick={() => setShowReturnPanel(p => !p)}
+          <div onClick={() => setShowReturnPanel(p => !p)} role="button" tabIndex={0} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setShowReturnPanel(p => !p); } }}
             style={{ background:"#fff3cd", padding:"0.75rem 1rem", display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer", gap:8 }}>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
               <span style={{ fontSize:16, display:"flex" }}><FaUndo /></span>
@@ -829,7 +834,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
               {returnComments.map((c, i) => (
                 <div key={c.id} style={{ marginBottom: i < returnComments.length-1 ? 10 : 0, padding:"0.65rem 0.8rem",
                   background:"#fff8e6", border:"1px solid #ffc10744", borderRadius:8, borderLeft:"3px solid #ffc107" }}>
-                  <div style={{ fontSize:11, color:"#856404", fontWeight:600, marginBottom:4, display:"flex", justifyContent:"space-between" }}>
+                  <div style={{ fontSize: 12, color:"#856404", fontWeight:600, marginBottom:4, display:"flex", justifyContent:"space-between" }}>
                     <span>{c.user_name} ({c.user_role?.replace("_"," ")})</span>
                     <span style={{ fontWeight:400 }}>{new Date(c.created_at).toLocaleDateString("en-GB",{day:"2-digit",month:"short"})}</span>
                   </div>
@@ -863,13 +868,13 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
       )}
 
       {/* Header + Progress Pills */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16, flexWrap: "wrap" }}>
 
         {/* Left: Title only */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: 1 }}>
           <div style={{ minWidth: 0 }}>
             <h1 style={{ fontSize: 20, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>New Content Request</h1>
-            <p style={{ color: "#B5B5B5", fontSize: 12, margin: 0 }}>{pageType || "Select a page type to begin"}</p>
+            <p style={{ color: "#767676", fontSize: 12, margin: 0 }}>{pageType || "Select a page type to begin"}</p>
           </div>
         </div>
 
@@ -890,7 +895,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     width: 20, height: 20, borderRadius: "50%",
                     background: done ? "#3ec5cb" : active ? "#3ec5cb" : "#E0E0E0",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, fontWeight: 600,
+                    fontSize: 12, fontWeight: 600,
                     color: done ? "#0f2744" : active ? "#fff" : "#94a3b8",
                     flexShrink: 0,
                   }}>
@@ -940,6 +945,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           )}
           {step === 2 && (
             <button onClick={() => setStep(3)} disabled={!isValid()}
+              title={isValid() ? undefined : `Still needed: ${missingRequired().map(x => x.label).join("; ")}`}
               style={{
                 background: isValid() ? "#3ec5cb" : "#f9f9f9",
                 color: isValid() ? "#fff" : "#B5B5B5",
@@ -971,7 +977,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
               <button key={pt} onClick={() => setPageType(pt)}
                 style={{ background: pageType === pt ? "#181313" : "#fff", border: `2px solid ${pageType === pt ? "#181313" : "#E0E0E0"}`, borderRadius: 12, padding: "1.3rem 1.5rem", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
                 <div style={{ fontSize: 15, fontWeight: 500, color: pageType === pt ? "#F3F3F3" : "#181313", marginBottom: 5 }}>{pt}</div>
-                <div style={{ fontSize: 12, color: "#B5B5B5" }}>
+                <div style={{ fontSize: 12, color: "#767676" }}>
                   {pt === "Product"          && "Product pages with specs and CTAs"}
                   {pt === "Solutions"         && "Solutions overview with benefits"}
                   {pt === "Glossary"          && "Technical definitions"}
@@ -980,7 +986,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 {pageType === pt && (
                   <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {getSectionsForPageType(pt).map(s => (
-                      <span key={s.key} style={{ fontSize: 10, background: s.required ? "#181313" : "#F3F3F3", color: s.required ? "#fff" : "#646464", borderRadius: 10, padding: "2px 8px", fontWeight: 500 }}>
+                      <span key={s.key} style={{ fontSize: 12, background: s.required ? "#181313" : "#F3F3F3", color: s.required ? "#fff" : "#646464", borderRadius: 10, padding: "2px 8px", fontWeight: 500 }}>
                         {s.label} · {s.required ? "Required" : "Optional"}
                       </span>
                     ))}
@@ -1102,15 +1108,18 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     <span style={{ fontSize: 13, fontWeight: 500, color: isActive ? "#fff" : "#181313" }}>
                       {s.label}
                     </span>
+                    {!isNA && missingRequired().some(x => x.section === s.key) && (
+                      <span title="Required fields missing" aria-label="Required fields missing" style={{ width: 7, height: 7, borderRadius: "50%", background: "#c0392b", display: "inline-block" }} />
+                    )}
                     {isDone && !isNA && (
-                      <span style={{ fontSize: 11, color: "#3ec5cb", fontWeight: 600, display: "flex" }}><FaCheck size={9} /></span>
+                      <span style={{ fontSize: 12, color: "#3ec5cb", fontWeight: 600, display: "flex" }}><FaCheck size={9} /></span>
                     )}
                     {isNA && (
-                      <span style={{ fontSize: 10, color: "#94a3b8" }}>—</span>
+                      <span style={{ fontSize: 12, color: "#94a3b8" }}>—</span>
                     )}
                   </div>
                   <span style={{
-                    fontSize: 10,
+                    fontSize: 12,
                     color: isActive ? "#94a3b8" : (s.required && !isNA ? "#c0392b" : "#94a3b8"),
                     fontWeight: 400,
                   }}>
@@ -1121,11 +1130,20 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             })}
           </div>
 
+          {missingRequired().length > 0 && (
+            <div role="status" style={{ marginTop: 12, background: "#fff8f6", border: "1px solid #c0392b33", borderRadius: 8, padding: "0.55rem 0.9rem", fontSize: 13, color: "#8a2c20", display: "flex", flexWrap: "wrap", gap: "4px 10px", alignItems: "center" }}>
+              <strong style={{ fontWeight: 500 }}>To continue, complete:</strong>
+              {missingRequired().map((x, i) => (
+                <button key={i} onClick={() => handleSectionChange(x.section)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#8a2c20", textDecoration: "underline", fontSize: 13, fontFamily: "'Rubik',sans-serif" }}>{x.label}</button>
+              ))}
+            </div>
+          )}
+
           {/* Section form + preview */}
           <div style={{ paddingTop: 16 }}>
             {/* SEO Meta Data */}
             {activeSection === "seo_meta" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+              <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                 <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                   <div className="card">
                     <div className="card-header">
@@ -1136,10 +1154,10 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     <Field label="Meta Description" charLimit={CHAR_LIMITS.seo_meta_description} value={seoData.seo_meta_description} onChange={v => updSeo("seo_meta_description", v)} placeholder="e.g. Accelerate SoC verification with Cadence Xcelium..." multiline hint="Shown in search results — 120–160 characters" />
                     <Field label="Meta Keywords" charLimit={CHAR_LIMITS.seo_meta_keywords} value={seoData.seo_meta_keywords} onChange={v => updSeo("seo_meta_keywords", v)} placeholder="e.g. logic simulator, SoC verification, mixed-signal" multiline hint="Comma-separated keywords" />
                     <div style={{ marginTop:20, background:"#fff", border:"1px solid #E0E0E0", borderRadius:10, padding:"1rem 1.2rem" }}>
-                      <p style={{ fontSize:10, color:"#B5B5B5", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10, fontWeight:600 }}>Google Search Preview</p>
-                      <div style={{ fontSize:12, color:"#1a0dab", fontWeight:500, marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{seoData.seo_meta_title || <span style={{ color:"#B5B5B5", fontStyle:"italic" }}>Meta title will appear here</span>}</div>
-                      <div style={{ fontSize:11, color:"#006621", marginBottom:4 }}>cadence.com{seoData.seo_page_location || "/products/..."}</div>
-                      <div style={{ fontSize:12, color:"#545454", lineHeight:1.5, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>{seoData.seo_meta_description || <span style={{ color:"#B5B5B5", fontStyle:"italic" }}>Meta description will appear here...</span>}</div>
+                      <p style={{ fontSize: 12, color:"#767676", textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10, fontWeight:600 }}>Google Search Preview</p>
+                      <div style={{ fontSize:12, color:"#1a0dab", fontWeight:500, marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{seoData.seo_meta_title || <span style={{ color:"#767676", fontStyle:"italic" }}>Meta title will appear here</span>}</div>
+                      <div style={{ fontSize: 12, color:"#006621", marginBottom:4 }}>cadence.com{seoData.seo_page_location || "/products/..."}</div>
+                      <div style={{ fontSize:12, color:"#545454", lineHeight:1.5, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>{seoData.seo_meta_description || <span style={{ color:"#767676", fontStyle:"italic" }}>Meta description will appear here...</span>}</div>
                     </div>
                   </div>
                 </div>
@@ -1159,7 +1177,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
 
             {/* Banner */}
             {activeSection === "banner" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+              <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                 <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                 <div className="card">
                   <div className="card-header">
@@ -1198,7 +1216,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     <button onClick={() => toggleNA("key_benefits")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                       <KeyBenefits
                         data={kbData}
@@ -1231,7 +1249,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     <button onClick={() => toggleNA("features_apps")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                       <FeaturesApps data={faData} onChange={setFaData} isNA={false} onToggleNA={() => toggleNA("features_apps")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="features_apps" currentContent={faData.fa_impact} onAccept={(d) => { const { fa_items, ...rest } = d; setFaData(p => ({ ...p, ...rest, ...(fa_items ? { fa_items: fa_items.map((it,i) => ({ ...it, id:`li-ai-${i}-${Date.now()}` })) } : {}) })); }} />} naButton={<button onClick={() => toggleNA("features_apps")} className={`btn-na${naMap["features_apps"] ? " active" : ""}`}>{naMap["features_apps"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
                     </div>
@@ -1256,7 +1274,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     <button onClick={() => toggleNA("applications")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                       <Applications data={appData} onChange={setAppData} isNA={false} onToggleNA={() => toggleNA("applications")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="applications" currentContent={appData.app_impact} onAccept={(d) => { const { app_items, ...rest } = d; setAppData(p => ({ ...p, ...rest, ...(app_items ? { app_items: app_items.map((it,i) => ({ ...it, id:`app-tab-ai-${i}-${Date.now()}` })) } : {}) })); }} />} naButton={<button onClick={() => toggleNA("applications")} className={`btn-na${naMap["applications"] ? " active" : ""}`}>{naMap["applications"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
                     </div>
@@ -1277,7 +1295,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 {naMap["customer_stories"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Customer Stories marked as Not Applicable</div><button onClick={() => toggleNA("customer_stories")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><CustomerStories data={csData} onChange={setCsData} isNA={false} onToggleNA={() => toggleNA("customer_stories")} requestId={draftId || "draft"} naButton={<button onClick={() => toggleNA("customer_stories")} className={`btn-na${naMap["customer_stories"] ? " active" : ""}`}>{naMap["customer_stories"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
@@ -1293,7 +1311,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 {naMap["promo_section"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Promo Section marked as Not Applicable</div><button onClick={() => toggleNA("promo_section")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div><PromoSection data={promoData} onChange={setPromoData} isNA={false} onToggleNA={() => toggleNA("promo_section")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="promo_section" currentContent={promoData.promo_title} onAccept={(d) => setPromoData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("promo_section")} className={`btn-na${naMap["promo_section"] ? " active" : ""}`}>{naMap["promo_section"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
@@ -1309,7 +1327,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 {naMap["related_content"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Content marked as Not Applicable</div><button onClick={() => toggleNA("related_content")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><RelatedContent data={rcData} onChange={setRcData} isNA={false} onToggleNA={() => toggleNA("related_content")} requestId={draftId || "draft"} aiAssistButton={<SectionAIAssist sectionKey="related_content" currentContent={rcData.rc_impact} onAccept={(d) => setRcData(p => ({ ...p, ...d }))} />} naButton={<button onClick={() => toggleNA("related_content")} className={`btn-na${naMap["related_content"] ? " active" : ""}`}>{naMap["related_content"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
@@ -1324,7 +1342,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 {naMap["resources"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Resources marked as Not Applicable</div><button onClick={() => toggleNA("resources")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}><Resources data={resData} onChange={setResData} isNA={false} onToggleNA={() => toggleNA("resources")} requestId={draftId || "draft"} /></div>
                     <div style={{ position: "sticky", top: 0, height: "100vh", overflowY: "auto", paddingBottom: "2rem" }} ref={previewRef}><p className="text-xs text-uppercase text-muted mb-8">Live Preview</p><PagePreview req={{ ...banner, ...overview, ...kbData, ...faData, ...appData, ...csData, ...promoData, ...rcData, ...resData, ...rpData, ...tsData, ...othersData }} activeSection={activeSection} /></div>
                   </div>
@@ -1338,7 +1356,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 {naMap["related_products"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Related Products marked as Not Applicable</div><button onClick={() => toggleNA("related_products")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                       <RelatedProducts data={rpData} onChange={setRpData} isNA={false} onToggleNA={() => toggleNA("related_products")} requestId={draftId || "draft"} />
                     </div>
@@ -1358,7 +1376,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 {naMap["training_support"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Training & Support marked as Not Applicable</div><button onClick={() => toggleNA("training_support")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                       <TrainingSupport data={tsData} onChange={setTsData} isNA={false} onToggleNA={() => toggleNA("training_support")} requestId={draftId || "draft"} naButton={<button onClick={() => toggleNA("training_support")} className={`btn-na${naMap["training_support"] ? " active" : ""}`}>{naMap["training_support"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
                     </div>
@@ -1378,7 +1396,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                 {naMap["others"] ? (
                   <div className="na-placeholder"><div className="icon">—</div><div className="text">Others marked as Not Applicable</div><button onClick={() => toggleNA("others")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button></div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div style={{ height: "100vh", overflowY: "auto", paddingRight: 4, paddingBottom: "2rem" }}>
                       <Others data={othersData} onChange={setOthersData} isNA={false} onToggleNA={() => toggleNA("others")}
                         naButton={<button onClick={() => toggleNA("others")} className={`btn-na${naMap["others"] ? " active" : ""}`}>{naMap["others"] ? (<><FaCheck size={9} style={{ marginRight: 4 }} /> N/A — Undo</>) : "Mark as N/A"}</button>} />
@@ -1402,7 +1420,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     <button onClick={() => toggleNA("overview")} className="btn-ghost" style={{ marginTop: 12 }}>Undo</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+                  <div className="split-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
                     <div className="card">
                       <div className="card-header">
                         <div><h3>Overview — Content</h3><p>Impact statement, description and optional media</p></div>
@@ -1413,7 +1431,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                           </button>
                         </div>
                       </div>
-                      <Field label="Label" value="OVERVIEW" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
+                      <Field label="Label" value="OVERVIEW" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#767676", cursor: "not-allowed" }} hint="Fixed label — not editable" />
                       <Field label="Impact Statement" required charLimit={CHAR_LIMITS.overview_impact} value={overview.overview_impact} onChange={v => updOverview("overview_impact", v)} placeholder="e.g. Run More Validation Cycles on Bigger SoCs" multiline hint="Large heading — make it compelling" />
                       <Field label="Description" required charLimit={CHAR_LIMITS.overview_description} value={overview.overview_description} onChange={v => updOverview("overview_description", v)} placeholder="Describe the product or solution in detail..." multiline />
 
@@ -1466,7 +1484,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
           <div className="card" style={{ marginBottom: 16 }}>
             <h3 style={{ fontSize: 14, marginBottom: 14 }}>Pre-flight Check</h3>
             {!placeholderCheckEnabled && (
-              <div style={{ fontSize: 11, color: "#d97706", background: "#fffbeb", border: "1px solid #f59e0b44", borderRadius: 6, padding: "0.4rem 0.7rem", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ fontSize: 12, color: "#d97706", background: "#fffbeb", border: "1px solid #f59e0b44", borderRadius: 6, padding: "0.4rem 0.7rem", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
                 <FaExclamationTriangle size={11} /> Placeholder/Lorem Ipsum checking is turned off (AdminPanel → Settings) — temporary QA setting.
               </div>
             )}
@@ -1477,7 +1495,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {preflightIssues.some(i => i.severity === "warning") && (
-                  <div style={{ fontSize: 11, color: "#646464" }}>
+                  <div style={{ fontSize: 12, color: "#646464" }}>
                     {preflightIssues.filter(i => i.severity !== "warning").length > 0 && <>Red items must be fixed before submitting. </>}
                     Amber items are suggestions &mdash; they won&apos;t block submission.
                   </div>
@@ -1489,7 +1507,7 @@ export default function NewRequest({ go, user, draftId, saveDraftRef, pendingNav
                     <div style={{ fontSize: 13, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}><FaExclamationTriangle size={11} color={warn ? "#d97706" : "#c0392b"} /> {issue.message}</div>
                     {issue.section && (
                       <button type="button" onClick={() => { setStep(2); handleSectionChange(issue.section); }}
-                        style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, fontWeight: 500, color: "#181313", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+                        style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 12, fontWeight: 500, color: "#181313", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
                         Fix <FaArrowRight size={9} />
                       </button>
                     )}

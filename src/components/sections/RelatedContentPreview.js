@@ -10,7 +10,7 @@ export default function RelatedContentPreview({ data = {}, attachments = [] }) {
     <div style={{ background: "#fff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       <div className="section-container">
 
-        <div style={{ fontSize: 11, fontWeight: 600, color: rc_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: rc_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
           {rc_label || "RELATED CONTENT"}
         </div>
 
@@ -34,14 +34,14 @@ export default function RelatedContentPreview({ data = {}, attachments = [] }) {
                       onError={e => { e.target.style.display = "none"; }} />
                   ) : (
                     <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}>
-                      <span style={{ fontSize: 24, display: "flex", color: "#B5B5B5" }}><FaImage /></span>
-                      {imagePlaceholder && <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 8px" }}>{imagePlaceholder}</span>}
+                      <span style={{ fontSize: 24, display: "flex", color: "#767676" }}><FaImage /></span>
+                      {imagePlaceholder && <span style={{ fontSize: 12, color: "#767676", textAlign: "center", padding: "0 8px" }}>{imagePlaceholder}</span>}
                     </div>
                   )}
                 </div>
                 <div style={{ padding: "1rem" }}>
                   {card.label && (
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "#181313", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#181313", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
                       {card.label}
                     </div>
                   )}
@@ -67,7 +67,7 @@ export default function RelatedContentPreview({ data = {}, attachments = [] }) {
 
         {rc_cards.length === 0 && (
           <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#B5B5B5" }}>Content cards will appear here</div>
+            <div style={{ fontSize: 12, color: "#767676" }}>Content cards will appear here</div>
           </div>
         )}
 

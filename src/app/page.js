@@ -358,7 +358,7 @@ export default function App() {
               border: "1px solid #3ec5cb55",
               borderRadius: 5,
               padding: "2px 10px",
-              fontSize: 11,
+              fontSize: 12,
               color: "#3ec5cb",
               cursor: "pointer",
               fontFamily: "'Rubik', sans-serif",

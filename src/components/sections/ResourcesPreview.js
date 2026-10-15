@@ -36,7 +36,7 @@ function CarouselPreview({ data = {} }) {
         )}
       </div>
       <div style={{ textAlign: "right", marginTop: 16 }}>
-        <span style={{ fontSize: 13, fontWeight: 500, color: "#B5B5B5", display: "inline-flex", alignItems: "center", gap: 5 }}>VIEW ALL <FaArrowRight size={11} /></span>
+        <span style={{ fontSize: 13, fontWeight: 500, color: "#767676", display: "inline-flex", alignItems: "center", gap: 5 }}>VIEW ALL <FaArrowRight size={11} /></span>
       </div>
     </div>
   );
@@ -57,7 +57,7 @@ function ResourceCardsPreview({ data = {} }) {
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 50%, transparent)", borderRadius: 8 }} />
           <div style={{ position: "absolute", top: 12, right: 12 }}>
             {data.r1_tag && (
-              <span style={{ background: "rgba(255,255,255,0.9)", color: "#181313", fontSize: 10, fontWeight: 600, padding: "3px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <span style={{ background: "rgba(255,255,255,0.9)", color: "#181313", fontSize: 12, fontWeight: 600, padding: "3px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                 {data.r1_tag}
               </span>
             )}
@@ -72,7 +72,7 @@ function ResourceCardsPreview({ data = {} }) {
           <div key={n} style={{ border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               {data[`r${n}_tag`] && (
-                <span style={{ fontSize: 10, fontWeight: 600, color: "#646464", textTransform: "uppercase", letterSpacing: "0.06em", background: "#F3F3F3", padding: "2px 7px", borderRadius: 4 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#646464", textTransform: "uppercase", letterSpacing: "0.06em", background: "#F3F3F3", padding: "2px 7px", borderRadius: 4 }}>
                   {data[`r${n}_tag`]}
                 </span>
               )}
@@ -102,7 +102,7 @@ function NewsBlogsPreview({ news = {}, blogs = {} }) {
           <div key={item.id || i} style={{ border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.9rem 1rem" }}>
             <div style={{ width: 28, height: 3, background: "#c0392b", borderRadius: 2, marginBottom: 10 }} />
             <p style={{ fontSize: 13, fontWeight: 500, color: "#181313", lineHeight: 1.4, marginBottom: 8, fontFamily: "monospace", wordBreak: "break-all" }}>{item.url || "Article URL..."}</p>
-            <div style={{ fontSize: 11, color: "#B5B5B5" }}>{item.tag || "Tag"}</div>
+            <div style={{ fontSize: 12, color: "#767676" }}>{item.tag || "Tag"}</div>
           </div>
         ))}
       </div>
@@ -128,7 +128,7 @@ export default function ResourcesPreview({ data = {} }) {
     <div style={{ background: "#F9F9F9", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       <div className="section-container">
 
-        <div style={{ fontSize: 11, fontWeight: 600, color: res_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16, textAlign: "center" }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: res_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16, textAlign: "center" }}>
           {res_label || "RESOURCES"}
         </div>
 
@@ -144,7 +144,7 @@ export default function ResourcesPreview({ data = {} }) {
 
         {res_selected.length === 0 && (
           <div style={{ background: "#fff", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#B5B5B5" }}>Select resource types to see the preview</div>
+            <div style={{ fontSize: 12, color: "#767676" }}>Select resource types to see the preview</div>
           </div>
         )}
 

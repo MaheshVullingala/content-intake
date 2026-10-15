@@ -19,7 +19,7 @@ export default function KeyBenefitsPreview({ data = {}, attachments = [] }) {
     <div style={{ background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       <div className="section-container">
 
-        <div style={{ fontSize: 11, fontWeight: 600, color: kb_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: kb_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
           {kb_label || "KEY BENEFITS"}
         </div>
 
@@ -52,13 +52,13 @@ export default function KeyBenefitsPreview({ data = {}, attachments = [] }) {
                     <img src={iconUrl} alt={libIcon?.title || iconPlaceholder || "icon"} style={{ width: "100%", height: "100%", objectFit: "contain" }}
                       onError={e => { e.target.style.display = "none"; }} />
                   ) : iconPlaceholder ? (
-                    <span style={{ fontSize: 10, color: "#B5B5B5", display: "flex" }}><FaPalette /></span>
+                    <span style={{ fontSize: 12, color: "#767676", display: "flex" }}><FaPalette /></span>
                   ) : (
                     <span style={{ fontSize: 18, opacity: 0.3, display: "flex" }}><FaRegSquare /></span>
                   )}
                 </div>
                 {iconPlaceholder && (
-                  <div style={{ fontSize: 10, color: "#B5B5B5", marginBottom: 12, fontStyle: "italic", lineHeight: 1.4 }}>
+                  <div style={{ fontSize: 12, color: "#767676", marginBottom: 12, fontStyle: "italic", lineHeight: 1.4 }}>
                     Icon: {iconPlaceholder}
                   </div>
                 )}
@@ -77,7 +77,7 @@ export default function KeyBenefitsPreview({ data = {}, attachments = [] }) {
         {kb_cards.length === 0 && (
           <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
             <div style={{ fontSize: 24, marginBottom: 8 }}>🃏</div>
-            <div style={{ fontSize: 12, color: "#B5B5B5" }}>Benefit cards will appear here</div>
+            <div style={{ fontSize: 12, color: "#767676" }}>Benefit cards will appear here</div>
           </div>
         )}
 

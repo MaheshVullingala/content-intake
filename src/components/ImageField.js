@@ -134,7 +134,7 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
         </label>
       )}
       {/* Helper note */}
-      <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 8, lineHeight: 1.5 }}>
         Choose how to provide this image for Design QA:
       </div>
       {/* Icon toolbar — below the note */}
@@ -143,19 +143,19 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
           <FaPaperclip size={15} />
           {isFilled && value.type === "attachment" && <span style={dot} />}
         </button>
-        <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Upload</span>
+        <span style={{ fontSize: 12, color: "#64748b", marginRight: 4 }}>Upload</span>
         <button type="button" title="Paste an image URL" style={iconBtn("link")} onClick={() => toggle("link")}>
           <FaLink size={15} />
           {isFilled && value.type === "link" && <span style={dot} />}
         </button>
-        <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Paste URL</span>
+        <span style={{ fontSize: 12, color: "#64748b", marginRight: 4 }}>Paste URL</span>
         {!hideDescription && (
           <>
             <button type="button" title="Add description / notes for Design QA" style={iconBtn("description")} onClick={() => toggle("description")}>
               <FaPen size={14} />
               {isFilled && value.type === "description" && <span style={dot} />}
             </button>
-            <span style={{ fontSize: 11, color: "#64748b", marginRight: 4 }}>Describe</span>
+            <span style={{ fontSize: 12, color: "#64748b", marginRight: 4 }}>Describe</span>
           </>
         )}
         {isFilled && (
@@ -171,8 +171,8 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
           <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {value.type === "attachment" ? value.value : value.value}
           </span>
-          {value.type === "link" && <a href={value.url} target="_blank" rel="noreferrer" style={{ color: "#1b5793", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>Open <FaExternalLinkAlt size={9} /></a>}
-          {value.type === "attachment" && value.url && <a href={value.url} target="_blank" rel="noreferrer" style={{ color: "#1b5793", fontSize: 11, display: "inline-flex", alignItems: "center", gap: 3 }}>View <FaExternalLinkAlt size={9} /></a>}
+          {value.type === "link" && <a href={value.url} target="_blank" rel="noreferrer" style={{ color: "#1b5793", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 3 }}>Open <FaExternalLinkAlt size={9} /></a>}
+          {value.type === "attachment" && value.url && <a href={value.url} target="_blank" rel="noreferrer" style={{ color: "#1b5793", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 3 }}>View <FaExternalLinkAlt size={9} /></a>}
         </div>
       )}
 
@@ -214,10 +214,10 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
               <span style={{ fontSize: 20, display: "flex", color: "#1b5793" }}><FaImage /></span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 500, color: "#181313" }}>{value.value}</div>
-                {value.url && <a href={value.url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "#1b5793", display: "inline-flex", alignItems: "center", gap: 3 }}>View uploaded file <FaExternalLinkAlt size={9} /></a>}
+                {value.url && <a href={value.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#1b5793", display: "inline-flex", alignItems: "center", gap: 3 }}>View uploaded file <FaExternalLinkAlt size={9} /></a>}
               </div>
               <button type="button" onClick={() => { onChange(null); fileRef.current?.click(); }}
-                style={{ fontSize: 11, background: "none", border: "1px solid #E0E0E0", borderRadius: 5, padding: "3px 8px", cursor: "pointer", color: "#646464" }}>Replace</button>
+                style={{ fontSize: 12, background: "none", border: "1px solid #E0E0E0", borderRadius: 5, padding: "3px 8px", cursor: "pointer", color: "#646464" }}>Replace</button>
             </div>
           ) : (
             <div
@@ -235,15 +235,15 @@ export default function ImageField({ value = null, onChange, fieldKey = "image",
                 </div>
               ) : (
                 <>
-                  <div style={{ fontSize: 24, marginBottom: 6, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaPaperclip /></div>
+                  <div style={{ fontSize: 24, marginBottom: 6, display: "flex", justifyContent: "center", color: "#767676" }}><FaPaperclip /></div>
                   <div style={{ fontSize: 12, color: "#646464" }}>Click to upload a reference image</div>
-                  <div style={{ fontSize: 11, color: "#B5B5B5", marginTop: 4 }}>JPG, PNG, WebP, SVG · Max {MAX_MB}MB</div>
+                  <div style={{ fontSize: 12, color: "#767676", marginTop: 4 }}>JPG, PNG, WebP, SVG · Max {MAX_MB}MB</div>
                 </>
               )}
             </div>
           )}
           <input ref={fileRef} type="file" accept={ACCEPTED} style={{ display: "none" }} onChange={handleFile} />
-          {error && <div style={{ fontSize: 11, color: "#c0392b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}><FaExclamationTriangle size={10} /> {error}</div>}
+          {error && <div style={{ fontSize: 12, color: "#c0392b", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}><FaExclamationTriangle size={10} /> {error}</div>}
         </div>
       )}
     </div>

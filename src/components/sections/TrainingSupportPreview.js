@@ -41,7 +41,7 @@ export default function TrainingSupportPreview({ data = {} }) {
     <div style={{ background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       <div className="section-container training">
 
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#646464", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#646464", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
           {d.ts_label}
         </div>
 
@@ -64,7 +64,7 @@ export default function TrainingSupportPreview({ data = {} }) {
                 </div>
               </div>
               {card.icon && !isUrl(card.icon) && (
-                <div style={{ fontSize: 10, color: "#B5B5B5", marginBottom: 10, fontStyle: "italic", display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ fontSize: 12, color: "#767676", marginBottom: 10, fontStyle: "italic", display: "flex", alignItems: "center", gap: 4 }}>
                   <FaPalette size={9} /> {card.icon}
                 </div>
               )}

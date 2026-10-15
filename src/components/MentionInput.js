@@ -143,7 +143,7 @@ export default function MentionInput({
               }}
             >
               <span style={{ fontWeight: 500 }}>{u.name}</span>
-              <span style={{ fontSize: 10, color: "#B5B5B5" }}>{u.role}</span>
+              <span style={{ fontSize: 12, color: "#767676" }}>{u.role}</span>
             </div>
           ))}
         </div>

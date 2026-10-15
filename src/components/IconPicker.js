@@ -26,12 +26,12 @@ export default function IconPicker({ cardTitle = "", selectedId = null, onSelect
         style={{ background: sel ? "#e6f7f8" : "#fff", border: `1.5px solid ${sel ? "#14b8a6" : "#E0E0E0"}`, borderRadius: 10, padding: "12px 8px 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontFamily: "'Rubik',sans-serif", position: "relative" }}>
         {sel && <span style={{ position: "absolute", top: 6, right: 6, color: "#14b8a6", display: "flex" }}><FaCheck size={11} /></span>}
         <img src={icon.public_url} alt={icon.title} style={{ width: 48, height: 48, objectFit: "contain", background: "#fff" }} />
-        <span style={{ fontSize: 11, color: "#3C3C3C", textAlign: "center", lineHeight: 1.3, wordBreak: "break-word" }}>{icon.title}</span>
+        <span style={{ fontSize: 12, color: "#3C3C3C", textAlign: "center", lineHeight: 1.3, wordBreak: "break-word" }}>{icon.title}</span>
       </button>
     );
   };
   const grid = (list) => <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 10 }}>{list.map(tile)}</div>;
-  const heading = (t) => <div style={{ fontSize: 11, fontWeight: 600, color: "#646464", textTransform: "uppercase", letterSpacing: "0.06em", margin: "4px 0 8px" }}>{t}</div>;
+  const heading = (t) => <div style={{ fontSize: 12, fontWeight: 600, color: "#646464", textTransform: "uppercase", letterSpacing: "0.06em", margin: "4px 0 8px" }}>{t}</div>;
 
   const modal = (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
@@ -42,7 +42,7 @@ export default function IconPicker({ cardTitle = "", selectedId = null, onSelect
             <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", cursor: "pointer", color: "#646464", display: "flex" }}><FaTimes size={14} /></button>
           </div>
           <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: 11, top: 11, color: "#B5B5B5", display: "flex" }}><FaSearch size={13} /></span>
+            <span style={{ position: "absolute", left: 11, top: 11, color: "#767676", display: "flex" }}><FaSearch size={13} /></span>
             <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by icon name or benefit title..." className="input" style={{ paddingLeft: 32 }} />
           </div>
         </div>

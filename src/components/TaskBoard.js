@@ -136,7 +136,7 @@ export default function TaskBoard({
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             {req.request_display_id && (
               <span style={{
-                fontSize: 11, fontWeight: 700, fontFamily: "monospace",
+                fontSize: 12, fontWeight: 700, fontFamily: "monospace",
                 background: "#0f172a", color: "#5eead4",
                 borderRadius: 4, padding: "2px 8px",
               }}>
@@ -159,7 +159,7 @@ export default function TaskBoard({
               color: overallMeta.color,
               border: `1px solid ${overallMeta.color}33`,
               borderRadius: 20, padding: "2px 10px",
-              fontSize: 11, fontWeight: 500,
+              fontSize: 12, fontWeight: 500,
             }}>
               {overallMeta.label}
             </span>
@@ -175,7 +175,7 @@ export default function TaskBoard({
                   color:      req.priority === "urgent" ? "#c0392b" : "#d97706",
                   border: `1px solid ${req.priority === "urgent" ? "#c0392b33" : "#d9770633"}`,
                   borderRadius: 20, padding: "2px 10px",
-                  fontSize: 11, fontWeight: 600,
+                  fontSize: 12, fontWeight: 600,
                   cursor: (req.priority_override_reason || req.stakeholder_priority_reason) ? "help" : "default",
                 }}>
                 {req.priority.toUpperCase()}

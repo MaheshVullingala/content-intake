@@ -20,7 +20,7 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
       <div className="section-container">
 
         {/* Label */}
-        <div style={{ fontSize: 11, fontWeight: 600, color: fa_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: fa_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
           {fa_label || "FEATURES"}
         </div>
 
@@ -80,7 +80,7 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
                 )}
                 {!activeTabImage && getImagePlaceholder(fa_items[activeTab].image_ref) && (
                   <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.5rem", marginBottom: 20, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: "#B5B5B5", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}><FaPalette size={10} /> {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
+                    <div style={{ fontSize: 12, color: "#767676", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}><FaPalette size={10} /> {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
                   </div>
                 )}
                 <p style={{ fontSize: 15, color: "#3C3C3C", lineHeight: 1.75, marginBottom: 20, wordBreak: "break-word" }}>{fa_items[activeTab].description}</p>
@@ -115,7 +115,7 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
                 )}
                 {!activeTabImage && getImagePlaceholder(fa_items[activeTab].image_ref) && (
                   <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.5rem", marginBottom: 20, textAlign: "center" }}>
-                    <div style={{ fontSize: 11, color: "#B5B5B5", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}><FaPalette size={10} /> {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
+                    <div style={{ fontSize: 12, color: "#767676", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}><FaPalette size={10} /> {getImagePlaceholder(fa_items[activeTab].image_ref)}</div>
                   </div>
                 )}
                 <p style={{ fontSize: 15, color: "#3C3C3C", lineHeight: 1.75, marginBottom: 20, wordBreak: "break-word" }}>{fa_items[activeTab].description}</p>
@@ -167,7 +167,7 @@ export default function FeaturesAppsPreview({ data = {}, attachments = [] }) {
         {/* No view selected placeholder */}
         {!fa_view_type && (
           <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#B5B5B5" }}>Select a view type to see the preview</div>
+            <div style={{ fontSize: 12, color: "#767676" }}>Select a view type to see the preview</div>
           </div>
         )}
 

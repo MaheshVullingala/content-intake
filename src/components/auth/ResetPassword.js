@@ -56,7 +56,7 @@ export default function ResetPassword({ onDone }) {
       )}
 
       <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Rubik',sans-serif" }}>New Password</label>
+        <label style={{ fontSize: 12, color: "#646464", fontWeight: 500, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Rubik',sans-serif" }}>New Password</label>
         <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8}
           placeholder="Min. 8 characters"
           style={{ width: "100%", background: "#2e2a2a", border: "1px solid #3C3C3C", borderRadius: 8, padding: "0.7rem 0.9rem", fontSize: 14, color: "#F3F3F3", outline: "none", fontFamily: "'Rubik',sans-serif", boxSizing: "border-box" }}
@@ -65,7 +65,7 @@ export default function ResetPassword({ onDone }) {
       </div>
 
       <div style={{ marginBottom: 24 }}>
-        <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Rubik',sans-serif" }}>Confirm Password</label>
+        <label style={{ fontSize: 12, color: "#646464", fontWeight: 500, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Rubik',sans-serif" }}>Confirm Password</label>
         <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} required minLength={8}
           placeholder="Repeat password"
           style={{ width: "100%", background: "#2e2a2a", border: "1px solid #3C3C3C", borderRadius: 8, padding: "0.7rem 0.9rem", fontSize: 14, color: "#F3F3F3", outline: "none", fontFamily: "'Rubik',sans-serif", boxSizing: "border-box" }}

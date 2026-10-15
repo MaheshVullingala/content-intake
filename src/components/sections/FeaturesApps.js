@@ -10,13 +10,13 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled,
     <div className="field-wrap">
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
         <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
-        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+        {charLimit && <span style={{ fontSize: 12, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
       </div>
       {multiline
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize: 12, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -39,7 +39,7 @@ function ListView({ items = [], onChange, requestId = "draft" }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>List Items</h3>
-          <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{items.length}/20 items · Checkmark style</p>
+          <p style={{ fontSize: 12, color: "#767676", marginTop: 2 }}>{items.length}/20 items · Checkmark style</p>
         </div>
         <button type="button" onClick={addItem} disabled={items.length >= 20}
           style={{ background: items.length >= 20 ? "#F3F3F3" : "#181313", color: items.length >= 20 ? "#B5B5B5" : "#fff", border: "none", borderRadius: 8, padding: "0.45rem 1rem", fontSize: 13, fontWeight: 500, cursor: items.length >= 20 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
@@ -49,8 +49,8 @@ function ListView({ items = [], onChange, requestId = "draft" }) {
 
       {items.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-          <div style={{ fontSize: 24, marginBottom: 8, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaCheck /></div>
-          <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>No items yet. Add at least 1 list item.</div>
+          <div style={{ fontSize: 24, marginBottom: 8, display: "flex", justifyContent: "center", color: "#767676" }}><FaCheck /></div>
+          <div style={{ fontSize: 13, color: "#767676", marginBottom: 12 }}>No items yet. Add at least 1 list item.</div>
           <button type="button" onClick={addItem} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first item</button>
         </div>
       )}
@@ -62,14 +62,14 @@ function ListView({ items = [], onChange, requestId = "draft" }) {
             <input value={item.text} onChange={e => updateItem(item.id, e.target.value)}
               placeholder="Enter list item text..." maxLength={200}
               style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#181313", fontFamily: "'Rubik',sans-serif" }} />
-            <span style={{ fontSize: 10, color: (item.text||"").length > 170 ? "#c0392b" : "#B5B5B5", fontFamily: "monospace", flexShrink: 0 }}>{(item.text||"").length}/200</span>
+            <span style={{ fontSize: 12, color: (item.text||"").length > 170 ? "#c0392b" : "#B5B5B5", fontFamily: "monospace", flexShrink: 0 }}>{(item.text||"").length}/200</span>
             <div style={{ display: "flex", gap: 4 }}>
               <button type="button" onClick={() => moveItem(idx, -1)} disabled={idx === 0}
-                style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowUp size={9} /></button>
+                style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 12, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowUp size={9} /></button>
               <button type="button" onClick={() => moveItem(idx, 1)} disabled={idx === items.length - 1}
-                style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 11, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowDown size={9} /></button>
+                style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 12, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowDown size={9} /></button>
               <button type="button" onClick={() => removeItem(item.id)}
-                style={{ background: "#fff5f5", border: "1px solid #c0392b33", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 11, cursor: "pointer", color: "#c0392b", display: "flex" }}><FaTimes size={9} /></button>
+                style={{ background: "#fff5f5", border: "1px solid #c0392b33", borderRadius: 5, padding: "0.2rem 0.5rem", fontSize: 12, cursor: "pointer", color: "#c0392b", display: "flex" }}><FaTimes size={9} /></button>
             </div>
           </div>
         ))}
@@ -77,7 +77,7 @@ function ListView({ items = [], onChange, requestId = "draft" }) {
 
       {items.length > 0 && items.length < 20 && (
         <button type="button" onClick={addItem}
-          style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
+          style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#767676", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
           + Add another item ({items.length}/20)
@@ -104,7 +104,7 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>{orientation === "horizontal" ? "Horizontal" : "Vertical"} Tabs</h3>
-          <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{items.length}/10 tabs</p>
+          <p style={{ fontSize: 12, color: "#767676", marginTop: 2 }}>{items.length}/10 tabs</p>
         </div>
         <button type="button" onClick={addTab} disabled={items.length >= 10}
           style={{ background: items.length >= 10 ? "#F3F3F3" : "#181313", color: items.length >= 10 ? "#B5B5B5" : "#fff", border: "none", borderRadius: 8, padding: "0.45rem 1rem", fontSize: 13, fontWeight: 500, cursor: items.length >= 10 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
@@ -114,8 +114,8 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
 
       {items.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-          <div style={{ fontSize: 24, marginBottom: 8, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaFolderOpen /></div>
-          <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>No tabs yet. Add at least 1 tab.</div>
+          <div style={{ fontSize: 24, marginBottom: 8, display: "flex", justifyContent: "center", color: "#767676" }}><FaFolderOpen /></div>
+          <div style={{ fontSize: 13, color: "#767676", marginBottom: 12 }}>No tabs yet. Add at least 1 tab.</div>
           <button type="button" onClick={addTab} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first tab</button>
         </div>
       )}
@@ -125,16 +125,16 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
           <div key={tab.id} className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 12, borderBottom: "1px solid #F3F3F3" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#181313", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600 }}>{idx + 1}</div>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#181313", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600 }}>{idx + 1}</div>
                 <span style={{ fontSize: 13, fontWeight: 500, color: "#181313" }}>{tab.title || `Tab ${idx + 1}`}</span>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 <button type="button" onClick={() => moveTab(idx, -1)} disabled={idx === 0}
-                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowUp size={10} /></button>
+                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 12, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowUp size={10} /></button>
                 <button type="button" onClick={() => moveTab(idx, 1)} disabled={idx === items.length - 1}
-                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowDown size={10} /></button>
+                  style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 12, cursor: idx === items.length - 1 ? "not-allowed" : "pointer", color: idx === items.length - 1 ? "#B5B5B5" : "#646464", display: "flex" }}><FaArrowDown size={10} /></button>
                 <button type="button" onClick={() => removeTab(tab.id)}
-                  style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 11, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
+                  style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.55rem", fontSize: 12, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
               </div>
             </div>
 
@@ -142,7 +142,7 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
             <Field label="Description" required charLimit={200} value={tab.description} onChange={v => updateTab(tab.id, "description", v)} placeholder="Description for this tab..." multiline />
 
             <div style={{ paddingTop: 12, borderTop: "1px solid #F3F3F3", marginTop: 4 }}>
-              <div style={{ fontSize: 11, color: "#646464", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Image</div>
+              <div style={{ fontSize: 12, color: "#646464", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Image</div>
               <ImageField
                 label="Tab Image"
                 value={tab.image_ref || null}
@@ -156,7 +156,7 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
             </div>
 
             <div style={{ paddingTop: 12, borderTop: "1px solid #F3F3F3", marginTop: 4 }}>
-              <div style={{ fontSize: 11, color: "#646464", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>CTA</div>
+              <div style={{ fontSize: 12, color: "#646464", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>CTA</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <Field label="CTA Label" value={tab.cta_label} onChange={v => updateTab(tab.id, "cta_label", v)} placeholder="e.g. Learn More" />
                 <Field label="CTA Link" value={tab.cta_link} onChange={v => updateTab(tab.id, "cta_link", v)} placeholder="/products/..." />
@@ -168,7 +168,7 @@ function TabsView({ items = [], onChange, orientation, requestId = "draft" }) {
 
       {items.length > 0 && items.length < 10 && (
         <button type="button" onClick={addTab}
-          style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
+          style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#767676", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
           + Add another tab ({items.length}/10)
@@ -216,7 +216,7 @@ function TableView({ columns = [], rows = [], onUpdate }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Table</h3>
-          <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{columns.length}/6 columns · {rows.length}/20 rows</p>
+          <p style={{ fontSize: 12, color: "#767676", marginTop: 2 }}>{columns.length}/6 columns · {rows.length}/20 rows</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button type="button" onClick={addColumn} disabled={columns.length >= 6}
@@ -232,8 +232,8 @@ function TableView({ columns = [], rows = [], onUpdate }) {
 
       {columns.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-          <div style={{ fontSize: 24, marginBottom: 8, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaTable /></div>
-          <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>Start by adding columns, then add rows.</div>
+          <div style={{ fontSize: 24, marginBottom: 8, display: "flex", justifyContent: "center", color: "#767676" }}><FaTable /></div>
+          <div style={{ fontSize: 13, color: "#767676", marginBottom: 12 }}>Start by adding columns, then add rows.</div>
           <button type="button" onClick={addColumn} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first column</button>
         </div>
       )}
@@ -245,7 +245,7 @@ function TableView({ columns = [], rows = [], onUpdate }) {
             <thead>
               <tr style={{ background: "#181313" }}>
                 <th style={{ width: 36, padding: "0.5rem", borderRight: "1px solid #2e2a2a" }}>
-                  <span style={{ fontSize: 10, color: "#646464" }}>#</span>
+                  <span style={{ fontSize: 12, color: "#646464" }}>#</span>
                 </th>
                 {columns.map((col, idx) => (
                   <th key={col.id} style={{ padding: "0.5rem 0.75rem", borderRight: idx < columns.length - 1 ? "1px solid #2e2a2a" : "none" }}>
@@ -263,7 +263,7 @@ function TableView({ columns = [], rows = [], onUpdate }) {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={columns.length + 1} style={{ padding: "1.5rem", textAlign: "center", color: "#B5B5B5", fontSize: 13 }}>
+                  <td colSpan={columns.length + 1} style={{ padding: "1.5rem", textAlign: "center", color: "#767676", fontSize: 13 }}>
                     No rows yet. Click "+ Row" to add data.
                   </td>
                 </tr>
@@ -290,7 +290,7 @@ function TableView({ columns = [], rows = [], onUpdate }) {
 
       {columns.length > 0 && rows.length < 20 && (
         <button type="button" onClick={addRow}
-          style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
+          style={{ width: "100%", marginTop: 10, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "0.6rem", fontSize: 12, color: "#767676", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
           + Add row ({rows.length}/20)
@@ -362,7 +362,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
             {naButton}
           </div>
         </div>
-        <Field label="Label" value="FEATURES" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
+        <Field label="Label" value="FEATURES" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#767676", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required value={data.fa_impact || ""} onChange={v => upd("fa_impact", v)}
           placeholder="e.g. Transforming Semiconductor Design with Cadence Cerebrus AI Studio"
           multiline hint="Large heading for this section" />
@@ -379,7 +379,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
               style={{ background: data.fa_view_type === vt.key ? "#0f2744" : "#F9F9F9", border: `2px solid ${data.fa_view_type === vt.key ? "#1b5793" : "#E0E0E0"}`, borderRadius: 10, padding: "0.9rem 1rem", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
               <div style={{ fontSize: 22, marginBottom: 6, display: "flex", color: data.fa_view_type === vt.key ? "#fff" : "#181313" }}><vt.icon /></div>
               <div style={{ fontSize: 13, fontWeight: 600, color: data.fa_view_type === vt.key ? "#fff" : "#181313", marginBottom: 3 }}>{vt.label}</div>
-              <div style={{ fontSize: 11, color: "#B5B5B5", marginBottom: 6 }}>{vt.desc}</div>
+              <div style={{ fontSize: 12, color: "#767676", marginBottom: 6 }}>{vt.desc}</div>
               <div style={{ fontSize: 12, color: data.fa_view_type === vt.key ? "#3ec5cb" : "#1b5793", lineHeight: 1.6, borderTop: `1px solid ${data.fa_view_type === vt.key ? "#1b579344" : "#E0E0E0"}`, paddingTop: 8, marginTop: 4, fontWeight: 400 }}>{vt.when}</div>
             </button>
           ))}
@@ -420,7 +420,7 @@ export default function FeaturesApps({ data = {}, onChange, isNA, onToggleNA, ai
 
       {!data.fa_view_type && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 12, padding: "2rem", textAlign: "center" }}>
-          <div style={{ fontSize: 13, color: "#B5B5B5" }}>Select a view type above to start adding content</div>
+          <div style={{ fontSize: 13, color: "#767676" }}>Select a view type above to start adding content</div>
         </div>
       )}
     </div>

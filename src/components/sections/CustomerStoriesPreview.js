@@ -16,7 +16,7 @@ export default function CustomerStoriesPreview({ data = {}, attachments = [] }) 
   return (
     <div style={{ padding: "3.5rem 3.5rem",  background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif", textAlign: "center" }}>
       {/* Label */}
-      <div style={{ fontSize: 11, fontWeight: 600, color: cs_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 20 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: cs_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 20 }}>
         {cs_label || "ENDORSEMENTS"}
       </div>
 
@@ -44,14 +44,14 @@ export default function CustomerStoriesPreview({ data = {}, attachments = [] }) 
                 style={{ height: 32, maxWidth: 160, objectFit: "contain", margin: "0 auto 16px" }}
                 onError={e => { e.target.style.display = "none"; }} />
             ) : logoPlaceholder ? (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5", marginBottom: 16 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#F3F3F3", border: "1px dashed #E0E0E0", borderRadius: 6, padding: "6px 12px", fontSize: 12, color: "#767676", marginBottom: 16 }}>
                 <FaPalette size={10} /> {logoPlaceholder}
               </div>
             ) : null}
             <p style={{ fontSize: 17, color: "#3C3C3C", lineHeight: 1.8, fontStyle: "italic", marginBottom: 20, wordBreak: "break-word" }}>
               "{current.quote || "Customer quote will appear here..."}"
             </p>
-            <div style={{ fontSize: 13, color: "#B5B5B5" }}>
+            <div style={{ fontSize: 13, color: "#767676" }}>
               {current.customer || "Customer Name, Company"}
             </div>
           </div>

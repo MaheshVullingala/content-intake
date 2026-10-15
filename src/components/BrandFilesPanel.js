@@ -77,13 +77,13 @@ export default function BrandFilesPanel({ requestId, supabase }) {
               }}>
                 {f.file_name}
               </div>
-              <div style={{ fontSize: 10, color: "var(--color-silver)" }}>
+              <div style={{ fontSize: 12, color: "var(--color-silver)" }}>
                 {formatBytes(f.file_size)}
               </div>
             </div>
             <a
               href={f.public_url} target="_blank" rel="noopener noreferrer"
-              style={{ fontSize: 11, color: "var(--color-primary)", textDecoration: "none", flexShrink: 0 }}
+              style={{ fontSize: 12, color: "var(--color-primary)", textDecoration: "none", flexShrink: 0 }}
             >
               <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><FaArrowDown size={9} /> Download</span>
             </a>

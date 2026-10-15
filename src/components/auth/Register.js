@@ -89,7 +89,7 @@ export default function Register({ onSwitch }) {
   };
 
   const labelStyle = {
-    fontSize: 11, color: "#94a3b8", fontWeight: 600, display: "block",
+    fontSize: 12, color: "#94a3b8", fontWeight: 600, display: "block",
     marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.07em",
     fontFamily: "'Rubik',sans-serif",
   };
@@ -99,7 +99,7 @@ export default function Register({ onSwitch }) {
 
   return (
     <form onSubmit={handleRegister} style={{ width: "100%", maxWidth: 400, margin: "0 auto" }}>
-      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#1b5793", marginBottom: 6, fontFamily: "'Rubik',sans-serif" }}>Create Account</p>
+      <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#1b5793", marginBottom: 6, fontFamily: "'Rubik',sans-serif" }}>Create Account</p>
       <h2 style={{ fontSize: 22, fontWeight: 400, color: "#0f2744", marginBottom: 6, fontFamily: "'Rubik',sans-serif" }}>Register with your work email</h2>
       <div style={{ width: 36, height: 3, background: "#3ec5cb", borderRadius: 2, marginBottom: 22 }} />
 
@@ -143,7 +143,7 @@ export default function Register({ onSwitch }) {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 500, color: "#0f2744", display: "flex", alignItems: "center", gap: 6 }}><opt.icon size={12} /> {opt.label}</div>
-              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{opt.hint}</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{opt.hint}</div>
             </button>
           ))}
         </div>

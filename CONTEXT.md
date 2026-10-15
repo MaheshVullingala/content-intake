@@ -2088,3 +2088,9 @@ Manager request: pick card icons from the DAM list; request a new one if missing
 
 ## "Needs Brand Team involvement" checkbox removed (2026-10-15)
 Manager request. Removed from NewRequest step 1 (UI, state, load, payload). `requests.needs_brand` column kept (old rows); AdminTaskSetup's legacy hint is now inert.
+
+## UX pass: high-value items (2026-10-15)
+- Required-field feedback (NewRequest): `missingRequired()` replaces isValid; disabled "Preview & Submit" has a tooltip, a "To continue, complete:" link list under the tab bar, and red dots on tabs with missing required fields.
+- Readability: all inline font sizes 9-11px raised to 12px; small `#B5B5B5` text colors darkened to `#767676` (contrast).
+- Accessibility: new styles/accessibility.css (visible focus rings, reduced-motion), aria-labels on icon-only buttons with titles, keyboard support (role/tabIndex/Enter+Space) on the return-panel toggle and TagPicker options.
+- Responsive: `.split-grid` (form + live preview) stacks <=1024px, two-column field grids collapse <=720px, navbar tightens. Not browser-tested at real device sizes.

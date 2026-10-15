@@ -9,13 +9,13 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled,
     <div className="field-wrap">
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
         <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
-        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+        {charLimit && <span style={{ fontSize: 12, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
       </div>
       {multiline
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize: 12, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -49,7 +49,7 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
             {naButton}
           </div>
         </div>
-        <Field label="Label" value="RELATED CONTENT" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
+        <Field label="Label" value="RELATED CONTENT" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#767676", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required value={data.rc_impact || ""} onChange={v => upd("rc_impact", v)}
           placeholder='e.g. "Discover Inspiring Success Stories..."' multiline />
       </div>
@@ -57,7 +57,7 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Content Cards</h3>
-          <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{cards.length}/3 cards · 3 column layout</p>
+          <p style={{ fontSize: 12, color: "#767676", marginTop: 2 }}>{cards.length}/3 cards · 3 column layout</p>
         </div>
         <button onClick={addCard} disabled={cards.length >= 3}
           style={{ background: cards.length >= 3 ? "#F3F3F3" : "#181313", color: cards.length >= 3 ? "#B5B5B5" : "#fff", border: "none", borderRadius: 8, padding: "0.45rem 1rem", fontSize: 13, fontWeight: 500, cursor: cards.length >= 3 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
@@ -67,8 +67,8 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
 
       {cards.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-          <div style={{ fontSize: 28, marginBottom: 8, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaFileAlt /></div>
-          <div style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 12 }}>No cards yet. Add up to 3 content cards.</div>
+          <div style={{ fontSize: 28, marginBottom: 8, display: "flex", justifyContent: "center", color: "#767676" }}><FaFileAlt /></div>
+          <div style={{ fontSize: 13, color: "#767676", marginBottom: 12 }}>No cards yet. Add up to 3 content cards.</div>
           <button onClick={addCard} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 7, padding: "0.45rem 1rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>+ Add first card</button>
         </div>
       )}
@@ -78,11 +78,11 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
           <div key={card.id} className="card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 12, borderBottom: "1px solid #F3F3F3" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#181313", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600 }}>{idx + 1}</div>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#181313", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600 }}>{idx + 1}</div>
                 <span style={{ fontSize: 13, fontWeight: 500 }}>{card.title || `Card ${idx + 1}`}</span>
               </div>
               <button onClick={() => removeCard(card.id)}
-                style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.6rem", fontSize: 11, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
+                style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.25rem 0.6rem", fontSize: 12, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
             </div>
 
             {/* Category label */}
@@ -91,7 +91,7 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
                 {CARD_LABELS.map(l => (
                   <button key={l} type="button" onClick={() => updateCard(card.id, "label", l)}
-                    style={{ background: card.label === l ? "#181313" : "#F3F3F3", color: card.label === l ? "#fff" : "#646464", border: `1px solid ${card.label === l ? "#181313" : "#E0E0E0"}`, borderRadius: 20, padding: "3px 12px", fontSize: 11, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+                    style={{ background: card.label === l ? "#181313" : "#F3F3F3", color: card.label === l ? "#fff" : "#646464", border: `1px solid ${card.label === l ? "#181313" : "#E0E0E0"}`, borderRadius: 20, padding: "3px 12px", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
                     {l}
                   </button>
                 ))}
@@ -102,7 +102,7 @@ export default function RelatedContent({ data = {}, onChange, isNA, onToggleNA, 
               )}
               {!CARD_LABELS.includes(card.label) && (
                 <button onClick={() => updateCard(card.id, "label", " ")}
-                  style={{ marginTop: 6, background: "none", border: "1px dashed #E0E0E0", borderRadius: 6, padding: "0.3rem 0.8rem", fontSize: 11, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
+                  style={{ marginTop: 6, background: "none", border: "1px dashed #E0E0E0", borderRadius: 6, padding: "0.3rem 0.8rem", fontSize: 12, color: "#767676", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
                   + Custom tag
                 </button>
               )}

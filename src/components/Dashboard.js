@@ -308,7 +308,7 @@ export default function Dashboard({ go, user }) {
             <p style={{ fontSize: 13, color: "#646464", marginBottom: 6, lineHeight: 1.6 }}>You are about to permanently delete:</p>
             <div style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.7rem 1rem", marginBottom: 20 }}>
               <div style={{ fontSize: 14, fontWeight: 500 }}>{deleteModal.page_title || "Untitled"}</div>
-              <div style={{ fontSize: 12, color: "#B5B5B5", marginTop: 3 }}>{deleteModal.page_type} · Draft</div>
+              <div style={{ fontSize: 12, color: "#767676", marginTop: 3 }}>{deleteModal.page_type} · Draft</div>
             </div>
             <p style={{ fontSize: 12, color: "#c0392b", marginBottom: 20, display: "flex", alignItems: "center", gap: 6 }}><FaExclamationTriangle size={11} /> This action cannot be undone.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -331,7 +331,7 @@ export default function Dashboard({ go, user }) {
           <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#3C3C3C", display: "flex", alignItems: "center", justifyContent: "center" }}>{m?.icon && <m.icon size={18} color="#fff" />}</div>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 500, margin: 0 }}>Welcome back, {user.name}</h1>
-            <p style={{ color: "#B5B5B5", fontSize: 13, margin: 0 }}>{m.label}{isLead ? " · Team Lead" : ""} · {user.department}</p>
+            <p style={{ color: "#767676", fontSize: 13, margin: 0 }}>{m.label}{isLead ? " · Team Lead" : ""} · {user.department}</p>
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -374,7 +374,7 @@ export default function Dashboard({ go, user }) {
                       transition: "all 0.15s", whiteSpace: "nowrap",
                     }}>
                     <TabIcon size={12} /> {tabConfig[t].label}
-                    <span style={{ background: isActive ? "#1b5793" : "#E0E0E0", color: isActive ? "#fff" : "#646464", borderRadius: 20, padding: "2px 9px", fontSize: 11, fontWeight: 600, minWidth: 22, textAlign: "center" }}>{count}</span>
+                    <span style={{ background: isActive ? "#1b5793" : "#E0E0E0", color: isActive ? "#fff" : "#646464", borderRadius: 20, padding: "2px 9px", fontSize: 12, fontWeight: 600, minWidth: 22, textAlign: "center" }}>{count}</span>
                   </button>
                 );
 
@@ -391,7 +391,7 @@ export default function Dashboard({ go, user }) {
                           position: "absolute", top: 8, right: 4,
                           background: "#c0392b", color: "#fff", border: "2px solid #fff",
                           borderRadius: "50%", width: 18, height: 18,
-                          fontSize: 10, fontWeight: 700, lineHeight: 1,
+                          fontSize: 12, fontWeight: 700, lineHeight: 1,
                           display: "flex", alignItems: "center", justifyContent: "center",
                           cursor: "pointer", padding: 0,
                           animation: "attnPulse 1.8s ease-in-out infinite",
@@ -417,7 +417,7 @@ export default function Dashboard({ go, user }) {
                             </span>
                             <button onClick={() => setShowAttention(false)}
                               style={{ background: "none", border: "none", cursor: "pointer",
-                                       fontSize: 16, color: "#B5B5B5", lineHeight: 1, padding: 0, display: "flex" }}>
+                                       fontSize: 16, color: "#767676", lineHeight: 1, padding: 0, display: "flex" }}>
                               <FaTimes size={13} />
                             </button>
                           </div>
@@ -441,7 +441,7 @@ export default function Dashboard({ go, user }) {
                                                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                     {r.page_title || "Untitled"}
                                   </div>
-                                  <div style={{ fontSize: 11, color: borderColor, fontWeight: 500 }}>
+                                  <div style={{ fontSize: 12, color: borderColor, fontWeight: 500 }}>
                                     {reason?.text}
                                   </div>
                                 </div>
@@ -477,7 +477,7 @@ export default function Dashboard({ go, user }) {
             {/* Search + filters */}
             <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 200, paddingTop: 8, paddingBottom: 8 }}>
               <div style={{ position: "relative", flex: 1 }}>
-                <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#B5B5B5", display: "flex" }}><FaSearch size={12} /></span>
+                <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#767676", display: "flex" }}><FaSearch size={12} /></span>
                 <input value={search} onChange={e => setSearch(e.target.value)}
                   placeholder={user.role === "stakeholder" ? "Search by title or URL..." : "Search by title, URL or stakeholder..."}
                   style={{ width: "100%", paddingLeft: 36, paddingRight: 10, paddingTop: 10, paddingBottom: 10, border: "1px solid #cddaed", borderRadius: 7, fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313", outline: "none", background: "rgba(255,255,255,0.8)" }} />
@@ -506,7 +506,7 @@ export default function Dashboard({ go, user }) {
                   <FaTimes size={10} /> Clear
                 </button>
               )}
-              <span style={{ color: "#B5B5B5", fontSize: 12, whiteSpace: "nowrap" }}>{displayRows.length} shown</span>
+              <span style={{ color: "#767676", fontSize: 12, whiteSpace: "nowrap" }}>{displayRows.length} shown</span>
             </div>
           </div>
         </div>
@@ -517,7 +517,7 @@ export default function Dashboard({ go, user }) {
         ) : displayRows.length === 0 ? (
           <div style={{ padding: "3.5rem", textAlign: "center" }}>
             <div style={{ fontSize: 36, marginBottom: 12, display: "flex", justifyContent: "center", color: "#D0D0D0" }}>{hasActiveFilters ? <FaSearch /> : <FaClipboardList />}</div>
-            <p style={{ color: "#B5B5B5", fontSize: 14 }}>
+            <p style={{ color: "#767676", fontSize: 14 }}>
               {hasActiveFilters ? "No requests match your search or filters." :
                tab === "tab1" && user.role === "stakeholder" ? "No drafts yet." :
                tab === "tab1" && !isLead ? "No requests assigned to you yet." :
@@ -534,7 +534,7 @@ export default function Dashboard({ go, user }) {
             <thead>
               <tr style={{ background: "#F9F9F9" }}>
                 {["Title", "Page Type", "Status", "Assigned To", "Submitted By", "Last Updated", "Actions"].map(h => (
-                  <th key={h} style={{ padding: "0.7rem 1rem", textAlign: "left", fontSize: 10, color: "#B5B5B5", fontWeight: 500, letterSpacing: "0.07em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3" }}>{h}</th>
+                  <th key={h} style={{ padding: "0.7rem 1rem", textAlign: "left", fontSize: 12, color: "#767676", fontWeight: 500, letterSpacing: "0.07em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -563,21 +563,21 @@ export default function Dashboard({ go, user }) {
                   <tr key={req.id} style={{ borderBottom: i < displayRows.length - 1 ? "1px solid #F9F9F9" : "none", background: rowBg, borderLeft: req.priority === "urgent" ? "3px solid #c0392b" : "none" }}>
                     <td style={{ padding: "0.9rem 1rem", fontSize: 14, color: "#181313" }}>
                       {req.request_display_id && (
-                        <div style={{ fontSize: 10, fontWeight: 700, fontFamily: "monospace", color: "#3ec5cb", marginBottom: 2 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, fontFamily: "monospace", color: "#3ec5cb", marginBottom: 2 }}>
                           {req.request_display_id}
                         </div>
                       )}
-                      {req.page_title || <span style={{ color: "#B5B5B5", fontStyle: "italic" }}>Untitled</span>}
+                      {req.page_title || <span style={{ color: "#767676", fontStyle: "italic" }}>Untitled</span>}
                       {req.hasPendingChange && (
                         <span
                           title="Stakeholder proposed a content change — open the request to review and approve/reject it"
-                          style={{ marginLeft: 8, fontSize: 10, background: "#faf5ff", color: "#9333ea", border: "1px solid #9333ea33", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: "help", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          style={{ marginLeft: 8, fontSize: 12, background: "#faf5ff", color: "#9333ea", border: "1px solid #9333ea33", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: "help", display: "inline-flex", alignItems: "center", gap: 4 }}>
                           <FaFileAlt size={9} /> CONTENT UPDATED
                         </span>
                       )}
-                      {isDraft && !isReturnedDraft && <span style={{ marginLeft: 8, fontSize: 10, background: "#F3F3F3", color: "#B5B5B5", border: "1px solid #E0E0E0", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>DRAFT</span>}
+                      {isDraft && !isReturnedDraft && <span style={{ marginLeft: 8, fontSize: 12, background: "#F3F3F3", color: "#767676", border: "1px solid #E0E0E0", borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>DRAFT</span>}
                       {isReturnedDraft && (
-                        <span style={{ marginLeft: 8, fontSize: 10, background: isDesignQuery ? "#eff6ff" : "#fff3cd", color: isDesignQuery ? "#1b5793" : "#856404", border: `1px solid ${isDesignQuery ? "#3b82f633" : "#ffc10744"}`, borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>
+                        <span style={{ marginLeft: 8, fontSize: 12, background: isDesignQuery ? "#eff6ff" : "#fff3cd", color: isDesignQuery ? "#1b5793" : "#856404", border: `1px solid ${isDesignQuery ? "#3b82f633" : "#ffc10744"}`, borderRadius: 4, padding: "1px 6px", fontWeight: 500 }}>
                           {isDesignQuery ? "DESIGN QUERY" : "RETURNED"}
                         </span>
                       )}
@@ -588,7 +588,7 @@ export default function Dashboard({ go, user }) {
                             : req.stakeholder_priority_reason
                             ? `Stakeholder reason: ${req.stakeholder_priority_reason}`
                             : undefined}
-                          style={{ marginLeft: 8, fontSize: 10, background: "#fef2f2", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: (req.priority_override_reason || req.stakeholder_priority_reason) ? "help" : "default" }}>URGENT</span>
+                          style={{ marginLeft: 8, fontSize: 12, background: "#fef2f2", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: (req.priority_override_reason || req.stakeholder_priority_reason) ? "help" : "default" }}>URGENT</span>
                       )}
                       {req.priority === "high" && (
                         <span
@@ -597,17 +597,17 @@ export default function Dashboard({ go, user }) {
                             : req.stakeholder_priority_reason
                             ? `Stakeholder reason: ${req.stakeholder_priority_reason}`
                             : undefined}
-                          style={{ marginLeft: 8, fontSize: 10, background: "#fffbeb", color: "#d97706", border: "1px solid #d9770633", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: (req.priority_override_reason || req.stakeholder_priority_reason) ? "help" : "default" }}>HIGH</span>
+                          style={{ marginLeft: 8, fontSize: 12, background: "#fffbeb", color: "#d97706", border: "1px solid #d9770633", borderRadius: 4, padding: "1px 6px", fontWeight: 600, cursor: (req.priority_override_reason || req.stakeholder_priority_reason) ? "help" : "default" }}>HIGH</span>
                       )}
                     </td>
                     <td style={{ padding: "0.9rem 1rem" }}>
-                      <span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 11, fontWeight: 500, borderRadius: 4, padding: "3px 9px", border: "1px solid #E0E0E0" }}>{req.page_type}</span>
+                      <span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 12, fontWeight: 500, borderRadius: 4, padding: "3px 9px", border: "1px solid #E0E0E0" }}>{req.page_type}</span>
                     </td>
                     <td style={{ padding: "0.9rem 1rem" }}>
                       {isNewWorkflow ? (
-                        <span style={{ background: osMeta.bg, color: osMeta.color, border: `1px solid ${osMeta.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 500 }}>{osMeta.label}</span>
+                        <span style={{ background: osMeta.bg, color: osMeta.color, border: `1px solid ${osMeta.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 12, fontWeight: 500 }}>{osMeta.label}</span>
                       ) : (
-                        <span style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 11, fontWeight: 500 }}>{s.label}</span>
+                        <span style={{ background: s.bg, color: s.color, border: `1px solid ${s.color}44`, borderRadius: 20, padding: "3px 11px", fontSize: 12, fontWeight: 500 }}>{s.label}</span>
                       )}
                       {isNewWorkflow && req.taskProgress && req.taskProgress.length > 0 && (
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 5 }}>
@@ -628,7 +628,7 @@ export default function Dashboard({ go, user }) {
                               );
                             })}
                           </div>
-                          <span style={{ fontSize: 10, color: "#B5B5B5" }}>
+                          <span style={{ fontSize: 12, color: "#767676" }}>
                             {req.taskProgress.filter(t => t.status === "completed").length} of {req.taskProgress.length} tasks complete
                           </span>
                         </div>
@@ -650,11 +650,11 @@ export default function Dashboard({ go, user }) {
                           {isAssignedToMe ? <><FaUserCheck size={10} /> Me</> : assigneeName}
                         </span>
                       ) : (
-                        <span style={{ fontSize: 12, color: "#B5B5B5" }}>—</span>
+                        <span style={{ fontSize: 12, color: "#767676" }}>—</span>
                       )}
                     </td>
                     <td style={{ padding: "0.9rem 1rem", fontSize: 13, color: "#646464" }}>{req.users?.name || "—"}</td>
-                    <td style={{ padding: "0.9rem 1rem", fontSize: 12, color: "#B5B5B5" }}>
+                    <td style={{ padding: "0.9rem 1rem", fontSize: 12, color: "#767676" }}>
                       {new Date(req.updated_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                       {req.due_date && (() => {
                         const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -663,7 +663,7 @@ export default function Dashboard({ go, user }) {
                         const isDueSoon = !isOverdue && (due - today) / 86400000 <= 2;
                         if (!isOverdue && !isDueSoon) return null;
                         return (
-                          <div style={{ marginTop: 3, fontSize: 11, color: isOverdue ? "#c0392b" : "#d97706", display: "flex", alignItems: "center", gap: 4 }}>
+                          <div style={{ marginTop: 3, fontSize: 12, color: isOverdue ? "#c0392b" : "#d97706", display: "flex", alignItems: "center", gap: 4 }}>
                             <FaClock size={10} /> {isOverdue ? "Overdue" : "Due soon"} · {due.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
                           </div>
                         );
@@ -675,7 +675,7 @@ export default function Dashboard({ go, user }) {
                           <button onClick={() => go("detail", req.id)}
                             style={{ background: isDesignQuery ? "#eff6ff" : "#fff3cd", color: isDesignQuery ? "#1b5793" : "#856404", border: `1px solid ${isDesignQuery ? "#3b82f666" : "#ffc10766"}`, borderRadius: 6, padding: "0.4rem 0.9rem", cursor: "pointer", fontSize: 12, fontFamily: "'Rubik',sans-serif", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
                             {isDesignQuery ? <><FaComments size={11} /> Design Query</> : <><FaUndo size={11} /> Comments</>}
-                            <span style={{ background: "#c0392b", color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 700 }}>{returnInfo.count}</span>
+                            <span style={{ background: "#c0392b", color: "#fff", borderRadius: 10, padding: "1px 6px", fontSize: 12, fontWeight: 700 }}>{returnInfo.count}</span>
                           </button>
                         )}
                         {isDraft && !isReturnedDraft && isOwner && (
@@ -711,7 +711,7 @@ export default function Dashboard({ go, user }) {
                             {act && isAssignedToMe && req.status === "pending_approval" ? <><FaCheckCircle size={11} /> Sign off</> :
                              act && isAssignedToMe ? <>Review <FaArrowRight size={10} /></> : "View"}
                             {isLead && !isAssignedToMe && req.status === myStage && (comments_count => comments_count > 0 ? (
-                              <span style={{ background: "#e8f2fb", color: "#1b5793", borderRadius: 10, padding: "1px 6px", fontSize: 10, fontWeight: 600, display: "flex" }}>
+                              <span style={{ background: "#e8f2fb", color: "#1b5793", borderRadius: 10, padding: "1px 6px", fontSize: 12, fontWeight: 600, display: "flex" }}>
                                 <FaComments size={9} />
                               </span>
                             ) : null)(req.comment_count || 0)}

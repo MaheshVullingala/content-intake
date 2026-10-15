@@ -93,7 +93,7 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
             position: "absolute", top: -5, right: -5,
             background: "#c0392b", color: "#fff",
             borderRadius: 999, minWidth: 16, height: 16,
-            fontSize: 10, fontWeight: 700,
+            fontSize: 12, fontWeight: 700,
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: "0 3px", fontFamily: "'Rubik',sans-serif",
           }}>
@@ -112,12 +112,12 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#181313", display: "flex", alignItems: "center", gap: 6 }}><FaCommentDots size={12} /> {label}</span>
-            <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#B5B5B5", display: "flex", alignItems: "center" }}><FaTimes size={12} /></button>
+            <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#767676", display: "flex", alignItems: "center" }}><FaTimes size={12} /></button>
           </div>
 
           <div style={{ maxHeight: 180, overflowY: "auto", marginBottom: 8 }}>
             {comments.length === 0 ? (
-              <p style={{ fontSize: 12, color: "#B5B5B5", margin: "4px 0" }}>No comments yet on this section.</p>
+              <p style={{ fontSize: 12, color: "#767676", margin: "4px 0" }}>No comments yet on this section.</p>
             ) : (
               comments.map(c => {
                 const meta = ROLE_META[c.user_role] || {};
@@ -129,8 +129,8 @@ export default function SectionCommentBubble({ sectionKey, label, comments = [],
                     border: "1px solid #F0F0F0",
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{meta.icon && <meta.icon size={10} />} {c.user_name}</span>
-                      <span style={{ fontSize: 10, color: "#B5B5B5", marginLeft: "auto" }}>{formatTime(c.created_at)}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{meta.icon && <meta.icon size={10} />} {c.user_name}</span>
+                      <span style={{ fontSize: 12, color: "#767676", marginLeft: "auto" }}>{formatTime(c.created_at)}</span>
                     </div>
                     <div style={{ fontSize: 12, whiteSpace: "pre-wrap", color: "#3C3C3C" }}>{renderWithMentions(c.text, c.mentioned_user_ids, users)}</div>
                   </div>

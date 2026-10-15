@@ -131,7 +131,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", pageC
             <span style={{ fontSize: 16, display: "flex" }}><config.icon /></span>
             <div>
               <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>AI Assist — {config.label}</div>
-              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 11 }}>Cadence brand voice</div>
+              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 12 }}>Cadence brand voice</div>
             </div>
           </div>
           <button type="button" onClick={close}
@@ -184,7 +184,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", pageC
                       <span style={{ fontSize: 16, display: "flex" }}><FaMagic /></span>
                       <div>
                         <div style={{ fontWeight: 600 }}>Improve what I wrote</div>
-                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 1 }}>AI rewrites it in Cadence brand voice</div>
+                        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 1 }}>AI rewrites it in Cadence brand voice</div>
                       </div>
                     </button>
 
@@ -193,7 +193,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", pageC
                       <span style={{ fontSize: 16, display: "flex" }}><FaSync /></span>
                       <div>
                         <div style={{ fontWeight: 600 }}>Start fresh with new direction</div>
-                        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 1 }}>Tell AI what you want to say instead</div>
+                        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 1 }}>Tell AI what you want to say instead</div>
                       </div>
                     </button>
                   </div>
@@ -261,7 +261,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", pageC
               <div style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>
                 {mode === "from_page" ? "Reading your page content..." : "Writing in Cadence voice..."}
               </div>
-              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>This takes a few seconds</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>This takes a few seconds</div>
               <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
             </div>
           )}
@@ -278,10 +278,10 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", pageC
           {result && !loading && (
             <>
               <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: "0.75rem 0.9rem", marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}><FaCheck size={10} /> AI Generated Content</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}><FaCheck size={10} /> AI Generated Content</div>
                 {Object.entries(result).map(([key, val]) => (
                   <div key={key} style={{ marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+                    <div style={{ fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
                       {key.replace(/_/g, " ")}
                     </div>
                     <div style={{ fontSize: 12, color: "#0f172a", lineHeight: 1.5, wordBreak: "break-word" }}>
@@ -313,7 +313,7 @@ export default function SectionAIAssist({ sectionKey, currentContent = "", pageC
                   with their own wording instead of applying/redoing it. */}
               {usePageContent && (
                 <button type="button" onClick={() => { setResult(null); setMode("direction"); }}
-                  style={{ width: "100%", marginTop: 10, background: "none", border: "none", color: "#94a3b8", fontSize: 11, textDecoration: "underline", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
+                  style={{ width: "100%", marginTop: 10, background: "none", border: "none", color: "#94a3b8", fontSize: 12, textDecoration: "underline", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
                   Write SEO content myself instead
                 </button>
               )}

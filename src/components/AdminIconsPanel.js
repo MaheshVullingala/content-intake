@@ -106,7 +106,7 @@ export default function AdminIconsPanel() {
         </div>
         {msg && <div style={{ fontSize: 13, color: "#181313", background: "#F3F3F3", borderRadius: 8, padding: "0.5rem 0.8rem", marginBottom: 10 }}>{msg}</div>}
         <div style={{ position: "relative", maxWidth: 320 }}>
-          <span style={{ position: "absolute", left: 11, top: 11, color: "#B5B5B5", display: "flex" }}><FaSearch size={12} /></span>
+          <span style={{ position: "absolute", left: 11, top: 11, color: "#767676", display: "flex" }}><FaSearch size={12} /></span>
           <input className="input" value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter icons..." style={{ paddingLeft: 30 }} />
         </div>
       </div>

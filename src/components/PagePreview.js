@@ -218,7 +218,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
           color: isActive ? "#fff" : "#1b5793",
           border: `1.5px solid ${isActive ? "#1b5793" : "#1b5793"}`,
           borderRadius: 7, padding: "4px 10px",
-          fontSize: 11, fontWeight: 600, cursor: "pointer",
+          fontSize: 12, fontWeight: 600, cursor: "pointer",
           fontFamily: "'Rubik',sans-serif",
           boxShadow: "0 2px 6px rgba(0,0,0,0.18)",
           // Was opacity:0 when neither hovered nor active -- invisible with
@@ -301,7 +301,7 @@ export default function PagePreview({ req = {}, pageType = "Product", activeSect
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
               {banner_tags.map(t => (
                 <span key={t.id} style={{
-                  fontSize: 11, padding: "3px 10px", borderRadius: 20,
+                  fontSize: 12, padding: "3px 10px", borderRadius: 20,
                   background: "rgba(255,255,255,0.15)", color: "#fff",
                   border: "1px solid rgba(255,255,255,0.35)",
                 }}>

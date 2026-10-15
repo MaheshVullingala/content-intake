@@ -467,7 +467,7 @@ Return this exact format:
               View
             </a>
             {f.uploaded_by === user.id && canDelete && (
-              <button
+              <button aria-label="Delete file"
                 onClick={() => handleDeleteFile(f)}
                 title="Delete file"
                 style={{
@@ -764,7 +764,7 @@ Return this exact format:
                     <div style={{ display: "flex", justifyContent: "space-between",
                                   alignItems: "center", marginBottom: 4 }}>
                       <label className="field-label" style={{ margin: 0 }}>{f.label}</label>
-                      <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "monospace",
+                      <span style={{ fontSize: 12, fontWeight: 600, fontFamily: "monospace",
                                      color: "var(--color-silver)" }}>
                         {kwCount} term{kwCount !== 1 ? "s" : ""}
                       </span>
@@ -786,7 +786,7 @@ Return this exact format:
                                 alignItems: "center", marginBottom: 4 }}>
                     <label className="field-label" style={{ margin: 0 }}>{f.label}</label>
                     <span style={{
-                      fontSize: 11, fontWeight: 600, fontFamily: "monospace",
+                      fontSize: 12, fontWeight: 600, fontFamily: "monospace",
                       color: inRange ? "var(--color-success)" : "#d97706",
                     }}>
                       {len}/{f.max}
@@ -932,7 +932,7 @@ Return this exact format:
                       <span style={{ flex: 1, fontSize: "var(--text-xs)", color: "var(--color-success)", display: "flex", alignItems: "center", gap: 4 }}>
                         <FaCheck size={9} /> Mapped
                       </span>
-                      <button
+                      <button aria-label="Remove mapped image"
                         onClick={() => deleteMappedImage(mapped)}
                         title="Remove mapped image"
                         style={{ background: "none", border: "none", cursor: "pointer",

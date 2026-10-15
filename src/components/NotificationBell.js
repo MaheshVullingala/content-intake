@@ -72,7 +72,7 @@ export default function NotificationBell({ user, supabase, go }) {
           <span style={{
             position: "absolute", top: 1, right: 1,
             background: "#dc2626", color: "#fff",
-            fontSize: 9, fontWeight: 700,
+            fontSize: 12, fontWeight: 700,
             fontFamily: "'Rubik', sans-serif",
             borderRadius: 10, padding: "0 3px",
             minWidth: 14, height: 14,
@@ -120,7 +120,7 @@ export default function NotificationBell({ user, supabase, go }) {
                   onClick={markAllRead}
                   style={{
                     background: "none", border: "none", color: "#3ec5cb",
-                    fontSize: 11, cursor: "pointer",
+                    fontSize: 12, cursor: "pointer",
                     fontFamily: "'Rubik', sans-serif", padding: 0,
                   }}
                 >
@@ -178,7 +178,7 @@ export default function NotificationBell({ user, supabase, go }) {
                         </div>
                         {n.message && (
                           <div style={{
-                            fontSize: 11, color: "#64748b",
+                            fontSize: 12, color: "#64748b",
                             fontFamily: "'Rubik', sans-serif",
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
@@ -189,7 +189,7 @@ export default function NotificationBell({ user, supabase, go }) {
                           </div>
                         )}
                         <div style={{
-                          fontSize: 10, color: "#334155",
+                          fontSize: 12, color: "#334155",
                           fontFamily: "'Rubik', sans-serif",
                           marginTop: 4,
                         }}>

@@ -22,7 +22,7 @@ export default function IconField({ value = null, onChange, cardTitle = "", fiel
       {isLibrary ? (
         <div style={{ display: "flex", alignItems: "center", gap: 12, border: "1px solid #E0E0E0", borderRadius: 10, padding: "8px 12px", background: "#fff" }}>
           <img src={value.url} alt={value.value} style={{ width: 40, height: 40, objectFit: "contain" }} />
-          <div style={{ flex: 1, fontSize: 13, color: "#181313" }}>{value.value}<div style={{ fontSize: 11, color: "#646464" }}>From icon library</div></div>
+          <div style={{ flex: 1, fontSize: 13, color: "#181313" }}>{value.value}<div style={{ fontSize: 12, color: "#646464" }}>From icon library</div></div>
           <button className="btn-ghost" onClick={() => setPicking(true)}>Change</button>
           <button onClick={() => onChange(null)} title="Remove icon" aria-label="Remove icon" style={{ background: "none", border: "none", cursor: "pointer", color: "#c0392b", display: "flex" }}><FaTimes size={13} /></button>
         </div>

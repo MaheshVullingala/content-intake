@@ -14,14 +14,14 @@ export default function OthersPreview({ data = {} }) {
   return (
     <div style={{ background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       <div className="section-container">
-        <div style={{ fontSize: 11, fontWeight: 600, color: "#646464", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "#646464", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
           OTHERS
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
           {oth_items.map((item, i) => (
             <div key={item.id || i} style={{ border: "1px solid #E0E0E0", borderRadius: 10, padding: "1.75rem" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: "#B5B5B5", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#767676", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
                 {item.label || `Custom Section ${i + 1}`}
               </div>
 

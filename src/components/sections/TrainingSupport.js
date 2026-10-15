@@ -40,13 +40,13 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled,
     <div className="field-wrap">
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
         <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
-        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+        {charLimit && <span style={{ fontSize: 12, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
       </div>
       {multiline
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize: 12, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -110,7 +110,7 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
             <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
               <button className="btn-primary" onClick={confirmUnlock} disabled={draftReason.trim().length < MIN_JUSTIFICATION}>Unlock for editing</button>
               <button className="btn-ghost" onClick={() => { setAsking(false); setDraftReason(""); }}>Cancel</button>
-              <span style={{ fontSize: 11, color: "#B5B5B5" }}>At least {MIN_JUSTIFICATION} characters</span>
+              <span style={{ fontSize: 12, color: "#767676" }}>At least {MIN_JUSTIFICATION} characters</span>
             </div>
           </div>
         )}
@@ -131,7 +131,7 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
             {naButton}
           </div>
         </div>
-        <Field label="Label" value="TRAINING AND SUPPORT" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
+        <Field label="Label" value="TRAINING AND SUPPORT" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#767676", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" value={d.ts_impact} onChange={v => upd("ts_impact", v)} placeholder="Need Help?" {...lock} style={lockStyle} />
       </div>
 
@@ -139,7 +139,7 @@ export default function TrainingSupport({ data = {}, onChange, isNA, onToggleNA,
       {[1, 2, 3].map(n => (
         <div key={n} className="card" style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: "#181313", marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid #F3F3F3", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#181313", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600 }}>{n}</div>
+            <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#181313", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600 }}>{n}</div>
             {d[`ts_card${n}_title`] || `Card ${n}`}
           </div>
 

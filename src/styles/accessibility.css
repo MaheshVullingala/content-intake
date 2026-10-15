@@ -1,0 +1,30 @@
+/* Accessibility + responsive layer (added with the UX pass). */
+
+/* Visible keyboard focus everywhere (inputs previously had outline:none). */
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible, summary:focus-visible {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+}
+.input:focus-visible, .textarea:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.25);
+}
+
+/* Tablet: form and live preview stack instead of sitting side by side. */
+@media (max-width: 1024px) {
+  .split-grid { grid-template-columns: 1fr !important; }
+  .split-grid > div { position: static !important; height: auto !important; overflow: visible !important; }
+  .app-nav { padding: 0 1rem !important; }
+  .app-nav-right { gap: 10px !important; overflow-x: auto; }
+}
+
+/* Phone: two-column field grids become one column. */
+@media (max-width: 720px) {
+  [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+  .app-nav-right button { white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

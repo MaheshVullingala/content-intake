@@ -122,7 +122,7 @@ function CharLimitsPanel({ user }) {
 
   const sections = [...new Set(CHAR_LIMIT_FIELDS.map(f => f.section))];
 
-  if (loading) return <div style={{ padding: "2rem", color: "#B5B5B5" }}>Loading limits...</div>;
+  if (loading) return <div style={{ padding: "2rem", color: "#767676" }}>Loading limits...</div>;
 
   return (
     <div>
@@ -151,8 +151,8 @@ function CharLimitsPanel({ user }) {
                     onBlur={e => saveLimit(field.key, e.target.value)}
                     style={{ width: 70, padding: "0.35rem 0.5rem", border: "1px solid #E0E0E0", borderRadius: 6, fontSize: 13, fontFamily: "'Rubik',sans-serif", textAlign: "center", color: "#181313", background: "#F9F9F9" }}
                   />
-                  {saving === field.key && <span style={{ fontSize: 10, color: "#94a3b8" }}>Saving...</span>}
-                  {limits[field.key] !== undefined && saving !== field.key && <span style={{ fontSize: 10, color: "#3ec5cb", display: "inline-flex" }}><FaCheck size={9} /></span>}
+                  {saving === field.key && <span style={{ fontSize: 12, color: "#94a3b8" }}>Saving...</span>}
+                  {limits[field.key] !== undefined && saving !== field.key && <span style={{ fontSize: 12, color: "#3ec5cb", display: "inline-flex" }}><FaCheck size={9} /></span>}
                 </div>
               </div>
             ))}
@@ -382,7 +382,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
     <div className="fade-in" style={{ fontFamily: "'Rubik', sans-serif" }}>
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>Admin Panel</h1>
-        <p style={{ color: "#B5B5B5", fontSize: 14 }}>Monitor requests, manage users, assign roles and permissions</p>
+        <p style={{ color: "#767676", fontSize: 14 }}>Monitor requests, manage users, assign roles and permissions</p>
       </div>
 
       {/* Pending users alert */}
@@ -408,7 +408,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           <div key={s.key} style={{ background: "#fff", border: "1px solid #E0E0E0", borderRadius: 12, padding: "1rem 1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ fontSize: 26, fontWeight: 500, color: s.count > 0 ? "#181313" : "#B5B5B5" }}>{s.count}</div>
-              <div style={{ fontSize: 12, color: "#B5B5B5", marginTop: 2 }}>{s.label}</div>
+              <div style={{ fontSize: 12, color: "#767676", marginTop: 2 }}>{s.label}</div>
             </div>
             <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#F3F3F3", border: "1px solid #E0E0E0", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <div style={{ width: 10, height: 10, borderRadius: "50%", background: s.count > 0 ? "#181313" : "#E0E0E0" }} />
@@ -425,7 +425,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
       </div>
 
       {loading ? (
-        <div style={{ padding: "2rem", textAlign: "center", color: "#B5B5B5" }}>Loading...</div>
+        <div style={{ padding: "2rem", textAlign: "center", color: "#767676" }}>Loading...</div>
       ) : (
         <>
           {/* Requests tab */}
@@ -435,7 +435,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                 <thead>
                   <tr style={{ background: "#F9F9F9" }}>
                     {["Title","Type","Status","Submitted By","Assigned To","Updated"].map(h => (
-                      <th key={h} style={{ padding: "0.65rem 1rem", textAlign: "left", fontSize: 10, color: "#B5B5B5", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3" }}>{h}</th>
+                      <th key={h} style={{ padding: "0.65rem 1rem", textAlign: "left", fontSize: 12, color: "#767676", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -445,8 +445,8 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                     return (
                       <tr key={r.id} style={{ borderBottom: i < requests.length - 1 ? "1px solid #F9F9F9" : "none" }}>
                         <td style={{ padding: "0.75rem 1rem", fontSize: 13, color: "#181313", fontWeight: 500 }}>{r.page_title || "—"}</td>
-                        <td style={{ padding: "0.75rem 1rem" }}><span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 11, borderRadius: 4, padding: "2px 8px", border: "1px solid #E0E0E0", fontWeight: 500 }}>{r.page_type}</span></td>
-                        <td style={{ padding: "0.75rem 1rem" }}><span style={{ background: s.bg, color: s.color, fontSize: 10, borderRadius: 20, padding: "3px 9px", fontWeight: 500, border: `1px solid ${s.color}33` }}>{s.label}</span></td>
+                        <td style={{ padding: "0.75rem 1rem" }}><span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 12, borderRadius: 4, padding: "2px 8px", border: "1px solid #E0E0E0", fontWeight: 500 }}>{r.page_type}</span></td>
+                        <td style={{ padding: "0.75rem 1rem" }}><span style={{ background: s.bg, color: s.color, fontSize: 12, borderRadius: 20, padding: "3px 9px", fontWeight: 500, border: `1px solid ${s.color}33` }}>{s.label}</span></td>
                         <td style={{ padding: "0.75rem 1rem", fontSize: 13, color: "#646464" }}>{r.users?.name || "—"}</td>
                         <td style={{ padding: "0.75rem 1rem", fontSize: 13, color: "#646464" }}>
                           {r.assigned?.name
@@ -454,10 +454,10 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#2a7a4b", display: "inline-block" }} />
                                 {r.assigned.name}
                               </span>
-                            : <span style={{ color: "#B5B5B5" }}>Unassigned</span>
+                            : <span style={{ color: "#767676" }}>Unassigned</span>
                           }
                         </td>
-                        <td style={{ padding: "0.75rem 1rem", fontSize: 11, color: "#B5B5B5" }}>{new Date(r.updated_at).toLocaleDateString()}</td>
+                        <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#767676" }}>{new Date(r.updated_at).toLocaleDateString()}</td>
                       </tr>
                     );
                   })}
@@ -476,7 +476,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                     <div style={{ width: 10, height: 10, borderRadius: 2, background: "#181313" }} />
                     Can assign tasks
                   </div>
-                  <span style={{ fontSize: 12, color: "#B5B5B5" }}>{users.length} users</span>
+                  <span style={{ fontSize: 12, color: "#767676" }}>{users.length} users</span>
                   <button
                     onClick={() => { setInviteError(""); setShowInviteModal(true); }}
                     style={{ background: "#1b5793", color: "#fff", border: "none", borderRadius: 8, padding: "0.5rem 1rem", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
@@ -488,7 +488,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                 <thead>
                   <tr style={{ background: "#F9F9F9" }}>
                     {["User","Email","Department","Role","Can Assign","Joined","Action"].map(h => (
-                      <th key={h} style={{ padding: "0.65rem 1rem", textAlign: "left", fontSize: 10, color: "#B5B5B5", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3" }}>{h}</th>
+                      <th key={h} style={{ padding: "0.65rem 1rem", textAlign: "left", fontSize: 12, color: "#767676", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -508,14 +508,14 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                         <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", fontFamily: "monospace" }}>
                           {u.email}
                           {!u.auth_id && (
-                            <span title="Invited — hasn't logged in yet" style={{ marginLeft: 8, fontSize: 10, color: "#1b5793", background: "#e8f4fb", border: "1px solid rgba(27,87,147,0.2)", borderRadius: 4, padding: "1px 6px", fontFamily: "'Rubik',sans-serif" }}>
+                            <span title="Invited — hasn't logged in yet" style={{ marginLeft: 8, fontSize: 12, color: "#1b5793", background: "#e8f4fb", border: "1px solid rgba(27,87,147,0.2)", borderRadius: 4, padding: "1px 6px", fontFamily: "'Rubik',sans-serif" }}>
                               Invited
                             </span>
                           )}
                         </td>
                         <td style={{ padding: "0.75rem 1rem", fontSize: 13, color: "#646464" }}>{u.department || "—"}</td>
                         <td style={{ padding: "0.75rem 1rem" }}>
-                          <span style={{ background: isPending ? "#fffbeb" : "#F3F3F3", color: isPending ? "#d97706" : "#3C3C3C", fontSize: 11, borderRadius: 4, padding: "2px 8px", border: `1px solid ${isPending ? "#f59e0b44" : "#E0E0E0"}`, fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <span style={{ background: isPending ? "#fffbeb" : "#F3F3F3", color: isPending ? "#d97706" : "#3C3C3C", fontSize: 12, borderRadius: 4, padding: "2px 8px", border: `1px solid ${isPending ? "#f59e0b44" : "#E0E0E0"}`, fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 4 }}>
                             {isPending ? <><FaHourglassHalf size={9} /> Pending</> : m.label}
                           </span>
                         </td>
@@ -544,11 +544,11 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                               }} />
                             </button>
                           ) : (
-                            <span style={{ fontSize: 12, color: "#B5B5B5" }}>—</span>
+                            <span style={{ fontSize: 12, color: "#767676" }}>—</span>
                           )}
                         </td>
 
-                        <td style={{ padding: "0.75rem 1rem", fontSize: 11, color: "#B5B5B5" }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                        <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#767676" }}>{new Date(u.created_at).toLocaleDateString()}</td>
                         <td style={{ padding: "0.75rem 1rem" }}>
                           {!isMe ? (
                             <select value={u.role} onChange={e => assignRole(u.id, e.target.value)}
@@ -558,7 +558,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                               {ROLES.map(r => <option key={r} value={r}>{ROLE_META[r]?.label || r}</option>)}
                             </select>
                           ) : (
-                            <span style={{ fontSize: 12, color: "#B5B5B5" }}>You</span>
+                            <span style={{ fontSize: 12, color: "#767676" }}>You</span>
                           )}
                         </td>
                       </tr>
@@ -574,7 +574,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
             <div className="card">
               <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 14 }}>Status change history</h3>
               {history.length === 0
-                ? <div style={{ color: "#B5B5B5", fontSize: 13, textAlign: "center", padding: "1rem" }}>No activity yet.</div>
+                ? <div style={{ color: "#767676", fontSize: 13, textAlign: "center", padding: "1rem" }}>No activity yet.</div>
                 : history.map((h, i) => {
                   const from = h.from_status ? getStatus(h.from_status) : null;
                   const to   = getStatus(h.to_status);
@@ -584,11 +584,11 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                       <div style={{ flex: 1 }}>
                         <span style={{ fontSize: 13, color: "#181313", fontWeight: 500 }}>{h.user_name}</span>
                         <span style={{ fontSize: 13, color: "#646464" }}> moved a request </span>
-                        {from && <span style={{ fontSize: 11, background: from.bg, color: from.color, borderRadius: 10, padding: "1px 7px" }}>{from.label}</span>}
-                        {from && <span style={{ fontSize: 13, color: "#B5B5B5", margin: "0 4px" }}>→</span>}
-                        <span style={{ fontSize: 11, background: to.bg, color: to.color, borderRadius: 10, padding: "1px 7px" }}>{to.label}</span>
+                        {from && <span style={{ fontSize: 12, background: from.bg, color: from.color, borderRadius: 10, padding: "1px 7px" }}>{from.label}</span>}
+                        {from && <span style={{ fontSize: 13, color: "#767676", margin: "0 4px" }}>→</span>}
+                        <span style={{ fontSize: 12, background: to.bg, color: to.color, borderRadius: 10, padding: "1px 7px" }}>{to.label}</span>
                       </div>
-                      <div style={{ fontSize: 11, color: "#B5B5B5", whiteSpace: "nowrap" }}>{new Date(h.created_at).toLocaleString()}</div>
+                      <div style={{ fontSize: 12, color: "#767676", whiteSpace: "nowrap" }}>{new Date(h.created_at).toLocaleString()}</div>
                     </div>
                   );
                 })
@@ -606,17 +606,17 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
               {/* Filters */}
               <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
                 <div>
-                  <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>From</label>
+                  <label style={{ fontSize: 12, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>From</label>
                   <input type="date" value={auditDateFrom} onChange={e => setAuditDateFrom(e.target.value)}
                     style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313" }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>To</label>
+                  <label style={{ fontSize: 12, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>To</label>
                   <input type="date" value={auditDateTo} onChange={e => setAuditDateTo(e.target.value)}
                     style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313" }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Action Type</label>
+                  <label style={{ fontSize: 12, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Action Type</label>
                   <select value={auditAction} onChange={e => setAuditAction(e.target.value)}
                     style={{ background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313", cursor: "pointer", minWidth: 180 }}>
                     <option value="">All Actions</option>
@@ -624,7 +624,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                   </select>
                 </div>
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>User Email</label>
+                  <label style={{ fontSize: 12, color: "#646464", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>User Email</label>
                   <input type="text" placeholder="Search by user email…" value={auditEmail} onChange={e => setAuditEmail(e.target.value)}
                     style={{ width: "100%", background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.45rem 0.7rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", color: "#181313", boxSizing: "border-box" }} />
                 </div>
@@ -639,33 +639,33 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
               <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #E0E0E0", overflow: "hidden" }}>
                 <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid #F3F3F3", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <h2 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Audit Log</h2>
-                  <span style={{ fontSize: 12, color: "#B5B5B5" }}>{auditLog.length} shown (last 200)</span>
+                  <span style={{ fontSize: 12, color: "#767676" }}>{auditLog.length} shown (last 200)</span>
                 </div>
                 {auditLoading ? (
-                  <div style={{ padding: "2rem", textAlign: "center", color: "#B5B5B5" }}>Loading...</div>
+                  <div style={{ padding: "2rem", textAlign: "center", color: "#767676" }}>Loading...</div>
                 ) : auditLog.length === 0 ? (
-                  <div style={{ padding: "2rem", textAlign: "center", color: "#B5B5B5", fontSize: 13 }}>No audit log entries match these filters.</div>
+                  <div style={{ padding: "2rem", textAlign: "center", color: "#767676", fontSize: 13 }}>No audit log entries match these filters.</div>
                 ) : (
                   <div style={{ overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
                         <tr style={{ background: "#F9F9F9" }}>
                           {["Timestamp","User","Role","Action","Entity","Old Value","New Value","IP Address"].map(h => (
-                            <th key={h} style={{ padding: "0.65rem 1rem", textAlign: "left", fontSize: 10, color: "#B5B5B5", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3", whiteSpace: "nowrap" }}>{h}</th>
+                            <th key={h} style={{ padding: "0.65rem 1rem", textAlign: "left", fontSize: 12, color: "#767676", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", borderBottom: "1px solid #F3F3F3", whiteSpace: "nowrap" }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {auditLog.map((a, i) => (
                           <tr key={a.id} style={{ borderBottom: i < auditLog.length - 1 ? "1px solid #F9F9F9" : "none" }}>
-                            <td style={{ padding: "0.75rem 1rem", fontSize: 11, color: "#B5B5B5", whiteSpace: "nowrap" }}>{new Date(a.timestamp).toLocaleString()}</td>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#767676", whiteSpace: "nowrap" }}>{new Date(a.timestamp).toLocaleString()}</td>
                             <td style={{ padding: "0.75rem 1rem", fontSize: 13, color: "#181313", fontWeight: 500, whiteSpace: "nowrap" }}>{a.users?.name || a.user_email || "—"}</td>
                             <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", whiteSpace: "nowrap" }}>{a.user_role || "—"}</td>
-                            <td style={{ padding: "0.75rem 1rem" }}><span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 11, borderRadius: 4, padding: "2px 8px", border: "1px solid #E0E0E0", fontWeight: 500, whiteSpace: "nowrap" }}>{a.action}</span></td>
+                            <td style={{ padding: "0.75rem 1rem" }}><span style={{ background: "#F3F3F3", color: "#3C3C3C", fontSize: 12, borderRadius: 4, padding: "2px 8px", border: "1px solid #E0E0E0", fontWeight: 500, whiteSpace: "nowrap" }}>{a.action}</span></td>
                             <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", whiteSpace: "nowrap" }}>{a.entity_type ? `${a.entity_type}${a.entity_id ? " #" + String(a.entity_id).slice(0, 8) : ""}` : "—"}</td>
                             <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", fontFamily: "monospace", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.old_value || ""}>{a.old_value || "—"}</td>
                             <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#646464", fontFamily: "monospace", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={a.new_value || ""}>{a.new_value || "—"}</td>
-                            <td style={{ padding: "0.75rem 1rem", fontSize: 11, color: "#B5B5B5", fontFamily: "monospace", whiteSpace: "nowrap" }}>{a.ip_address || "—"}</td>
+                            <td style={{ padding: "0.75rem 1rem", fontSize: 12, color: "#767676", fontFamily: "monospace", whiteSpace: "nowrap" }}>{a.ip_address || "—"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -687,7 +687,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           {tab === "settings" && (
             <div className="card" style={{ maxWidth: 480 }}>
               <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Session Settings</h3>
-              <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 24, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: "#767676", marginBottom: 24, lineHeight: 1.6 }}>
                 Configure how long users can be inactive before being automatically logged out.
                 A warning will appear 60 seconds before logout.
               </p>
@@ -704,7 +704,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                     <option key={m} value={m}>{m} {m === 1 ? "minute" : "minutes"}</option>
                   ))}
                 </select>
-                <span style={{ fontSize: 13, color: "#B5B5B5" }}>of inactivity</span>
+                <span style={{ fontSize: 13, color: "#767676" }}>of inactivity</span>
               </div>
 
               <div style={{ background: "#e8f4fb", border: "1px solid rgba(27,87,147,0.15)", borderRadius: 8, padding: "0.75rem 1rem", marginBottom: 24, fontSize: 12, color: "#1b5793", lineHeight: 1.6 }}>
@@ -737,7 +737,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           {tab === "settings" && (
             <div className="card" style={{ maxWidth: 480, marginTop: 20 }}>
               <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Email Notifications</h3>
-              <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 20, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: "#767676", marginBottom: 20, lineHeight: 1.6 }}>
                 In addition to in-app notifications, email a copy out via SMTP.
                 Requires SMTP_HOST/SMTP_FROM (and credentials, if your relay
                 needs them) to be configured in the environment — this toggle
@@ -778,7 +778,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           {tab === "settings" && (
             <div className="card" style={{ maxWidth: 480, marginTop: 20 }}>
               <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Login Settings</h3>
-              <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 20, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: "#767676", marginBottom: 20, lineHeight: 1.6 }}>
                 Turn off email/password login once Okta SSO is verified working,
                 so it's the only way in. {!OKTA_ENABLED && "Disabled here until Okta is configured (NEXT_PUBLIC_OKTA_ENABLED) — otherwise this could lock everyone out with no way back in."}
               </p>
@@ -817,7 +817,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           {tab === "settings" && (
             <div className="card" style={{ maxWidth: 480, marginTop: 20 }}>
               <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Fill Test Data Button</h3>
-              <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 20, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: "#767676", marginBottom: 20, lineHeight: 1.6 }}>
                 The Fill Test Data button (New Request → step 2) is normally stripped out of production builds automatically.
                 Turn this on to temporarily keep it available in production too — e.g. for QA on a live-configured deployment.
                 Remember to turn it back off once that testing is done. Note this doesn't weaken the pre-flight check —
@@ -857,7 +857,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
           {tab === "settings" && (
             <div className="card" style={{ maxWidth: 480, marginTop: 20 }}>
               <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 6 }}>Placeholder Content Check</h3>
-              <p style={{ fontSize: 13, color: "#B5B5B5", marginBottom: 20, lineHeight: 1.6 }}>
+              <p style={{ fontSize: 13, color: "#767676", marginBottom: 20, lineHeight: 1.6 }}>
                 Part of the pre-flight check — normally blocks Submit if Lorem Ipsum placeholder text is present.
                 Turn this off temporarily if you need to actually Submit Fill Test Data content during QA,
                 then turn it back on once that testing is done. This does not affect the CTA label/link
@@ -907,7 +907,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
             onClick={e => e.stopPropagation()}
           >
             <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>Invite User</h3>
-            <p style={{ fontSize: 12, color: "#B5B5B5", marginBottom: 18, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 12, color: "#767676", marginBottom: 18, lineHeight: 1.6 }}>
               Pre-assigns a role for this email. {process.env.NEXT_PUBLIC_OKTA_ENABLED === "true"
                 ? "They'll sign in with Okta and the role applies automatically."
                 : "They'll register with this same email and the role applies automatically — no separate approval step."}
@@ -919,14 +919,14 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
               </div>
             )}
 
-            <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Email</label>
+            <label style={{ fontSize: 12, color: "#646464", display: "block", marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Email</label>
             <input
               type="email" value={inviteForm.email} onChange={e => setInviteForm(p => ({ ...p, email: e.target.value }))}
               placeholder="name@cadence.com" maxLength={254}
               style={{ width: "100%", background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.6rem 0.8rem", fontSize: 13, marginBottom: 14, fontFamily: "'Rubik',sans-serif", outline: "none", boxSizing: "border-box" }}
             />
 
-            <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Name</label>
+            <label style={{ fontSize: 12, color: "#646464", display: "block", marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Name</label>
             <input
               type="text" value={inviteForm.name} onChange={e => setInviteForm(p => ({ ...p, name: e.target.value }))}
               placeholder="e.g. Alex Johnson" maxLength={100}
@@ -935,7 +935,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
               <div>
-                <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Department</label>
+                <label style={{ fontSize: 12, color: "#646464", display: "block", marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Department</label>
                 <select value={inviteForm.department} onChange={e => setInviteForm(p => ({ ...p, department: e.target.value }))}
                   style={{ width: "100%", background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.6rem 0.6rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", outline: "none", cursor: "pointer", boxSizing: "border-box" }}>
                   <option value="">Select...</option>
@@ -943,7 +943,7 @@ export default function AdminPanel({ user, timeoutMins = 5, onTimeoutChange }) {
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: 11, color: "#646464", display: "block", marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Role</label>
+                <label style={{ fontSize: 12, color: "#646464", display: "block", marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>Role</label>
                 <select value={inviteForm.role} onChange={e => setInviteForm(p => ({ ...p, role: e.target.value }))}
                   style={{ width: "100%", background: "#F9F9F9", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.6rem 0.6rem", fontSize: 13, fontFamily: "'Rubik',sans-serif", outline: "none", cursor: "pointer", boxSizing: "border-box" }}>
                   {INVITE_ROLES.map(r => <option key={r} value={r}>{ROLE_META[r]?.label || r}</option>)}

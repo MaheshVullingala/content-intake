@@ -9,13 +9,13 @@ const Field = ({ label, value, onChange, placeholder, multiline, hint, disabled,
     <div className="field-wrap">
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
         <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
-        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+        {charLimit && <span style={{ fontSize: 12, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
       </div>
       {multiline
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...(fieldStyle || { minHeight:70 }), ...(over ? { borderColor:"#c0392b" } : {}) }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...fieldStyle, ...(over ? { borderColor:"#c0392b" } : {}) }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize: 12, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -50,7 +50,7 @@ export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA,
         <div className="card-header">
           <div><h3>Related Products — Header</h3><p>Label, impact statement and description</p></div>
         </div>
-        <Field label="Label" value="RELATED PRODUCTS" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
+        <Field label="Label" value="RELATED PRODUCTS" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#767676", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required value={data.rp_impact || ""} onChange={v => upd("rp_impact", v)}
           placeholder='e.g. "A Collection of Products to Fully Explore"' multiline />
         <Field label="Description" charLimit={300} value={data.rp_description || ""} onChange={v => upd("rp_description", v)}
@@ -61,7 +61,7 @@ export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA,
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Product Cards</h3>
-          <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>
+          <p style={{ fontSize: 12, color: "#767676", marginTop: 2 }}>
             {cards.length}/12 cards · 2 column layout
           </p>
         </div>
@@ -74,8 +74,8 @@ export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA,
       {/* Empty state */}
       {cards.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 12, padding: "2.5rem", textAlign: "center" }}>
-          <div style={{ fontSize: 32, marginBottom: 10, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaBox /></div>
-          <div style={{ fontSize: 14, color: "#B5B5B5", marginBottom: 14 }}>No cards yet. Add at least 1 product card.</div>
+          <div style={{ fontSize: 32, marginBottom: 10, display: "flex", justifyContent: "center", color: "#767676" }}><FaBox /></div>
+          <div style={{ fontSize: 14, color: "#767676", marginBottom: 14 }}>No cards yet. Add at least 1 product card.</div>
           <button onClick={addCard} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 8, padding: "0.55rem 1.2rem", fontSize: 13, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
             + Add first card
           </button>
@@ -135,7 +135,7 @@ export default function RelatedProducts({ data = {}, onChange, isNA, onToggleNA,
       {/* Add more */}
       {cards.length > 0 && cards.length < 12 && (
         <button onClick={addCard}
-          style={{ width: "100%", marginTop: 12, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "0.75rem", fontSize: 13, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s" }}
+          style={{ width: "100%", marginTop: 12, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "0.75rem", fontSize: 13, color: "#767676", cursor: "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
           + Add another card ({cards.length}/12)

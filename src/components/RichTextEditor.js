@@ -138,7 +138,7 @@ export default function RichTextEditor({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
           <label className="field-label" style={{ margin: 0 }}>{label}{required && <span className="req"> *</span>}</label>
           {charLimit && (
-            <span style={{ fontSize: 10, fontFamily: "monospace", color: over ? "#c0392b" : len > charLimit * 0.85 ? "#856404" : "#B5B5B5", fontWeight: 500 }}>
+            <span style={{ fontSize: 12, fontFamily: "monospace", color: over ? "#c0392b" : len > charLimit * 0.85 ? "#856404" : "#B5B5B5", fontWeight: 500 }}>
               {len}/{charLimit}
             </span>
           )}
@@ -153,7 +153,7 @@ export default function RichTextEditor({
 
       <div style={{ position: "relative" }}>
         {empty && placeholder && (
-          <div style={{ position: "absolute", top: 11, left: 13, fontSize: 14, color: "#B5B5B5", pointerEvents: "none" }}>
+          <div style={{ position: "absolute", top: 11, left: 13, fontSize: 14, color: "#767676", pointerEvents: "none" }}>
             {placeholder}
           </div>
         )}
@@ -171,13 +171,13 @@ export default function RichTextEditor({
             minHeight,
             overflowY: "auto",
             ...(over ? { borderColor: "#c0392b" } : {}),
-            ...(inert ? { background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" } : {}),
+            ...(inert ? { background: "#F5F5F5", color: "#767676", cursor: "not-allowed" } : {}),
           }}
         />
       </div>
 
       {over && (
-        <div style={{ fontSize: 11, color: "#c0392b", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ fontSize: 12, color: "#c0392b", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
           <FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit
         </div>
       )}

@@ -10,13 +10,13 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
     <div className="field-wrap">
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
         <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
-        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+        {charLimit && <span style={{ fontSize: 12, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
       </div>
       {multiline
         ? <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="textarea" maxLength={charLimit || undefined} style={over ? { borderColor:"#c0392b" } : {}} />
         : <input    value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} className="input" maxLength={charLimit || undefined} style={over ? { borderColor:"#c0392b" } : {}} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize: 12, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && !over && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -47,7 +47,7 @@ function TagSelector({ selected = [], onChange }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
         {PRODUCT_TAGS.map(tag => (
           <button key={tag} type="button" onClick={() => toggle(tag)}
-            style={{ background: selected.includes(tag) ? "#181313" : "#F3F3F3", color: selected.includes(tag) ? "#fff" : "#646464", border: `1px solid ${selected.includes(tag) ? "#181313" : "#E0E0E0"}`, borderRadius: 20, padding: "3px 11px", fontSize: 11, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
+            style={{ background: selected.includes(tag) ? "#181313" : "#F3F3F3", color: selected.includes(tag) ? "#fff" : "#646464", border: `1px solid ${selected.includes(tag) ? "#181313" : "#E0E0E0"}`, borderRadius: 20, padding: "3px 11px", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", fontWeight: 500 }}>
             {tag}
           </button>
         ))}
@@ -62,7 +62,7 @@ function TagSelector({ selected = [], onChange }) {
         </button>
       </div>
       {selected.length > 0 && (
-        <div style={{ marginTop: 8, fontSize: 11, color: "#B5B5B5" }}>
+        <div style={{ marginTop: 8, fontSize: 12, color: "#767676" }}>
           Selected: {selected.join(", ")}
         </div>
       )}
@@ -93,14 +93,14 @@ function CarouselForm({ data = {}, onChange, type = "mixed", requestId = "draft"
           Resource Items <span className="req">*</span>
         </label>
         <button onClick={addItem} disabled={items.length >= 9}
-          style={{ background: items.length >= 9 ? "#F3F3F3" : "#181313", color: items.length >= 9 ? "#B5B5B5" : "#fff", border: "none", borderRadius: 7, padding: "0.35rem 0.8rem", fontSize: 11, fontWeight: 500, cursor: items.length >= 9 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
+          style={{ background: items.length >= 9 ? "#F3F3F3" : "#181313", color: items.length >= 9 ? "#B5B5B5" : "#fff", border: "none", borderRadius: 7, padding: "0.35rem 0.8rem", fontSize: 12, fontWeight: 500, cursor: items.length >= 9 ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif" }}>
           + Add ({items.length}/9)
         </button>
       </div>
 
       {items.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 8, padding: "1.2rem", textAlign: "center", marginBottom: 8 }}>
-          <div style={{ fontSize: 12, color: "#B5B5B5" }}>Add at least 1 resource item</div>
+          <div style={{ fontSize: 12, color: "#767676" }}>Add at least 1 resource item</div>
         </div>
       )}
 
@@ -118,7 +118,7 @@ function CarouselForm({ data = {}, onChange, type = "mixed", requestId = "draft"
                 <input value={item.url} onChange={e => updateItem(item.id, "url", e.target.value)}
                   placeholder="https://..." className="input" />
               </div>
-              <button onClick={() => removeItem(item.id)} style={{ marginTop: 20, background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.6rem", fontSize: 11, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
+              <button onClick={() => removeItem(item.id)} style={{ marginTop: 20, background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.4rem 0.6rem", fontSize: 12, cursor: "pointer", display: "flex" }}><FaTimes size={10} /></button>
             </div>
             <ImageField
               label="Item Thumbnail"
@@ -143,7 +143,7 @@ function ResourcesForm({ data = {}, onChange, requestId = "draft" }) {
       {/* Resource 1 — featured with image */}
       <div className="card">
         <div style={{ fontSize: 12, fontWeight: 500, color: "#181313", marginBottom: 12, paddingBottom: 10, borderBottom: "1px solid #F3F3F3" }}>
-          Resource 1 <span style={{ fontSize: 11, color: "#B5B5B5", fontWeight: 400 }}>— Featured (large card with image)</span>
+          Resource 1 <span style={{ fontSize: 12, color: "#767676", fontWeight: 400 }}>— Featured (large card with image)</span>
         </div>
         <Field label="Title" required value={data.r1_title || ""} onChange={v => upd("r1_title", v)} placeholder='e.g. "TIE Language — The Fast Path to High-Performance Embedded SoC"' />
         <Field label="Link URL" required value={data.r1_link || ""} onChange={v => upd("r1_link", v)} placeholder="https://..." />
@@ -159,7 +159,7 @@ function ResourcesForm({ data = {}, onChange, requestId = "draft" }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {["White Paper","Brochure","Video","eBook","Data Sheet","Case Study"].map(t => (
               <button key={t} type="button" onClick={() => upd("r1_tag", t)}
-                style={{ background: data.r1_tag === t ? "#181313" : "#F3F3F3", color: data.r1_tag === t ? "#fff" : "#646464", border: `1px solid ${data.r1_tag === t ? "#181313" : "#E0E0E0"}`, borderRadius: 20, padding: "3px 11px", fontSize: 11, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
+                style={{ background: data.r1_tag === t ? "#181313" : "#F3F3F3", color: data.r1_tag === t ? "#fff" : "#646464", border: `1px solid ${data.r1_tag === t ? "#181313" : "#E0E0E0"}`, borderRadius: 20, padding: "3px 11px", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
                 {t}
               </button>
             ))}
@@ -171,7 +171,7 @@ function ResourcesForm({ data = {}, onChange, requestId = "draft" }) {
       {[2, 3, 4].map(n => (
         <div key={n} className="card">
           <div style={{ fontSize: 12, fontWeight: 500, color: "#181313", marginBottom: 12, paddingBottom: 10, borderBottom: "1px solid #F3F3F3" }}>
-            Resource {n} <span style={{ fontSize: 11, color: "#B5B5B5", fontWeight: 400 }}>— Small card</span>
+            Resource {n} <span style={{ fontSize: 12, color: "#767676", fontWeight: 400 }}>— Small card</span>
           </div>
           <Field label="Title" required value={data[`r${n}_title`] || ""} onChange={v => upd(`r${n}_title`, v)} placeholder={`Resource ${n} title...`} />
           <Field label="Link URL" required value={data[`r${n}_link`] || ""} onChange={v => upd(`r${n}_link`, v)} placeholder="https://..." />
@@ -180,7 +180,7 @@ function ResourcesForm({ data = {}, onChange, requestId = "draft" }) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {["White Paper","Brochure","Video","eBook","Data Sheet","Case Study"].map(t => (
                 <button key={t} type="button" onClick={() => upd(`r${n}_tag`, t)}
-                  style={{ background: data[`r${n}_tag`] === t ? "#181313" : "#F3F3F3", color: data[`r${n}_tag`] === t ? "#fff" : "#646464", border: `1px solid ${data[`r${n}_tag`] === t ? "#181313" : "#E0E0E0"}`, borderRadius: 20, padding: "3px 11px", fontSize: 11, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
+                  style={{ background: data[`r${n}_tag`] === t ? "#181313" : "#F3F3F3", color: data[`r${n}_tag`] === t ? "#fff" : "#646464", border: `1px solid ${data[`r${n}_tag`] === t ? "#181313" : "#E0E0E0"}`, borderRadius: 20, padding: "3px 11px", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
                   {t}
                 </button>
               ))}
@@ -216,11 +216,11 @@ function NewsBlogsForm({ news = {}, blogs = {}, onNewsChange, onBlogsChange }) {
             {TAGS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <button onClick={() => onRemove(link.id)}
-            style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.6rem 0.6rem", fontSize: 11, cursor: "pointer", marginTop: 1, display: "flex" }}><FaTimes size={10} /></button>
+            style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.6rem 0.6rem", fontSize: 12, cursor: "pointer", marginTop: 1, display: "flex" }}><FaTimes size={10} /></button>
         </div>
       ))}
       <button onClick={onAdd}
-        style={{ background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 7, padding: "0.5rem 1rem", fontSize: 12, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
+        style={{ background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 7, padding: "0.5rem 1rem", fontSize: 12, color: "#767676", cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}
         onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
         + Add link
@@ -288,7 +288,7 @@ export default function Resources({ data = {}, onChange, isNA, onToggleNA, reque
 
       {/* Sub-item selector */}
       <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 14 }}>Select Resource Types <span style={{ fontSize: 11, color: "#B5B5B5", fontWeight: 400 }}>(choose all that apply)</span></div>
+        <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 14 }}>Select Resource Types <span style={{ fontSize: 12, color: "#767676", fontWeight: 400 }}>(choose all that apply)</span></div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {SUB_ITEMS.map(sub => (
             <button key={sub.key} onClick={() => toggleSub(sub.key)}
@@ -296,7 +296,7 @@ export default function Resources({ data = {}, onChange, isNA, onToggleNA, reque
               <span style={{ fontSize: 20, display: "flex", color: selected.includes(sub.key) ? "#F3F3F3" : "#181313" }}><sub.icon /></span>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: selected.includes(sub.key) ? "#F3F3F3" : "#181313" }}>{sub.label}</div>
-                <div style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>{sub.desc}</div>
+                <div style={{ fontSize: 12, color: "#767676", marginTop: 2 }}>{sub.desc}</div>
               </div>
               {selected.includes(sub.key) && <span style={{ marginLeft: "auto", color: "#2a7a4b", fontSize: 16, display: "flex" }}><FaCheck /></span>}
             </button>
@@ -336,7 +336,7 @@ export default function Resources({ data = {}, onChange, isNA, onToggleNA, reque
               />
             )}
             {!activeTab && (
-              <div style={{ textAlign: "center", color: "#B5B5B5", fontSize: 13, padding: "1rem" }}>
+              <div style={{ textAlign: "center", color: "#767676", fontSize: 13, padding: "1rem" }}>
                 Select a resource type tab above to fill in details
               </div>
             )}

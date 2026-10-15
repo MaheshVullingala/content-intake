@@ -79,7 +79,7 @@ export function PCBLoader({ label = "LOADING..." }) {
         <div style={{ height: "100%", background: "#2c90b2", borderRadius: 2, animation: "pcb-bar 2.4s ease-in-out infinite" }} />
       </div>
       {/* Label */}
-      <div style={{ fontSize: 11, color: "#646464", letterSpacing: ".12em", fontFamily: "monospace", animation: "pcb-txt 2s ease-in-out infinite" }}>
+      <div style={{ fontSize: 12, color: "#646464", letterSpacing: ".12em", fontFamily: "monospace", animation: "pcb-txt 2s ease-in-out infinite" }}>
         {label}
       </div>
     </div>
@@ -114,7 +114,7 @@ export function PCBLoaderMini({ label = "UPLOADING..." }) {
           </g>
         ))}
       </svg>
-      <div style={{ fontSize: 11, color: "#646464", letterSpacing: ".1em", fontFamily: "monospace", animation: "pcb-txt 2s ease-in-out infinite" }}>
+      <div style={{ fontSize: 12, color: "#646464", letterSpacing: ".1em", fontFamily: "monospace", animation: "pcb-txt 2s ease-in-out infinite" }}>
         {label}
       </div>
     </div>

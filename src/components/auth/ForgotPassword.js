@@ -23,10 +23,10 @@ export default function ForgotPassword({ onSwitch }) {
 
   if (sent) return (
     <div style={{ textAlign: "center", fontFamily: "'Rubik',sans-serif" }}>
-      <div style={{ fontSize: 40, marginBottom: 16, display: "flex", justifyContent: "center", color: "#B5B5B5" }}><FaEnvelope /></div>
+      <div style={{ fontSize: 40, marginBottom: 16, display: "flex", justifyContent: "center", color: "#767676" }}><FaEnvelope /></div>
       <h2 style={{ fontSize: 20, fontWeight: 500, color: "#F3F3F3", marginBottom: 10 }}>Check your email</h2>
       <p style={{ fontSize: 13, color: "#646464", lineHeight: 1.7, marginBottom: 24 }}>
-        We sent a password reset link to <strong style={{ color: "#B5B5B5" }}>{email}</strong>.<br />
+        We sent a password reset link to <strong style={{ color: "#767676" }}>{email}</strong>.<br />
         Click the link in the email to set a new password.
       </p>
       <button onClick={() => onSwitch("login")} style={{ background: "#F3F3F3", color: "#181313", border: "none", borderRadius: 8, padding: "0.65rem 1.5rem", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
@@ -47,7 +47,7 @@ export default function ForgotPassword({ onSwitch }) {
       )}
 
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Rubik',sans-serif" }}>Email</label>
+        <label style={{ fontSize: 12, color: "#646464", fontWeight: 500, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'Rubik',sans-serif" }}>Email</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
           placeholder="you@company.com" maxLength={254}
           style={{ width: "100%", background: "#2e2a2a", border: "1px solid #3C3C3C", borderRadius: 8, padding: "0.7rem 0.9rem", fontSize: 14, color: "#F3F3F3", outline: "none", fontFamily: "'Rubik',sans-serif", boxSizing: "border-box" }}
@@ -62,7 +62,7 @@ export default function ForgotPassword({ onSwitch }) {
 
       <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#646464", fontFamily: "'Rubik',sans-serif" }}>
         <button type="button" onClick={() => onSwitch("login")}
-          style={{ background: "none", border: "none", color: "#B5B5B5", fontSize: 13, cursor: "pointer", fontFamily: "'Rubik',sans-serif", textDecoration: "underline" }}>
+          style={{ background: "none", border: "none", color: "#767676", fontSize: 13, cursor: "pointer", fontFamily: "'Rubik',sans-serif", textDecoration: "underline" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><FaArrowLeft size={10} /> Back to Sign in</span>
         </button>
       </p>

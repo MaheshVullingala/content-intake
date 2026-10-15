@@ -9,13 +9,13 @@ const Field = ({ label, value, onChange, placeholder, multiline, required, hint,
     <div className="field-wrap">
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
         <label className="field-label" style={{ margin:0 }}>{label}{required && <span className="req"> *</span>}</label>
-        {charLimit && <span style={{ fontSize:10, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
+        {charLimit && <span style={{ fontSize: 12, fontFamily:"monospace", color: over ? "#c0392b" : len > charLimit*0.85 ? "#856404" : "#B5B5B5", fontWeight:500 }}>{len}/{charLimit}</span>}
       </div>
       {multiline
         ? <textarea value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="textarea" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...(fieldStyle || { minHeight:70 }), borderColor: over ? "#c0392b" : undefined }} />
         : <input    value={value} onChange={e => !disabled && !readOnly && onChange(e.target.value)} placeholder={placeholder} className="input" disabled={disabled} readOnly={readOnly} maxLength={charLimit || undefined} style={{ ...fieldStyle, borderColor: over ? "#c0392b" : undefined }} />
       }
-      {over && <div style={{ fontSize:11, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
+      {over && <div style={{ fontSize: 12, color:"#c0392b", marginTop:3, display:"flex", alignItems:"center", gap:4 }}><FaExclamationTriangle size={10} /> Exceeds {charLimit} character limit</div>}
       {hint && <div className="field-hint">{hint}</div>}
     </div>
   );
@@ -77,7 +77,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
             {naButton}
           </div>
         </div>
-        <Field label="Label" value="KEY BENEFITS" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#B5B5B5", cursor: "not-allowed" }} hint="Fixed label — not editable" />
+        <Field label="Label" value="KEY BENEFITS" onChange={() => {}} readOnly disabled style={{ background: "#F5F5F5", color: "#767676", cursor: "not-allowed" }} hint="Fixed label — not editable" />
         <Field label="Impact Statement" required charLimit={100} value={data.kb_impact || ""} onChange={v => upd("kb_impact", v)}
           placeholder="e.g. Deliver 10X Design Productivity to Meet Your Time-to-Market Goals"
           multiline hint="Large heading — the main message of this section" />
@@ -89,7 +89,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
       <div style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h3 style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>Benefit Cards</h3>
-          <p style={{ fontSize: 11, color: "#B5B5B5", marginTop: 2 }}>
+          <p style={{ fontSize: 12, color: "#767676", marginTop: 2 }}>
             {cards.length}/6 cards · {getLayoutLabel()}
           </p>
         </div>
@@ -103,7 +103,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
       {cards.length === 0 && (
         <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 12, padding: "2.5rem", textAlign: "center" }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>🃏</div>
-          <div style={{ fontSize: 14, color: "#B5B5B5", marginBottom: 14 }}>No cards yet. Add at least 1 benefit card.</div>
+          <div style={{ fontSize: 14, color: "#767676", marginBottom: 14 }}>No cards yet. Add at least 1 benefit card.</div>
           <button onClick={addCard} style={{ background: "#181313", color: "#fff", border: "none", borderRadius: 8, padding: "0.55rem 1.2rem", fontSize: 13, cursor: "pointer", fontFamily: "'Rubik',sans-serif" }}>
             + Add first card
           </button>
@@ -125,13 +125,13 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
                 </span>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button onClick={() => moveCard(idx, -1)} disabled={idx === 0}
+                <button aria-label="Move up" onClick={() => moveCard(idx, -1)} disabled={idx === 0}
                   title="Move up"
                   style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "#B5B5B5" : "#646464", fontFamily: "'Rubik',sans-serif", display: "flex" }}><FaArrowUp size={10} /></button>
-                <button onClick={() => moveCard(idx, 1)} disabled={idx === cards.length - 1}
+                <button aria-label="Move down" onClick={() => moveCard(idx, 1)} disabled={idx === cards.length - 1}
                   title="Move down"
                   style={{ background: "#F3F3F3", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: idx === cards.length - 1 ? "not-allowed" : "pointer", color: idx === cards.length - 1 ? "#B5B5B5" : "#646464", fontFamily: "'Rubik',sans-serif", display: "flex" }}><FaArrowDown size={10} /></button>
-                <button onClick={() => removeCard(card.id)}
+                <button aria-label="Remove card" onClick={() => removeCard(card.id)}
                   title="Remove card"
                   style={{ background: "#fff5f5", color: "#c0392b", border: "1px solid #c0392b33", borderRadius: 6, padding: "0.3rem 0.65rem", fontSize: 12, cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex" }}><FaTimes size={10} /></button>
               </div>
@@ -140,7 +140,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
             {/* Card fields */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div className="field-wrap">
-                <div style={{display:"flex",justifyContent:"space-between"}}><label className="field-label">Card Title <span className="req">*</span></label><span style={{fontSize:10,fontFamily:"monospace",color:(card.title||"").length>50?"#c0392b":"#B5B5B5"}}>{(card.title||"").length}/50</span></div>
+                <div style={{display:"flex",justifyContent:"space-between"}}><label className="field-label">Card Title <span className="req">*</span></label><span style={{fontSize: 12,fontFamily:"monospace",color:(card.title||"").length>50?"#c0392b":"#B5B5B5"}}>{(card.title||"").length}/50</span></div>
                 <input value={card.title}
                   onChange={e => updateCard(card.id, "title", e.target.value)}
                   placeholder='e.g. "Unmatched Performance"'
@@ -150,7 +150,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
             </div>
 
             <div className="field-wrap">
-              <div style={{display:"flex",justifyContent:"space-between"}}><label className="field-label">Card Description <span className="req">*</span></label><span style={{fontSize:10,fontFamily:"monospace",color:(card.description||"").length>150?"#c0392b":"#B5B5B5"}}>{(card.description||"").length}/150</span></div>
+              <div style={{display:"flex",justifyContent:"space-between"}}><label className="field-label">Card Description <span className="req">*</span></label><span style={{fontSize: 12,fontFamily:"monospace",color:(card.description||"").length>150?"#c0392b":"#B5B5B5"}}>{(card.description||"").length}/150</span></div>
               <textarea value={card.description}
                 onChange={e => updateCard(card.id, "description", e.target.value)}
                 placeholder="Brief description of this benefit..."
@@ -171,7 +171,7 @@ export default function KeyBenefits({ data = {}, onChange, isNA, onToggleNA, aiA
       {/* Add more button */}
       {cards.length > 0 && cards.length < 6 && (
         <button onClick={addCard}
-          style={{ width: "100%", marginTop: 12, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "0.75rem", fontSize: 13, color: "#B5B5B5", cursor: "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s" }}
+          style={{ width: "100%", marginTop: 12, background: "transparent", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "0.75rem", fontSize: 13, color: "#767676", cursor: "pointer", fontFamily: "'Rubik',sans-serif", transition: "all 0.15s" }}
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#3C3C3C"; e.currentTarget.style.color = "#3C3C3C"; }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = "#E0E0E0"; e.currentTarget.style.color = "#B5B5B5"; }}>
           + Add another card ({cards.length}/6)

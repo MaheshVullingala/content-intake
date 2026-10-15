@@ -153,7 +153,7 @@ export default function AdminTagsPanel({ user }) {
     return t.name.toLowerCase().includes(q) || (t.category || "").toLowerCase().includes(q);
   });
 
-  if (loading) return <div style={{ padding: "2rem", color: "#B5B5B5" }}>Loading tags...</div>;
+  if (loading) return <div style={{ padding: "2rem", color: "#767676" }}>Loading tags...</div>;
 
   return (
     <div>
@@ -173,7 +173,7 @@ export default function AdminTagsPanel({ user }) {
           Pending Approval {pending.length > 0 && `(${pending.length})`}
         </h4>
         {pending.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#B5B5B5", padding: "0.5rem 0" }}>No tag requests waiting on review.</div>
+          <div style={{ fontSize: 13, color: "#767676", padding: "0.5rem 0" }}>No tag requests waiting on review.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {pending.map(tag => (
@@ -254,12 +254,12 @@ export default function AdminTagsPanel({ user }) {
             className="input" style={{ maxWidth: 220, fontSize: 12, padding: "0.35rem 0.6rem" }} />
         </div>
         {filteredApproved.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#B5B5B5", padding: "0.5rem 0" }}>No matching tags.</div>
+          <div style={{ fontSize: 13, color: "#767676", padding: "0.5rem 0" }}>No matching tags.</div>
         ) : (
           <div style={{ maxHeight: 360, overflowY: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
-                <tr style={{ textAlign: "left", color: "#B5B5B5", fontSize: 11, textTransform: "uppercase" }}>
+                <tr style={{ textAlign: "left", color: "#767676", fontSize: 12, textTransform: "uppercase" }}>
                   <th style={{ padding: "6px 8px" }}>Category</th>
                   <th style={{ padding: "6px 8px" }}>Name</th>
                   <th style={{ padding: "6px 8px" }}>URL</th>
@@ -273,7 +273,7 @@ export default function AdminTagsPanel({ user }) {
                     <td style={{ padding: "6px 8px", color: "#181313" }}>{tag.name}</td>
                     <td style={{ padding: "6px 8px", color: "#646464", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tag.url || "—"}</td>
                     <td style={{ padding: "6px 8px" }}>
-                      <button onClick={() => removeApproved(tag)} disabled={acting === tag.id}
+                      <button aria-label="Delete tag" onClick={() => removeApproved(tag)} disabled={acting === tag.id}
                         title="Delete tag"
                         style={{ background: "none", border: "none", cursor: acting === tag.id ? "default" : "pointer", color: "#c0392b", display: "flex" }}>
                         <FaTrash size={11} />

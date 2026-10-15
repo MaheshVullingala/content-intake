@@ -11,7 +11,7 @@ export default function RelatedProductsPreview({ data = {}, attachments = [] }) 
     <div style={{ background: "#ffffff", width: "100%", boxSizing: "border-box", fontFamily: "'Rubik', sans-serif" }}>
       <div className="section-container">
 
-        <div style={{ fontSize: 11, fontWeight: 600, color: rp_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: rp_label ? "#646464" : "#E0E0E0", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 16 }}>
           {rp_label || "RELATED PRODUCTS"}
         </div>
 
@@ -45,7 +45,7 @@ export default function RelatedProductsPreview({ data = {}, attachments = [] }) 
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         onError={e => { e.target.style.display = "none"; }} />
                     ) : (
-                      <span style={{ fontSize: 10, color: "#B5B5B5", textAlign: "center", padding: "0 8px", display: "flex", alignItems: "center", gap: 4 }}><FaPalette size={9} /> {imagePlaceholder}</span>
+                      <span style={{ fontSize: 12, color: "#767676", textAlign: "center", padding: "0 8px", display: "flex", alignItems: "center", gap: 4 }}><FaPalette size={9} /> {imagePlaceholder}</span>
                     )}
                   </div>
                 )}
@@ -69,7 +69,7 @@ export default function RelatedProductsPreview({ data = {}, attachments = [] }) 
 
         {rp_cards.length === 0 && (
           <div style={{ background: "#F9F9F9", border: "2px dashed #E0E0E0", borderRadius: 10, padding: "2rem", textAlign: "center" }}>
-            <div style={{ fontSize: 12, color: "#B5B5B5" }}>Product cards will appear here</div>
+            <div style={{ fontSize: 12, color: "#767676" }}>Product cards will appear here</div>
           </div>
         )}
 

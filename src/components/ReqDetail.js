@@ -31,7 +31,7 @@ function SubmittedBanner({ req, onJiraCreated }) {
   };
   const row = (key, label, value, mono) => (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: "#646464", minWidth: 96 }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: "#646464", minWidth: 96 }}>{label}</span>
       <code style={{ fontSize: 12, fontFamily: mono ? "monospace" : "'Rubik',sans-serif", background: "#fff", border: "1px solid #E0E0E0", borderRadius: 6, padding: "3px 8px", wordBreak: "break-all", flex: 1 }}>{value}</code>
       <button type="button" className="btn-ghost" style={{ fontSize: 12, padding: "4px 10px", whiteSpace: "nowrap" }} onClick={() => copy(key, value)}>
         {copied === key ? "Copied!" : "Copy"}
@@ -97,7 +97,7 @@ export default function ReqDetail({ reqId, user, go, navParams }) {
     </div>
   );
   if (!req) return (
-    <div style={{ padding: "2rem", color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>
+    <div style={{ padding: "2rem", color: "#767676", fontFamily: "'Rubik',sans-serif" }}>
       Request not found.
     </div>
   );
@@ -119,7 +119,7 @@ export default function ReqDetail({ reqId, user, go, navParams }) {
 
   return (
     <div style={{ padding: "2rem", textAlign: "center",
-      color: "#B5B5B5", fontFamily: "'Rubik',sans-serif" }}>
+      color: "#767676", fontFamily: "'Rubik',sans-serif" }}>
       This request uses the legacy workflow and is no longer supported.
     </div>
   );

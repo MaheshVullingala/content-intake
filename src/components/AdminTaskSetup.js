@@ -206,14 +206,14 @@ export default function AdminTaskSetup({ req, user, supabase, onTasksCreated }) 
                 </div>
                 {isBrand && (
                   <span className="badge badge-light"
-                    style={{ fontSize: 10, whiteSpace: "nowrap",
+                    style={{ fontSize: 12, whiteSpace: "nowrap",
                              opacity: isChecked ? 1 : 0.5 }}>
                     Optional
                   </span>
                 )}
                 {isRequired && (
                   <span className="badge badge-light"
-                    style={{ fontSize: 10, whiteSpace: "nowrap" }}>
+                    style={{ fontSize: 12, whiteSpace: "nowrap" }}>
                     Required
                   </span>
                 )}

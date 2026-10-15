@@ -280,7 +280,7 @@ export default function TaskBoardOverview({ req, user, tasks, supabase, onRefres
                     background: statusMeta.bg, color: statusMeta.color,
                     border: `1px solid ${statusMeta.color}33`,
                     borderRadius: 20, padding: "2px 8px",
-                    fontSize: 11, fontWeight: 500,
+                    fontSize: 12, fontWeight: 500,
                     alignItems: "center", gap: 4,
                   }}>
                     <StatusIcon size={10} /> {statusMeta.label}

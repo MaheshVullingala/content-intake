@@ -7,7 +7,7 @@ import {
 export const PAGE_TYPES = ["Product", "Solutions", "Glossary", "On-demand Webinar"];
 
 export const STATUS_FLOW = [
-  { key: "draft",             label: "Draft",            color: "#B5B5B5", bg: "#F9F9F9" },
+  { key: "draft",             label: "Draft",            color: "#767676", bg: "#F9F9F9" },
   { key: "editorial_qa",     label: "Editorial QA",     color: "#646464", bg: "#F3F3F3" },
   { key: "design_qa",        label: "Design QA",        color: "#3C3C3C", bg: "#EFEFEF" },
   { key: "pending_approval", label: "Pending Approval", color: "#181313", bg: "#EAEAEA" },

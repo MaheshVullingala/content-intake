@@ -22,7 +22,7 @@ export default function PromoSectionPreview({ data = {}, attachments = [] }) {
         {/* Left content */}
         <div style={{ flex: 1 }}>
           {promo_label && (
-            <div style={{ fontSize: 10, fontWeight: 600, color: "#B5B5B5", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12, textShadow: promo_bg_image ? "0 1px 4px rgba(0,0,0,0.65)" : "none" }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#767676", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 12, textShadow: promo_bg_image ? "0 1px 4px rgba(0,0,0,0.65)" : "none" }}>
               {promo_label}
             </div>
           )}
@@ -36,10 +36,10 @@ export default function PromoSectionPreview({ data = {}, attachments = [] }) {
             </h2>
           )}
           {promo_description && (
-            <p style={{ fontSize: 13, color: "#B5B5B5", marginTop: 10, lineHeight: 1.6, textShadow: promo_bg_image ? "0 1px 4px rgba(0,0,0,0.65)" : "none" }}>{promo_description}</p>
+            <p style={{ fontSize: 13, color: "#767676", marginTop: 10, lineHeight: 1.6, textShadow: promo_bg_image ? "0 1px 4px rgba(0,0,0,0.65)" : "none" }}>{promo_description}</p>
           )}
           {!promo_bg_image && promo_bg_placeholder && (
-            <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.08)", border: "1px dashed rgba(255,255,255,0.3)", borderRadius: 6, padding: "6px 12px", fontSize: 11, color: "#B5B5B5" }}>
+            <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.08)", border: "1px dashed rgba(255,255,255,0.3)", borderRadius: 6, padding: "6px 12px", fontSize: 12, color: "#767676" }}>
               <FaPalette size={10} /> {promo_bg_placeholder}
             </div>
           )}

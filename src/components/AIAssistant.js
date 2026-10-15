@@ -144,7 +144,7 @@ function SectionPicker({ brief, setBrief, availableSections, onGenerate, onEditB
           </p>
         </div>
         <button type="button" onClick={onEditBrief}
-          style={{ background: "none", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, color: "#646464", cursor: "pointer", fontFamily: "'Rubik',sans-serif", flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
+          style={{ background: "none", border: "1px solid #E0E0E0", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 12, color: "#646464", cursor: "pointer", fontFamily: "'Rubik',sans-serif", flexShrink: 0, display: "flex", alignItems: "center", gap: 5 }}>
           <FaPen size={9} /> Edit brief
         </button>
       </div>
@@ -167,10 +167,10 @@ function SectionPicker({ brief, setBrief, availableSections, onGenerate, onEditB
               <span style={{ fontSize: 16, flexShrink: 0, display: "flex" }}><config.icon /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: "#181313" }}>{config.label}</div>
-                <div style={{ fontSize: 11, color: "#B5B5B5" }}>{config.desc}</div>
+                <div style={{ fontSize: 12, color: "#767676" }}>{config.desc}</div>
               </div>
               <button type="button" onClick={() => generate(key)} disabled={isGenerating || generatingAll}
-                style={{ background: isDone ? "#22c55e" : "#1b5793", color: "#fff", border: "none", borderRadius: 6, padding: "0.35rem 0.75rem", fontSize: 11, fontWeight: 500, cursor: isGenerating || generatingAll ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", flexShrink: 0, whiteSpace: "nowrap", opacity: isGenerating ? 0.7 : 1, display: "flex", alignItems: "center", gap: 4 }}>
+                style={{ background: isDone ? "#22c55e" : "#1b5793", color: "#fff", border: "none", borderRadius: 6, padding: "0.35rem 0.75rem", fontSize: 12, fontWeight: 500, cursor: isGenerating || generatingAll ? "not-allowed" : "pointer", fontFamily: "'Rubik',sans-serif", flexShrink: 0, whiteSpace: "nowrap", opacity: isGenerating ? 0.7 : 1, display: "flex", alignItems: "center", gap: 4 }}>
                 {isGenerating ? <FaHourglassHalf size={9} /> : isDone ? <><FaCheck size={9} /> Redo</> : "Generate"}
               </button>
             </div>
@@ -276,14 +276,14 @@ export default function AIAssistant({ availableSections = [], onGenerate }) {
                 <span style={{ fontSize: 18, display: "flex" }}><FaMagic /></span>
                 <div>
                   <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: 1.2 }}>AI Content Assistant</div>
-                  <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}>
+                  <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12 }}>
                     {screen === "brief" ? "Step 1 — Product Brief" : `Step 2 — Generate · ${brief.productName}`}
                   </div>
                 </div>
               </div>
               {briefSaved && screen === "sections" && (
                 <button type="button" onClick={() => setScreen("brief")}
-                  style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 11, color: "#fff", cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 5 }}>
+                  style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, padding: "0.3rem 0.7rem", fontSize: 12, color: "#fff", cursor: "pointer", fontFamily: "'Rubik',sans-serif", display: "flex", alignItems: "center", gap: 5 }}>
                   <FaArrowLeft size={9} /> Brief
                 </button>
               )}

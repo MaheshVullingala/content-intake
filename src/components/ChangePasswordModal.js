@@ -28,7 +28,7 @@ export function validateNewPassword(current, next, confirm) {
   return "";
 }
 
-const label = { fontSize: 11, color: "#646464", fontWeight: 500, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" };
+const label = { fontSize: 12, color: "#646464", fontWeight: 500, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.05em" };
 const input = { width: "100%", border: "1px solid #E0E0E0", borderRadius: 8, padding: "0.65rem 0.85rem", fontSize: 14, color: "#181313", outline: "none", fontFamily: "'Rubik',sans-serif", boxSizing: "border-box" };
 
 export default function ChangePasswordModal({ user, supabase, onClose }) {
